@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">COMPASS skills ecosystem map</title>
+  <desc id="desc">An English DAG showing user-profile-keeper, task-clarifier, task-forest, and future ecosystem skills.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #d8e2ee; stroke-width: 2; rx: 18; }
+      .node { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 16; }
+      .core { stroke: #2563eb; }
+      .future { stroke: #0f766e; }
+      .auto { stroke: #d97706; }
+      .title { font: 800 36px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+      .label { font: 750 20px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .small { font: 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+      .tag { font: 700 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .edge { stroke: #334155; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .soft { stroke: #64748b; stroke-dasharray: 8 7; }
+      .blue { fill: #dbeafe; }
+      .teal { fill: #ccfbf1; }
+      .amber { fill: #fef3c7; }
+    </style>
+  </defs>
+  <rect class="bg" width="1280" height="760"/>
+  <text class="title" x="70" y="72">COMPASS Skills Ecosystem</text>
+  <text class="subtitle" x="70" y="108">Help agents understand the user, map the work, and align before goal drift happens.</text>
+
+  <rect class="panel" x="48" y="145" width="1184" height="540"/>
+
+  <rect class="node core" x="95" y="220" width="260" height="118"/>
+  <rect class="blue" x="118" y="240" width="96" height="28" rx="14"/>
+  <text class="tag" x="136" y="259">Know user</text>
+  <text class="label" x="118" y="296">User Profile</text>
+  <text class="small" x="118" y="320">user-profile-keeper</text>
+  <text class="small" x="118" y="342">local, auditable, correctable</text>
+
+  <rect class="node core" x="510" y="220" width="260" height="118"/>
+  <rect class="blue" x="533" y="240" width="118" height="28" rx="14"/>
+  <text class="tag" x="551" y="259">Know direction</text>
+  <text class="label" x="533" y="296">Alignment Gate</text>
+  <text class="small" x="533" y="320">task-clarifier</text>
+  <text class="small" x="533" y="342">shared executable requirement</text>
+
+  <rect class="node core" x="925" y="220" width="260" height="118"/>
+  <rect class="blue" x="948" y="240" width="98" height="28" rx="14"/>
+  <text class="tag" x="966" y="259">Know work</text>
+  <text class="label" x="948" y="296">Task Forest / DAG</text>
+  <text class="small" x="948" y="320">task-forest</text>
+  <text class="small" x="948" y="342">goals, edges, progress, drift</text>
+
+  <path class="edge soft" d="M355 279 C420 255, 450 255, 510 279"/>
+  <text class="small" x="388" y="247">low-risk profile summary</text>
+  <path class="edge" d="M770 279 C830 279, 865 279, 925 279"/>
+  <text class="small" x="805" y="257">aligned proposal updates</text>
+
+  <rect class="node future" x="96" y="440" width="230" height="104"/>
+  <rect class="teal" x="118" y="460" width="98" height="26" rx="13"/>
+  <text class="tag" x="139" y="479">handoff</text>
+  <text class="label" x="118" y="514">Session Handoff</text>
+  <text class="small" x="118" y="538">restart prompts</text>
+
+  <rect class="node future" x="385" y="440" width="230" height="104"/>
+  <rect class="teal" x="407" y="460" width="98" height="26" rx="13"/>
+  <text class="tag" x="428" y="479">control</text>
+  <text class="label" x="407" y="514">Agent Control Room</text>
+  <text class="small" x="407" y="538">multi-agent state and risk</text>
+
+  <rect class="node future" x="674" y="440" width="230" height="104"/>
+  <rect class="teal" x="696" y="460" width="98" height="26" rx="13"/>
+  <text class="tag" x="721" y="479">routing</text>
+  <text class="label" x="696" y="514">Gap Router</text>
+  <text class="small" x="696" y="538">low-switch-cost task picks</text>
+
+  <rect class="node auto" x="963" y="440" width="230" height="104"/>
+  <rect class="amber" x="985" y="460" width="98" height="26" rx="13"/>
+  <text class="tag" x="1005" y="479">evolve</text>
+  <text class="label" x="985" y="514">Run-History Skills</text>
+  <text class="small" x="985" y="538">builder / upgrader</text>
+
+  <path class="edge" d="M1015 338 C930 382, 830 410, 788 440"/>
+  <path class="edge" d="M1010 338 C820 392, 600 402, 500 440"/>
+  <path class="edge" d="M967 338 C700 390, 360 405, 228 440"/>
+  <path class="edge" d="M1045 338 C1070 380, 1078 405, 1078 440"/>
+  <path class="edge soft" d="M640 338 C720 420, 860 495, 963 510"/>
+  <path class="edge soft" d="M225 338 C370 448, 660 535, 963 510"/>
+
+  <rect class="node auto" x="240" y="600" width="800" height="48"/>
+  <text class="label" x="268" y="631">Future: reports, scheduling, retrospectives, habits, and health systems</text>
+  <path class="edge" d="M1078 544 C970 590, 820 606, 640 600"/>
+  <path class="edge" d="M788 544 C760 575, 715 594, 640 600"/>
+  <path class="edge" d="M500 544 C535 575, 585 594, 640 600"/>
+</svg>

@@ -19,6 +19,8 @@ Scope:
 - Generalized Codex-first wording and defaults into agent-agnostic `SKILL.md` usage, with `COMPASS_AGENT_NAME` for actor labeling and `COMPASS_USER_PROFILE_HOME` for profile storage overrides.
 - Added public visual assets. Live task-forest screenshots were re-encoded with semantic filenames; raw source screenshot filenames are excluded by `.gitignore`.
 - Added explicit plaintext local-storage warnings for `user-profile-keeper` and clarified that `task-clarifier` works with or without a profile.
+- Added localized Chinese and English README diagrams for profile alignment, the ecosystem DAG, and the roadmap ecosystem.
+- Added agent-assisted installation prompts that require safety review before copying skills into an agent or harness.
 
 ## Local-First Boundaries
 

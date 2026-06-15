@@ -32,7 +32,7 @@ Live task details, purpose, requirements, evidence, and scheduling:
 
 User profile and alignment flow:
 
-![profile and clarifier flow](assets/profile-clarifier-flow.png)
+![COMPASS user profile and alignment flow](assets/profile-alignment-flow.en.png)
 
 ## Why COMPASS
 
@@ -60,32 +60,7 @@ Task Clarifier answers: should we do this, and how do we avoid drifting?
 
 ## Ecosystem DAG
 
-```mermaid
-flowchart TD
-  U["User"] --> UPK["user-profile-keeper<br/>Local user profile"]
-  U --> TC["task-clarifier<br/>Alignment gate"]
-  U --> TF["task-forest<br/>Task forest / DAG"]
-
-  UPK -. "low-risk clarification_summary" .-> TC
-  TC --> TF
-  TF --> SH["session-handoff-prompt<br/>session resume prompts"]
-  TF --> ACR["Local Agent Control Room<br/>multi-agent status"]
-  TF --> GR["Gap Router<br/>low-switching-cost tasks"]
-
-  SH --> TF
-  GR -. "completion via proposal" .-> TF
-  ACR -. "review / risk via proposal" .-> TF
-
-  TF --> RHB["run-history-skill-builder<br/>build skills from real runs"]
-  TF --> RHU["run-history-skill-upgrader<br/>upgrade skills from failures"]
-  TC --> RHB
-  UPK --> RHU
-
-  RHB --> ECO["Future ecosystem<br/>daily reports / weekly reports / planning / habits / retrospectives"]
-  RHU --> ECO
-```
-
-![COMPASS system map](assets/compass-system-map.svg)
+![COMPASS skills ecosystem DAG](assets/compass-system-map.en.svg)
 
 ## Installation And Agent Compatibility
 
@@ -107,7 +82,27 @@ COMPASS is not Codex-only. It is an agent-agnostic `SKILL.md` skills package: an
 | OpenCode | Keep this repo's `skills/` and [AGENTS.md](AGENTS.md); let the agent discover and read the matching `SKILL.md` through the AGENTS rules. |
 | Other agents | If the agent can read local files and run local scripts, load the package through [AGENTS.md](AGENTS.md): read `SKILL.md` first, then use `references/` and `scripts/` as needed. |
 
-In general, copy the three folders under `skills/` into your target agent's local skills directory, then invoke them in any session:
+**Simplest agent-assisted install prompt**
+
+Send the prompt below to the AI agent you are using. It should review the safety boundary first, then copy the released skills to the real local skills directory for the current agent / harness. If it cannot identify the install path reliably, it should output an installation plan instead of guessing and writing files.
+
+```text
+Safely install COMPASS Skills.
+
+Repo: https://github.com/dongshuyan/compass-skills
+
+Goal: after confirming safety, install all released skills under this repo's `skills/` directory.
+
+Requirements:
+1. Read and review README, SECURITY, AGENTS.md, every `skills/*/SKILL.md`, and the relevant `references/` and `scripts/`.
+2. Confirm that the skills do not upload user data, read credentials / tokens / cookies, write remotely, change global configuration, or run dangerous commands.
+3. Identify the local skills directory and loading rules for the current agent / harness. If this cannot be identified reliably, provide an install plan and do not write files.
+4. Copy only the released skill folders under `skills/`. Do not copy `.git`, runtime caches, user profiles, task graphs, raw screenshots, or local environment files.
+5. After installation, run available local validation, such as Python compile checks and the task-forest export regression. If a check cannot run, explain why and state the remaining risk.
+6. Report the install location, installed skills, safety review result, validation result, and how to invoke the skills in a session.
+```
+
+For manual installation, copy the three folders under `skills/` into your target agent's local skills directory, then invoke them in any session:
 
 ```text
 $user-profile-keeper
@@ -196,6 +191,8 @@ COMPASS defaults:
 See [SECURITY.md](SECURITY.md).
 
 ## Roadmap
+
+![COMPASS roadmap skills ecosystem](assets/compass-roadmap-ecosystem.en.png)
 
 Coming next:
 
