@@ -212,3 +212,7 @@ Coming next:
 - [ ] Run Python compile checks and the task-forest clean-room export validation.
 - [ ] Scan for private paths, tokens, credentials, internal logs, and runtime residue.
 - [ ] Test the three prompts in a fresh workspace.
+
+## Community Discussion
+
+- Linux.do discussion placeholder: [https://linux.do/](https://linux.do/)

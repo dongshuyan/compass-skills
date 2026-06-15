@@ -223,3 +223,7 @@ COMPASS 的默认安全边界：
 - [ ] 运行 Python 编译检查和 task-forest 从零构建验证。
 - [ ] 扫描是否包含私有路径、token、credential、内部日志或运行残留。
 - [ ] 在一个全新 workspace 里试用三个 prompt。
+
+## 社区讨论
+
+- Linux.do 讨论帖占位链接：[https://linux.do/](https://linux.do/)
