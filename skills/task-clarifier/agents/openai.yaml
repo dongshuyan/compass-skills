@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Clarifier"
+  short_description: "低打扰但强对齐的任务澄清路由器"
+  default_prompt: "Use $task-clarifier to align an ambiguous or risky task, form an execution contract, and decide whether to ask, search, default, confirm, or proceed."

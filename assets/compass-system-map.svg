@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="720" viewBox="0 0 1180 720" role="img" aria-labelledby="title desc">
+  <title id="title">COMPASS skills ecosystem map</title>
+  <desc id="desc">A directed graph showing user profile, task forest, task clarifier, and future ecosystem skills.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 34px system-ui, -apple-system, Segoe UI, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 17px system-ui, -apple-system, Segoe UI, sans-serif; fill: #475569; }
+      .node { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 14; }
+      .core { stroke: #2563eb; }
+      .future { stroke: #0f766e; }
+      .label { font: 700 18px system-ui, -apple-system, Segoe UI, sans-serif; fill: #111827; }
+      .small { font: 14px system-ui, -apple-system, Segoe UI, sans-serif; fill: #475569; }
+      .edge { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .soft { stroke-dasharray: 7 6; stroke: #64748b; }
+      .badge { fill: #dbeafe; }
+      .badge2 { fill: #ccfbf1; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1180" height="720"/>
+  <text class="title" x="70" y="70">司南 COMPASS</text>
+  <text class="subtitle" x="70" y="104">Personal Alignment Skills OS for AI Agents</text>
+
+  <rect class="node core" x="70" y="210" width="230" height="110"/>
+  <rect class="badge" x="92" y="228" width="62" height="26" rx="13"/>
+  <text class="small" x="108" y="247">知人</text>
+  <text class="label" x="92" y="282">user-profile-keeper</text>
+  <text class="small" x="92" y="305">local user profile</text>
+
+  <rect class="node core" x="475" y="210" width="230" height="110"/>
+  <rect class="badge" x="497" y="228" width="62" height="26" rx="13"/>
+  <text class="small" x="513" y="247">知向</text>
+  <text class="label" x="497" y="282">task-clarifier</text>
+  <text class="small" x="497" y="305">alignment gate</text>
+
+  <rect class="node core" x="875" y="210" width="230" height="110"/>
+  <rect class="badge" x="897" y="228" width="62" height="26" rx="13"/>
+  <text class="small" x="913" y="247">知事</text>
+  <text class="label" x="897" y="282">task-forest</text>
+  <text class="small" x="897" y="305">repo-local task DAG</text>
+
+  <path class="edge soft" d="M300 265 C365 245, 410 245, 475 265"/>
+  <text class="small" x="328" y="230">clarification_summary</text>
+  <path class="edge" d="M705 265 C770 265, 810 265, 875 265"/>
+  <text class="small" x="744" y="247">aligned updates</text>
+
+  <rect class="node future" x="205" y="430" width="220" height="92"/>
+  <rect class="badge2" x="225" y="448" width="92" height="24" rx="12"/>
+  <text class="small" x="241" y="466">handoff</text>
+  <text class="label" x="225" y="498">session-handoff</text>
+
+  <rect class="node future" x="480" y="430" width="220" height="92"/>
+  <rect class="badge2" x="500" y="448" width="90" height="24" rx="12"/>
+  <text class="small" x="516" y="466">control</text>
+  <text class="label" x="500" y="498">agent control room</text>
+
+  <rect class="node future" x="755" y="430" width="220" height="92"/>
+  <rect class="badge2" x="775" y="448" width="82" height="24" rx="12"/>
+  <text class="small" x="791" y="466">routing</text>
+  <text class="label" x="775" y="498">gap-router</text>
+
+  <path class="edge" d="M942 320 C850 370, 740 405, 700 448"/>
+  <path class="edge" d="M928 320 C715 360, 490 390, 400 448"/>
+  <path class="edge" d="M990 320 C950 365, 910 398, 885 430"/>
+
+  <rect class="node future" x="205" y="590" width="330" height="70"/>
+  <text class="label" x="225" y="623">run-history-skill-builder</text>
+  <text class="small" x="225" y="646">turn real runs into reusable skills</text>
+
+  <rect class="node future" x="645" y="590" width="330" height="70"/>
+  <text class="label" x="665" y="623">run-history-skill-upgrader</text>
+  <text class="small" x="665" y="646">upgrade skills from failures and feedback</text>
+
+  <path class="edge" d="M425 522 C405 545, 390 565, 372 590"/>
+  <path class="edge" d="M700 522 C725 545, 750 565, 778 590"/>
+  <path class="edge soft" d="M590 320 C555 415, 505 520, 435 590"/>
+  <path class="edge soft" d="M185 320 C285 440, 520 530, 670 590"/>
+</svg>

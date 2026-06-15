@@ -1,0 +1,4 @@
+interface:
+  display_name: "任务森林维护器"
+  short_description: "维护repo本地任务DAG、历史、待办和HTML可视化"
+  default_prompt: "Use $task-forest to close this session, update the repo-local task DAG, and export the HTML task forest."

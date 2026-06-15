@@ -1,0 +1,4 @@
+interface:
+  display_name: "User Profile Keeper"
+  short_description: "本地维护可审计可纠错的长期用户画像"
+  default_prompt: "Use $user-profile-keeper to update my local user profile from this session and show any pending confirmations."
