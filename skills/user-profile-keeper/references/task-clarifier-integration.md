@@ -1,6 +1,6 @@
 # Task Clarifier Integration
 
-`user-profile-keeper` 是可选 skill。未安装或无画像时，`task-clarifier` 必须按自身规则正常运行。
+`user-profile-keeper` 是可选 skill。未安装或无画像时，`task-clarifier` 必须按自身规则正常运行。画像摘要只提升提问贴合度，不是 task-clarifier 可用性的前置条件。
 
 ## Boundary
 

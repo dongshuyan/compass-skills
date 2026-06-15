@@ -49,6 +49,7 @@
 
 - 默认本地目录 `<home>/.compass-skills/user-profiles/v1` 使用 `0700`；可用 `COMPASS_USER_PROFILE_HOME` 指向其他本地目录。
 - SQLite 数据库使用 `0600`。
+- 画像默认明文存储，不做内置加密；本 skill 的安全边界是不联网、不上传、不读取 credential、最小扩散和可删除，而不是抵御同机恶意进程、系统管理员、磁盘取证或未加密备份。
 - 导出文件默认放在用户目录下的 `exports/`，并支持 redacted 导出。
 - `.git` 工作区内不得自动复制完整画像。
 - 可选加密可后续接入 macOS Keychain、age 或 SQLCipher，但不得强制安装依赖。

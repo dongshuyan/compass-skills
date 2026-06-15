@@ -5,6 +5,7 @@ COMPASS is designed as a local-first skills system.
 ## Data Boundaries
 
 - `user-profile-keeper` stores profile data locally under `.compass-skills/user-profiles/v1` in the user's home directory by default.
+- Profile storage is plaintext local storage. It is not encrypted by default and should not be treated as a secure vault.
 - `task-forest` stores task data inside the current workspace under `.agent-workbench/task-forest/`.
 - `task-clarifier` does not write persistent data.
 - The skills do not upload profile data, task data, credentials, or browser session information.
@@ -20,6 +21,8 @@ These skills must not save:
 
 `user-profile-keeper` may store private background information only when the user explicitly provides or confirms it. Other skills should only read the low-risk `clarification_summary` view.
 
+Users should decide whether local plaintext profile storage is acceptable for their device, account model, backup tools, and threat model before using `user-profile-keeper`. Do not store secrets or highly sensitive personal information in the profile.
+
 ## External Side Effects
 
 The released skills do not publish, push, upload, email, schedule, or remotely write anything by themselves. If an agent uses these skills while a user asks for an external side effect, the agent should require explicit user confirmation before the final action.
@@ -33,4 +36,3 @@ The released skills do not publish, push, upload, email, schedule, or remotely w
 ## Reporting Issues
 
 Before reporting a security issue publicly, remove private paths, profile content, task graph content, tokens, and local logs from the report.
-

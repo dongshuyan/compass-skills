@@ -10,25 +10,25 @@ COMPASS helps AI agents understand the user, see the full task landscape, and av
 ## Understand It In 30 Seconds
 
 **Use case 1: before a task starts, avoid doing the wrong thing.**
-When a request is ambiguous, costly, or risky, use `$task-clarifier` to decide whether to proceed, research first, ask, confirm risk, offer workflow choices, or stop. Its value is not asking more questions; it asks only questions that change the execution path.
+When a request is ambiguous, costly, or risky, use `$task-clarifier` to turn fuzzy intent into a shared executable requirement: the user understands what they want, the agent understands it the same way, and the user can verify that understanding. It does not ask more questions; it asks fewer, better questions that change the path.
 
 **Use case 2: during and after work, turn progress into a task map.**
 Use `$task-forest` to convert session goals, progress, deviations, dependencies, todos, and decisions into a proposal. After approval, it exports a tree view, DAG view, task detail cards, and a recommended queue so the next agent or next session knows why the task exists, what changed, and what to do next.
 
 **Use case 3: over long-term collaboration, personalize without overreaching.**
-Use `$user-profile-keeper` to store an auditable, correctable, retractable local collaboration profile. It does not save secrets or upload data; `task-clarifier` only reads a low-risk summary to reduce unnecessary clarification.
+Use `$user-profile-keeper` to store an auditable, correctable, retractable local collaboration profile. It does not save secrets or upload data; `task-clarifier` can read a low-risk summary to ask questions in a way that fits the user. Without a profile, `task-clarifier` still works normally and provides strong alignment.
 
 Tree view and session update flow:
 
 ![task-forest tree demo](assets/task-forest-demo.gif)
 
-DAG relationship view:
+Live DAG relationship view:
 
-![task-forest DAG view](assets/task-forest-dag-view.png)
+![task-forest live DAG view](assets/task-forest-live-dag.png)
 
-Task details, purpose, requirements, evidence, and scheduling:
+Live task details, purpose, requirements, evidence, and scheduling:
 
-![task-forest detail view](assets/task-forest-detail-view.png)
+![task-forest live detail view](assets/task-forest-live-detail.png)
 
 User profile and alignment flow:
 
@@ -50,7 +50,7 @@ COMPASS gives agents a durable work foundation: understand the user, map the tas
 | --- | --- | --- |
 | **Know the user** | [`user-profile-keeper`](skills/user-profile-keeper/) | Maintains a local, auditable, correctable user profile for communication preferences, risk boundaries, and collaboration style. |
 | **Know the work** | [`task-forest`](skills/task-forest/) | Maintains a repo-local task forest / DAG with goals, subtasks, dependencies, progress, deviations, todos, and history snapshots. |
-| **Know the direction** | [`task-clarifier`](skills/task-clarifier/) | Decides whether to proceed, research first, ask, confirm risk, offer choices, or stop before costly or ambiguous work. |
+| **Know the direction** | [`task-clarifier`](skills/task-clarifier/) | Turns fuzzy intent into a shared executable requirement that the user understands, the agent understands, and the user can verify. |
 
 ```text
 User Profile Keeper answers: who is the user and how should we collaborate?
@@ -119,7 +119,9 @@ $task-clarifier
 
 ### user-profile-keeper: Local User Profile
 
-Maintains a local user profile that is auditable, correctable, and retractable. It is for collaboration preferences, clarification style, risk boundaries, capability boundaries, and recurring omissions. It does not save secrets or upload data.
+Maintains a local user profile that is auditable, correctable, and retractable. It is for collaboration preferences, clarification style, risk boundaries, capability boundaries, and recurring omissions. It does not save secrets or upload data. `task-clarifier` may read only the low-risk `clarification_summary` to ask better questions; it also works well without a profile.
+
+**Important:** `user-profile-keeper` stores data locally in plaintext. It is not an encrypted vault. These skills are designed not to upload, exfiltrate, or read credentials, but local files may still be readable by other processes, backups, or users with access to the same machine. Use it only after understanding this risk, and do not store secrets, tokens, passwords, private keys, verification codes, or highly sensitive information.
 
 **Initial profile prompt**
 
@@ -164,7 +166,9 @@ Requirements:
 
 ### task-clarifier: Alignment And Risk Gate
 
-Routes ambiguous, costly, risky, or evidence-sensitive tasks. It asks only decision-changing questions and otherwise researches first, proceeds with safe defaults, confirms risk, offers workflow choices, or blocks.
+Turns fuzzy intent into a shared executable requirement: the user understands what they want, the agent understands it the same way, and the user can verify that understanding. It routes ambiguous, costly, risky, or evidence-sensitive tasks by asking only decision-changing questions; otherwise it researches first, proceeds with safe defaults, confirms risk, offers workflow choices, or blocks.
+
+If `user-profile-keeper` is installed, `task-clarifier` can use a low-risk profile summary to tailor its questions. If no profile exists, it still works normally from the current context, files, and evidence.
 
 **General prompt**
 
@@ -182,6 +186,7 @@ Output: decide whether to proceed, research-first, ask, confirm, offer-method-ch
 COMPASS defaults:
 
 - No network upload for profile or task data.
+- `user-profile-keeper` uses local plaintext storage by default. It provides local-first, auditable, deletable storage; it does not provide encryption.
 - No browser-cookie, token, credential, private-key, or session reading.
 - Full profile data is not exposed to ordinary skills; only low-risk `clarification_summary` may be read.
 - `task-forest` stores full task content in repo-local files and keeps any global registry lightweight.

@@ -1,6 +1,6 @@
 # User Profile Integration
 
-`user-profile-keeper` 是可选 skill。`task-clarifier` 不能依赖它存在；未安装、数据库不存在、读取失败或摘要为空时，按当前上下文继续工作。读取摘要不得为了探测画像而创建新画像数据库。
+`user-profile-keeper` 是可选 skill。`task-clarifier` 不能依赖它存在；未安装、数据库不存在、读取失败或摘要为空时，按当前上下文继续工作。画像摘要只用于提升提问贴合度，不是完成需求对齐的前置条件。读取摘要不得为了探测画像而创建新画像数据库。
 
 ## Allowed Read
 
