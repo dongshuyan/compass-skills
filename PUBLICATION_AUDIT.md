@@ -21,6 +21,8 @@ Scope:
 - Added explicit plaintext local-storage warnings for `user-profile-keeper` and clarified that `task-clarifier` works with or without a profile.
 - Added localized Chinese and English README diagrams for profile alignment, the ecosystem DAG, and the roadmap ecosystem.
 - Added agent-assisted installation prompts that require safety review before copying skills into an agent or harness.
+- Reworked the localized ecosystem DAG SVGs after rendered visual review to avoid text and arrow overlap at README display widths.
+- Reviewed and linked the static `skill-writing-tutorial.html`; removed a local-materials footer reference and kept only public source links.
 
 ## Local-First Boundaries
 

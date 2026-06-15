@@ -44,6 +44,8 @@ DAG 关系视图实况截图：
 
 COMPASS 的核心目标是给 AI agent 一个长期工作底座：先理解用户，再看清任务森林，最后在每次行动前做目标对齐。
 
+如果你还不熟悉 `SKILL.md` skills 的编写和使用方式，可以先看这个中文教程：[如何编写 Skills](skill-writing-tutorial.html)。它是单文件静态 HTML，讲清楚 skill 的最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
+
 ## 三省模型
 
 | 层 | Skill | 解决的问题 |

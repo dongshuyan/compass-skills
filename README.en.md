@@ -44,6 +44,8 @@ Most agents are good at the current prompt. Long-running work fails in different
 
 COMPASS gives agents a durable work foundation: understand the user, map the task forest, and pass every ambiguous or risky task through an alignment gate.
 
+If you are new to `SKILL.md` skills, start with the Chinese static tutorial: [How to Write Skills](skill-writing-tutorial.html). It covers the minimum structure, progressive disclosure, reuse audits, AI-assisted drafting, distillation from real runs, and iteration checks.
+
 ## The Three-Layer Model
 
 | Layer | Skill | Purpose |

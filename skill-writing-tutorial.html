@@ -1,0 +1,1972 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>如何编写 Skills</title>
+  <style>
+    :root {
+      --paper: #f4f7fb;
+      --surface: #ffffff;
+      --ink: #142033;
+      --muted: #506176;
+      --line: #d7e0ea;
+      --navy: #17243a;
+      --blue: #1769e0;
+      --blue-2: #eaf3ff;
+      --green: #1e8f68;
+      --green-2: #eaf8f2;
+      --amber: #d58a1f;
+      --amber-2: #fff4df;
+      --rose: #c84f72;
+      --rose-2: #fff0f4;
+      --code: #111a2a;
+      --code-line: #25334a;
+      --shadow: 0 18px 50px rgba(27, 42, 66, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(215, 224, 234, 0.86);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      width: min(100% - 40px, 1420px);
+      height: 66px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--navy);
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--blue-2);
+      border: 1px solid #c9def7;
+    }
+
+    .brand svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .top-links::-webkit-scrollbar {
+      height: 0;
+    }
+
+    .top-links a {
+      padding: 7px 10px;
+      border-radius: 8px;
+      color: #42536a;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .top-links a:hover,
+    .top-links a:focus-visible {
+      background: var(--blue-2);
+      color: var(--blue);
+      outline: none;
+    }
+
+    .page {
+      width: min(100% - 40px, 1420px);
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 560px;
+      padding: 72px 0 42px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(420px, 0.96fr);
+      align-items: center;
+      gap: 44px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      max-width: 9ch;
+      color: var(--navy);
+      font-size: clamp(62px, 8vw, 116px);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .hero-meta {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #ffffff;
+      color: #44556b;
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .hero-panel {
+      border: 1px solid #cbd8e5;
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-top {
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fbff;
+      color: #56677a;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .traffic {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .traffic span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #cad7e5;
+    }
+
+    .hero-card-body {
+      padding: 26px;
+    }
+
+    .prompt-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .prompt-line {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      color: #405066;
+    }
+
+    .prompt-line strong {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--blue-2);
+      color: var(--blue);
+      font-size: 14px;
+    }
+
+    .hero-arrow {
+      margin: 18px 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--green);
+      background: var(--green-2);
+      color: #164a3b;
+      font-weight: 820;
+    }
+
+    .skill-file {
+      border: 1px solid #22324a;
+      border-radius: 8px;
+      background: var(--code);
+      color: #dbe9ff;
+      overflow: hidden;
+    }
+
+    .skill-file pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 252px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+      padding-bottom: 72px;
+    }
+
+    .hero > *,
+    .layout > *,
+    .grid-two > *,
+    .grid-three > *,
+    .grid-four > *,
+    .quality-grid > *,
+    .source-list > * {
+      min-width: 0;
+    }
+
+    .side {
+      position: sticky;
+      top: 86px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .side-card,
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 10px 28px rgba(27, 42, 66, 0.05);
+    }
+
+    .side-card {
+      padding: 16px;
+    }
+
+    .side-title {
+      margin: 0 0 12px;
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .side-nav a {
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: #4a5d73;
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .side-nav a:hover,
+    .side-nav a:focus-visible {
+      background: var(--blue-2);
+      color: var(--blue);
+      outline: none;
+    }
+
+    .timebox {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timebox-row {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      align-items: center;
+      gap: 10px;
+      color: #506176;
+      font-size: 13px;
+      font-weight: 740;
+    }
+
+    .bar {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf2f7;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+      min-width: 0;
+    }
+
+    .section-inner {
+      padding: 28px;
+    }
+
+    .section {
+      min-width: 0;
+      scroll-margin-top: 88px;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 50px minmax(0, 1fr);
+      gap: 0 18px;
+      align-items: start;
+      margin-bottom: 20px;
+    }
+
+    .section-number {
+      width: 50px;
+      height: 50px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--navy);
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .section h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: clamp(28px, 3.2vw, 44px);
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      grid-column: 2;
+      max-width: 900px;
+      margin: 10px 0 0;
+      color: #405066;
+      font-size: 17px;
+    }
+
+    .section h3 {
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .section p {
+      margin: 0;
+      color: #3b4b60;
+      font-size: 16px;
+    }
+
+    .section p + p {
+      margin-top: 12px;
+    }
+
+    .grid-two,
+    .grid-three,
+    .grid-four,
+    .quality-grid,
+    .source-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .grid-three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .note-card,
+    .mini-card,
+    .step-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 18px;
+    }
+
+    .mini-card {
+      min-height: 150px;
+    }
+
+    .tag {
+      display: inline-flex;
+      margin-bottom: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef4f8;
+      color: #44556b;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .step-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--navy);
+      font-size: 15px;
+    }
+
+    .section ul,
+    .section ol {
+      margin: 10px 0 0;
+      padding-left: 1.25em;
+      color: #405066;
+    }
+
+    .section li + li {
+      margin-top: 6px;
+    }
+
+    .takeaway {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-left: 4px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      background: var(--green-2);
+      color: #164a3b;
+      font-weight: 760;
+    }
+
+    .warn {
+      border-left-color: var(--amber);
+      background: var(--amber-2);
+      color: #6d4310;
+    }
+
+    .code-block {
+      min-width: 0;
+      border: 1px solid #24324b;
+      border-radius: 8px;
+      background: var(--code);
+      color: #dbe9ff;
+      overflow: hidden;
+    }
+
+    .code-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--code-line);
+      color: #94a7c1;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.65;
+      tab-size: 2;
+    }
+
+    .diagram,
+    .info-figure {
+      margin: 22px 0;
+      border: 1px solid #c9d8e5;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+      max-width: 100%;
+      scroll-margin-top: 88px;
+    }
+
+    .diagram svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .diagram figcaption,
+    .info-figure figcaption {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: #f7fafc;
+      color: #506176;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .info-canvas {
+      padding: 20px;
+      background:
+        linear-gradient(#eef4f9 1px, transparent 1px),
+        linear-gradient(90deg, #eef4f9 1px, transparent 1px),
+        #ffffff;
+      background-size: 24px 24px;
+    }
+
+    .info-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .info-heading strong {
+      color: var(--navy);
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid #bdd2e6;
+      border-radius: 999px;
+      background: #f7fbff;
+      color: #405066;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .info-flow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) 42px minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .info-panel {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .info-panel h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .info-panel p {
+      font-size: 14px;
+    }
+
+    .info-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .criteria-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .criterion {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 8px;
+      align-items: start;
+      color: #405066;
+      font-size: 14px;
+    }
+
+    .criterion b {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--blue-2);
+      color: var(--blue);
+      font-size: 12px;
+    }
+
+    .split-figure {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .responsibility-card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .responsibility-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    .role-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex: 0 0 auto;
+    }
+
+    .role-dot.green {
+      background: var(--green);
+    }
+
+    .handoff-row {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px dashed #9eb8d3;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #294766;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .timeline-figure {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .timeline-step {
+      position: relative;
+      min-width: 0;
+      padding: 16px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .timeline-step strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--navy);
+      font-size: 16px;
+    }
+
+    .timeline-step span {
+      display: block;
+      color: #405066;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .timeline-step::after {
+      content: "→";
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--blue);
+      font-weight: 900;
+      font-size: 20px;
+      z-index: 1;
+    }
+
+    .timeline-step:last-child::after {
+      display: none;
+    }
+
+    .compare-figure {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .compare-card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .compare-card.bad {
+      border-color: #e7bfca;
+      background: #fff7f9;
+    }
+
+    .compare-card.good {
+      border-color: #b7dccb;
+      background: #f4fbf8;
+    }
+
+    .compare-card h3 {
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    .rule-chip {
+      display: inline-flex;
+      margin-top: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #17243a;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .svg-text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #17243a;
+    }
+
+    .svg-muted {
+      fill: #56677a;
+    }
+
+    .svg-mono {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      fill: #243247;
+    }
+
+    .matrix {
+      display: grid;
+      grid-template-columns: 150px repeat(4, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .matrix div {
+      padding: 13px 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      color: #3d4f64;
+      font-size: 14px;
+    }
+
+    .matrix div:nth-child(5n) {
+      border-right: 0;
+    }
+
+    .matrix .head {
+      background: #eef6fd;
+      color: var(--navy);
+      font-weight: 850;
+    }
+
+    .matrix .rowhead {
+      background: #fafcff;
+      color: var(--navy);
+      font-weight: 820;
+    }
+
+    .quality-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 16px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      color: #3d4f64;
+    }
+
+    .check strong {
+      color: var(--navy);
+    }
+
+    .mark {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green-2);
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .source-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 18px;
+    }
+
+    .source-list a {
+      display: block;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      color: #294766;
+      font-size: 14px;
+    }
+
+    .source-list a:hover,
+    .source-list a:focus-visible {
+      border-color: #8eb9e5;
+      background: #eef7ff;
+      outline: none;
+    }
+
+    .footer {
+      padding: 24px 0 64px;
+      color: #627386;
+      font-size: 14px;
+    }
+
+    @media (max-width: 1100px) {
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .hero h1 {
+        max-width: 14ch;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        position: static;
+      }
+
+      .side-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-four {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .info-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .info-arrow {
+        transform: rotate(90deg);
+        min-height: 28px;
+      }
+
+      .timeline-figure {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-step::after {
+        right: 50%;
+        top: auto;
+        bottom: -20px;
+        transform: translateX(50%) rotate(90deg);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page,
+      .topbar-inner {
+        width: min(100% - 28px, 1420px);
+      }
+
+      .topbar-inner {
+        height: auto;
+        min-height: 62px;
+        padding: 10px 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-links {
+        width: 100%;
+      }
+
+      .hero {
+        padding: 40px 0 28px;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 14vw, 58px);
+      }
+
+      .hero-card-body,
+      .section-inner {
+        padding: 20px;
+      }
+
+      .section-head {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .section-head p {
+        grid-column: 1;
+      }
+
+      .layout {
+        padding-top: 22px;
+        gap: 22px;
+      }
+
+      .grid-two,
+      .grid-three,
+      .grid-four,
+      .quality-grid,
+      .source-list,
+      .split-figure,
+      .compare-figure {
+        grid-template-columns: 1fr;
+      }
+
+      .info-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .side-nav {
+        grid-template-columns: 1fr;
+      }
+
+      .matrix {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .matrix div {
+        min-width: 150px;
+      }
+    }
+
+    @media print {
+      .topbar,
+      .side {
+        display: none;
+      }
+
+      .page {
+        width: 100%;
+      }
+
+      .layout,
+      .hero {
+        display: block;
+      }
+
+      .section {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="回到顶部">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 6.5h14M5 12h14M5 17.5h9" stroke="#1769e0" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Skills 编写教程</span>
+      </a>
+      <nav class="top-links" aria-label="顶部章节导航">
+        <a href="#why">价值</a>
+        <a href="#minimum">最小模型</a>
+        <a href="#discover">发现</a>
+        <a href="#anatomy">构成</a>
+        <a href="#disclosure">原理</a>
+        <a href="#compare">区别</a>
+        <a href="#ai-create">AI 生成</a>
+        <a href="#distill">提炼</a>
+        <a href="#iterate">迭代</a>
+        <a href="#practice">练习</a>
+      </nav>
+    </div>
+  </header>
+
+  <div id="top" class="page">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <h1 id="hero-title">如何编写 Skills</h1>
+        <div class="hero-meta" aria-label="课程信息">
+          <span class="pill"><span class="dot"></span>30 分钟主线</span>
+          <span class="pill"><span class="dot" style="background: var(--blue)"></span>11 个递进模块</span>
+          <span class="pill"><span class="dot" style="background: var(--amber)"></span>6 张重点信息图 + 7 张结构图</span>
+        </div>
+      </div>
+
+      <div class="hero-panel" aria-label="从重复提示到 Skill 的示意图">
+        <div class="panel-top">
+          <span>repeated-workflow.log</span>
+          <span class="traffic" aria-hidden="true"><span></span><span></span><span></span></span>
+        </div>
+        <div class="hero-card-body">
+          <div class="prompt-stack">
+            <div class="prompt-line"><strong>1</strong><span>每次都要提醒 agent：先读文件、再跑验证、最后输出固定格式。</span></div>
+            <div class="prompt-line"><strong>2</strong><span>每次都要重复写：哪些工具可以用，哪些资料必须先看。</span></div>
+            <div class="prompt-line"><strong>3</strong><span>每次都要纠正：触发条件、边界、常见错误和验收标准。</span></div>
+          </div>
+          <div class="hero-arrow">沉淀为一个可复用能力包</div>
+          <div class="skill-file">
+            <pre><code>---
+name: my-workflow-skill
+description: Use when the user asks to run this recurring workflow.
+---
+
+1. Confirm the real input and boundary.
+2. Load only the references needed for this branch.
+3. Execute the workflow with verification.
+4. Report result, evidence, and remaining uncertainty.</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="side" aria-label="页面目录">
+        <div class="side-card">
+          <p class="side-title">学习路径</p>
+          <nav class="side-nav">
+            <a href="#why">0. 为什么需要</a>
+            <a href="#minimum">1. 最小模型</a>
+            <a href="#discover">2. 发现复用</a>
+            <a href="#anatomy">3. 文件构成</a>
+            <a href="#disclosure">4. 加载原理</a>
+            <a href="#compare">5. 概念对比</a>
+            <a href="#ai-create">6. AI 生成</a>
+            <a href="#distill">7. 真实链路</a>
+            <a href="#iterate">8. 迭代优化</a>
+            <a href="#types">9. 常见类型</a>
+            <a href="#practice">10. 练习清单</a>
+          </nav>
+        </div>
+        <div class="side-card">
+          <p class="side-title">30 分钟分配</p>
+          <div class="timebox">
+            <div class="timebox-row"><span>价值</span><span class="bar"><span style="width: 10%"></span></span></div>
+            <div class="timebox-row"><span>发现</span><span class="bar"><span style="width: 24%"></span></span></div>
+            <div class="timebox-row"><span>结构</span><span class="bar"><span style="width: 43%"></span></span></div>
+            <div class="timebox-row"><span>生成</span><span class="bar"><span style="width: 64%"></span></span></div>
+            <div class="timebox-row"><span>迭代</span><span class="bar"><span style="width: 84%"></span></span></div>
+            <div class="timebox-row"><span>练习</span><span class="bar"><span style="width: 100%"></span></span></div>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <section id="why" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">0</span>
+              <h2>为什么需要 Skills</h2>
+              <p>Skill 解决的不是“模型不会写代码”，而是“同一类工作每次都要重新解释、重新纠错、重新找资料”。当一个工作流反复出现、容易漏步骤、需要固定资源或脚本时，就值得沉淀成 skill。</p>
+            </div>
+
+            <figure class="diagram">
+              <svg viewBox="0 0 980 360" role="img" aria-labelledby="fig-why-title">
+                <title id="fig-why-title">从临时提示到可复用 Skill</title>
+                <rect width="980" height="360" fill="#ffffff"/>
+                <rect x="46" y="56" width="230" height="70" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <rect x="46" y="146" width="230" height="70" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <rect x="46" y="236" width="230" height="70" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <text class="svg-text" x="70" y="86" font-size="19" font-weight="800">重复提示</text>
+                <text class="svg-muted" x="70" y="112" font-size="15">工具顺序、输出格式</text>
+                <text class="svg-text" x="70" y="176" font-size="19" font-weight="800">重复纠错</text>
+                <text class="svg-muted" x="70" y="202" font-size="15">边界、gotchas、验收</text>
+                <text class="svg-text" x="70" y="266" font-size="19" font-weight="800">重复找资料</text>
+                <text class="svg-muted" x="70" y="292" font-size="15">schema、模板、示例</text>
+                <path d="M300 91 C360 91, 365 180, 425 180" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <path d="M300 181 H425" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <path d="M300 271 C360 271, 365 180, 425 180" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <path d="M414 171 L430 180 L414 189" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <rect x="446" y="72" width="220" height="216" rx="8" fill="#f7fafc" stroke="#b8cad9"/>
+                <rect x="446" y="72" width="152" height="42" rx="8" fill="#d8ecfb" stroke="#b8cad9"/>
+                <text class="svg-mono" x="468" y="99" font-size="17" font-weight="800">skill/</text>
+                <text class="svg-mono" x="470" y="140" font-size="16">├── SKILL.md</text>
+                <text class="svg-mono" x="470" y="170" font-size="16">├── references/</text>
+                <text class="svg-mono" x="470" y="200" font-size="16">├── scripts/</text>
+                <text class="svg-mono" x="470" y="230" font-size="16">└── assets/</text>
+                <text class="svg-muted" x="470" y="260" font-size="14">可复用、可审查、可迭代</text>
+                <path d="M690 180 H776" fill="none" stroke="#1769e0" stroke-width="3"/>
+                <path d="M762 168 L784 180 L762 192" fill="none" stroke="#1769e0" stroke-width="3"/>
+                <rect x="804" y="93" width="126" height="174" rx="8" fill="#eaf7f2" stroke="#93c9b3"/>
+                <circle cx="867" cy="142" r="31" fill="#1e8f68"/>
+                <path d="M849 142 h36 M867 124 v36" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+                <text class="svg-text" x="838" y="205" font-size="24" font-weight="850">Agent</text>
+                <text class="svg-muted" x="828" y="232" font-size="14">按需读取和执行</text>
+              </svg>
+              <figcaption>判断标准：如果你已经第三次写同一段长 prompt，通常该考虑 skill。</figcaption>
+            </figure>
+
+            <div class="grid-three">
+              <div class="mini-card">
+                <span class="tag">适合写</span>
+                <h3>重复出现的工作流</h3>
+                <p>例如每周报告、固定文件转换、CI 失败排查、设计实现检查。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">适合写</span>
+                <h3>有私有上下文的任务</h3>
+                <p>例如内部 schema、团队规范、模板、常用脚本和验收标准。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">不必写</span>
+                <h3>一次性简单请求</h3>
+                <p>如果模型本来就能稳定完成，普通 prompt 更轻。</p>
+              </div>
+            </div>
+
+            <p class="takeaway">一句话：Skill 是给 agent 的可复用操作手册和工具包，不是把 prompt 写得更长。</p>
+          </div>
+        </section>
+
+        <section id="minimum" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">1</span>
+              <h2>Skill 的最小可运行模型</h2>
+              <p>最小 skill 只有一个文件夹和一个 `SKILL.md`。`name` 是身份，`description` 是触发入口，正文是触发后才会读取的操作说明。</p>
+            </div>
+
+            <div class="grid-two">
+              <figure class="diagram" style="margin: 0;">
+                <svg viewBox="0 0 520 420" role="img" aria-labelledby="fig-min-title">
+                  <title id="fig-min-title">最小 Skill 文件结构</title>
+                  <rect width="520" height="420" fill="#ffffff"/>
+                  <rect x="54" y="58" width="412" height="294" rx="8" fill="#f7fafc" stroke="#b8cad9" stroke-width="2"/>
+                  <rect x="54" y="58" width="188" height="46" rx="8" fill="#d8ecfb" stroke="#b8cad9" stroke-width="2"/>
+                  <text class="svg-mono" x="78" y="88" font-size="20" font-weight="850">roll-dice/</text>
+                  <line x1="94" y1="138" x2="94" y2="274" stroke="#8aa0b8" stroke-width="2"/>
+                  <line x1="94" y1="166" x2="142" y2="166" stroke="#8aa0b8" stroke-width="2"/>
+                  <line x1="94" y1="232" x2="142" y2="232" stroke="#8aa0b8" stroke-width="2"/>
+                  <rect x="142" y="136" width="238" height="60" rx="8" fill="#fff" stroke="#cbd8e5"/>
+                  <text class="svg-mono" x="164" y="172" font-size="19" font-weight="850">SKILL.md</text>
+                  <rect x="142" y="202" width="238" height="60" rx="8" fill="#eef4f8" stroke="#d6e1ea" stroke-dasharray="6 5"/>
+                  <text class="svg-mono" x="164" y="238" font-size="18">可选资源目录</text>
+                  <text class="svg-muted" x="74" y="320" font-size="15">最小版只需要 SKILL.md。</text>
+                </svg>
+                <figcaption>先把最小文件写对，再决定是否增加资源目录。</figcaption>
+              </figure>
+              <div>
+                <div class="code-block">
+                  <div class="code-title"><span>SKILL.md</span><span>最小示例</span></div>
+                  <pre><code>---
+name: roll-dice
+description: Roll dice using a random number generator.
+  Use when asked to roll a die, roll dice, or generate
+  a random dice roll.
+---
+
+To roll a die, generate a random number from 1 to the
+requested number of sides.</code></pre>
+                </div>
+                <div class="note-card" style="margin-top: 16px;">
+                  <h3>读这个示例时看三件事</h3>
+                  <ul>
+                    <li>`name` 使用小写和连字符，短且可识别。</li>
+                    <li>`description` 同时写“做什么”和“什么时候用”。</li>
+                    <li>正文只写触发后才需要知道的执行方法。</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <p class="takeaway">如果 `description` 写得模糊，skill 再强也可能不会被正确触发。</p>
+          </div>
+        </section>
+
+        <section id="discover" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">2</span>
+              <h2>先发现和复用高质量 Skills</h2>
+              <p>不必默认从空白文件开始写。更稳的路径是先看官方 skill、一手仓库和维护良好的社区案例；但安装前必须完整审计，确认没有错误、隐私泄露风险或安全风险，再决定安装、改造或放弃。</p>
+            </div>
+
+            <figure class="info-figure" aria-labelledby="fig-discover-info-title">
+              <div class="info-canvas">
+                <div class="info-heading">
+                  <strong id="fig-discover-info-title">如何判断一个已有 skill 值不值得安装？</strong>
+                  <span class="info-badge">Star 是线索，不是结论</span>
+                </div>
+                <div class="info-flow">
+                  <div class="info-panel">
+                    <h3>候选来源</h3>
+                    <div class="criteria-list">
+                      <div class="criterion"><b>1</b><span>官方示例：优先级最高，规范最可信。</span></div>
+                      <div class="criterion"><b>2</b><span>高 star 仓库：说明有人关注，但仍需审查。</span></div>
+                      <div class="criterion"><b>3</b><span>同类任务历史：和你的真实工作流最接近。</span></div>
+                    </div>
+                  </div>
+                  <div class="info-arrow" aria-hidden="true">→</div>
+                  <div class="info-panel">
+                    <h3>安装前完整审计</h3>
+                    <div class="criteria-list">
+                      <div class="criterion"><b>A</b><span>完整阅读 `SKILL.md`、references、scripts、assets 和依赖说明。</span></div>
+                      <div class="criterion"><b>B</b><span>检查是否有硬编码密钥、私有路径、上传日志、外部回传等隐私风险。</span></div>
+                      <div class="criterion"><b>C</b><span>检查脚本是否会删除文件、改全局配置、联网、读取凭据或自动执行危险命令。</span></div>
+                      <div class="criterion"><b>D</b><span>确认触发条件、停止条件、示例和验证方式没有明显错误或 bug。</span></div>
+                    </div>
+                  </div>
+                  <div class="info-arrow" aria-hidden="true">→</div>
+                  <div class="info-panel">
+                    <h3>处理结果</h3>
+                    <div class="criteria-list">
+                      <div class="criterion"><b>装</b><span>审计通过，任务匹配，先在低风险环境试用。</span></div>
+                      <div class="criterion"><b>改</b><span>结构好但边界不同，删除风险内容后定制自己的版本。</span></div>
+                      <div class="criterion"><b>弃</b><span>触发模糊、脚本不可审、隐私或安全边界不清。</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <figcaption>这张图把“找高质量 skill”拆成来源、安装前审计和处理结果：没有读完和审完，不要安装。</figcaption>
+            </figure>
+
+            <div class="grid-four">
+              <div class="mini-card">
+                <span class="tag">先找</span>
+                <h3>官方和高质量仓库</h3>
+                <p>优先看官方示例、活跃维护的 repo、star 较高且最近仍有更新的 skill 集合。Star 是线索，不是结论。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">先审</span>
+                <h3>完整阅读和安全检查</h3>
+                <p>安装前自己读完，或让 AI 辅助审计所有说明、脚本、依赖、网络访问和隐私风险。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">再试</span>
+                <h3>低风险环境试跑</h3>
+                <p>不要直接上真实项目。先用样例或临时目录试跑，观察是否触发准确、步骤完整、输出稳定。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">再改</span>
+                <h3>基于成熟模式定制</h3>
+                <p>保留好结构，替换业务规则、私有资源、验收标准和语言偏好，避免无意义重写。</p>
+              </div>
+            </div>
+
+            <p class="takeaway">能复用也要先审计。自己写或改 skill 的价值，不只是复用结构，更是把隐私、安全、触发边界和验收标准控制在自己能负责的范围内。</p>
+
+            <figure class="info-figure" aria-labelledby="fig-experience-calibration-title">
+              <div class="info-canvas">
+                <div class="info-heading">
+                  <strong id="fig-experience-calibration-title">把个人经验校准成可教学规则</strong>
+                  <span class="info-badge">经验可用，但必须标注证据级别</span>
+                </div>
+                <div class="grid-four">
+                  <div class="step-card">
+                    <strong>AI 生成草稿</strong>
+                    <span>官方文档支持用 `$skill-creator` 起步；但草稿不等于可用 skill，后面必须审核和验证。</span>
+                  </div>
+                  <div class="step-card">
+                    <strong>复用已有 skill</strong>
+                    <span>官方和一手仓库可作为高置信参考；GitHub star 只能作为发现线索，不能当作质量证明。</span>
+                  </div>
+                  <div class="step-card">
+                    <strong>真实链路提炼</strong>
+                    <span>“把工作过的线程、runbook、测试命令转成 skill”有官方支持；中文 workflow 审核是适合中文团队的实践。</span>
+                  </div>
+                  <div class="step-card">
+                    <strong>迭代但不过拟合</strong>
+                    <span>官方 eval 建议用真实 prompt、trace 和检查项防回归；单个失败不要直接写成狭窄特判。</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption>教程后续会把“经验”写成经过来源校准的推荐流程：能被官方或一手实践支持的强化，缺少标准依据的加限定。</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="anatomy" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">3</span>
+              <h2>Skill 的构成：四类文件各司其职</h2>
+              <p>无论是复用别人的 skill，还是让 AI 生成自己的 skill，都要看懂它的文件结构。把所有信息塞进一个 `SKILL.md` 会污染上下文；好的 skill 会把“每次都要看”和“特定分支才要看”的内容分层。</p>
+            </div>
+
+            <figure class="diagram">
+              <svg viewBox="0 0 1080 520" role="img" aria-labelledby="fig-anatomy-title">
+                <title id="fig-anatomy-title">Skill 目录结构和职责</title>
+                <rect width="1080" height="520" fill="#ffffff"/>
+                <rect x="58" y="56" width="350" height="394" rx="8" fill="#f7fafc" stroke="#b8cad9" stroke-width="2"/>
+                <rect x="58" y="56" width="190" height="46" rx="8" fill="#d8ecfb" stroke="#b8cad9" stroke-width="2"/>
+                <text class="svg-mono" x="84" y="86" font-size="20" font-weight="850">my-skill/</text>
+                <text class="svg-mono" x="92" y="138" font-size="18">├── SKILL.md</text>
+                <text class="svg-mono" x="92" y="176" font-size="18">├── references/</text>
+                <text class="svg-mono" x="92" y="214" font-size="18">├── scripts/</text>
+                <text class="svg-mono" x="92" y="252" font-size="18">├── assets/</text>
+                <text class="svg-mono" x="92" y="290" font-size="18">└── agents/</text>
+                <text class="svg-muted" x="92" y="342" font-size="15">required: SKILL.md</text>
+                <text class="svg-muted" x="92" y="370" font-size="15">optional: 资源目录和 UI 元数据</text>
+                <rect x="488" y="48" width="236" height="120" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <text class="svg-text" x="514" y="82" font-size="21" font-weight="850">SKILL.md</text>
+                <text class="svg-muted" x="514" y="112" font-size="15">核心流程、决策树、输出模板</text>
+                <text class="svg-muted" x="514" y="138" font-size="15">每次触发都要读</text>
+                <rect x="770" y="48" width="236" height="120" rx="8" fill="#f0faf5" stroke="#98cfb7"/>
+                <text class="svg-text" x="796" y="82" font-size="21" font-weight="850">references/</text>
+                <text class="svg-muted" x="796" y="112" font-size="15">API 文档、schema、规范</text>
+                <text class="svg-muted" x="796" y="138" font-size="15">按场景读取</text>
+                <rect x="488" y="220" width="236" height="120" rx="8" fill="#fff7e8" stroke="#e5ba73"/>
+                <text class="svg-text" x="514" y="254" font-size="21" font-weight="850">scripts/</text>
+                <text class="svg-muted" x="514" y="284" font-size="15">确定性、重复、易错流程</text>
+                <text class="svg-muted" x="514" y="310" font-size="15">可直接运行</text>
+                <rect x="770" y="220" width="236" height="120" rx="8" fill="#fff0f3" stroke="#df9aad"/>
+                <text class="svg-text" x="796" y="254" font-size="21" font-weight="850">assets/</text>
+                <text class="svg-muted" x="796" y="284" font-size="15">模板、图片、字体、样例</text>
+                <text class="svg-muted" x="796" y="310" font-size="15">用于最终产物</text>
+                <rect x="628" y="388" width="236" height="86" rx="8" fill="#f2f4f8" stroke="#ccd7e2"/>
+                <text class="svg-text" x="654" y="422" font-size="21" font-weight="850">agents/openai.yaml</text>
+                <text class="svg-muted" x="654" y="452" font-size="15">UI 元数据、默认 prompt、工具依赖</text>
+                <path d="M408 138 H470M408 214 H470" stroke="#6b7c90" stroke-width="2"/>
+                <path d="M459 128 L474 138 L459 148M459 204 L474 214 L459 224" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <path d="M408 176 C470 176, 520 102, 756 102M408 252 C470 252, 528 282, 756 282M408 290 C500 318, 560 430, 612 430" fill="none" stroke="#6b7c90" stroke-width="2"/>
+              </svg>
+              <figcaption>分层的目标是减少上下文占用，同时让 agent 知道每个资源在什么时候有用。</figcaption>
+            </figure>
+
+            <div class="grid-two">
+              <div class="note-card">
+                <h3>正文适合放什么</h3>
+                <ul>
+                  <li>必须遵守的流程和安全边界。</li>
+                  <li>选择路径的决策树。</li>
+                  <li>短模板、短示例、关键 gotchas。</li>
+                </ul>
+              </div>
+              <div class="note-card">
+                <h3>资源目录适合放什么</h3>
+                <ul>
+                  <li>长文档、API 细节、schema、参考表。</li>
+                  <li>重复写错的脚本和验证器。</li>
+                  <li>最终输出要复用的模板和素材。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="disclosure" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">4</span>
+              <h2>原理：Progressive Disclosure</h2>
+              <p>Skill 的关键设计是渐进披露：不是一开始把所有资料塞进上下文，而是先暴露最小索引，任务匹配后再逐层加载。</p>
+            </div>
+
+            <figure class="diagram">
+              <svg viewBox="0 0 1080 520" role="img" aria-labelledby="fig-disclosure-title">
+                <title id="fig-disclosure-title">Progressive Disclosure 三层加载</title>
+                <rect width="1080" height="520" fill="#ffffff"/>
+                <rect x="68" y="78" width="270" height="330" rx="8" fill="#f7fafc" stroke="#cbd8e5"/>
+                <text class="svg-text" x="96" y="118" font-size="22" font-weight="850">启动时</text>
+                <rect x="98" y="150" width="210" height="72" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <text class="svg-text" x="124" y="180" font-size="18" font-weight="800">metadata</text>
+                <text class="svg-muted" x="124" y="205" font-size="14">name + description + path</text>
+                <text class="svg-muted" x="98" y="262" font-size="15">每个 skill 只暴露一点索引。</text>
+                <text class="svg-muted" x="98" y="288" font-size="15">Codex 用这些信息判断是否相关。</text>
+                <rect x="406" y="78" width="270" height="330" rx="8" fill="#f7fafc" stroke="#cbd8e5"/>
+                <text class="svg-text" x="434" y="118" font-size="22" font-weight="850">匹配任务时</text>
+                <rect x="436" y="150" width="210" height="72" rx="8" fill="#f0faf5" stroke="#98cfb7"/>
+                <text class="svg-text" x="462" y="180" font-size="18" font-weight="800">SKILL.md body</text>
+                <text class="svg-muted" x="462" y="205" font-size="14">流程、边界、关键示例</text>
+                <text class="svg-muted" x="436" y="262" font-size="15">这时才加载完整操作说明。</text>
+                <text class="svg-muted" x="436" y="288" font-size="15">所以正文不负责“提醒触发”。</text>
+                <rect x="744" y="78" width="270" height="330" rx="8" fill="#f7fafc" stroke="#cbd8e5"/>
+                <text class="svg-text" x="772" y="118" font-size="22" font-weight="850">执行中</text>
+                <rect x="774" y="150" width="210" height="72" rx="8" fill="#fff7e8" stroke="#e5ba73"/>
+                <text class="svg-text" x="800" y="180" font-size="18" font-weight="800">resources</text>
+                <text class="svg-muted" x="800" y="205" font-size="14">references / scripts / assets</text>
+                <text class="svg-muted" x="774" y="262" font-size="15">需要哪个分支，就读哪个文件。</text>
+                <text class="svg-muted" x="774" y="288" font-size="15">脚本可执行，不必全文塞上下文。</text>
+                <path d="M352 240 H390M690 240 H728" stroke="#1769e0" stroke-width="3"/>
+                <path d="M378 228 L398 240 L378 252M716 228 L736 240 L716 252" fill="none" stroke="#1769e0" stroke-width="3"/>
+                <rect x="98" y="330" width="886" height="64" rx="8" fill="#17243a"/>
+                <text x="124" y="370" font-family="SFMono-Regular, Consolas, monospace" font-size="17" fill="#dbe9ff">上下文预算：先少量索引，再按需展开；description 要前置关键词。</text>
+              </svg>
+              <figcaption>OpenAI 文档说明 Codex 初始 skills 列表有上下文预算，skill 多时会优先缩短 description。</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="compare" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">5</span>
+              <h2>Skill 和 Prompt、Tool、MCP、Subagent 的区别</h2>
+              <p>这些概念经常被混在一起。最简单的判断：skill 是“如何完成一类任务”的可复用知识和流程，tool/MCP 是“能调用什么”，subagent 是“谁来做”。</p>
+            </div>
+
+            <div class="matrix" role="table" aria-label="概念对比表">
+              <div class="head">概念</div>
+              <div class="head">主要用途</div>
+              <div class="head">是否可复用</div>
+              <div class="head">是否携带文件</div>
+              <div class="head">典型例子</div>
+              <div class="rowhead">Prompt</div>
+              <div>一次性指令</div>
+              <div>低，复制粘贴为主</div>
+              <div>否</div>
+              <div>“帮我写一个提交信息”</div>
+              <div class="rowhead">AGENTS.md</div>
+              <div>项目/全局工作契约</div>
+              <div>高，但偏长期规则</div>
+              <div>通常否</div>
+              <div>代码风格、权限、沟通规则</div>
+              <div class="rowhead">Skill</div>
+              <div>任务能力包</div>
+              <div>高，可触发、可迭代</div>
+              <div>是</div>
+              <div>PDF、CI 修复、安全威胁建模</div>
+              <div class="rowhead">Tool / MCP</div>
+              <div>实际外部能力接口</div>
+              <div>高，偏操作能力</div>
+              <div>不负责教学流程</div>
+              <div>GitHub、Playwright、数据库</div>
+              <div class="rowhead">Subagent</div>
+              <div>独立上下文执行者</div>
+              <div>按任务临时使用</div>
+              <div>由任务决定</div>
+              <div>并行调研、独立验证、对抗审查</div>
+            </div>
+
+            <figure class="diagram">
+              <svg viewBox="0 0 1080 390" role="img" aria-labelledby="fig-stack-title">
+                <title id="fig-stack-title">Skill 在 Agent 工作中的位置</title>
+                <rect width="1080" height="390" fill="#ffffff"/>
+                <rect x="70" y="60" width="220" height="250" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <text class="svg-text" x="112" y="102" font-size="24" font-weight="850">Skill</text>
+                <text class="svg-muted" x="104" y="138" font-size="15">告诉 agent</text>
+                <text class="svg-muted" x="104" y="164" font-size="15">何时、为何、按什么顺序做</text>
+                <text class="svg-mono" x="104" y="212" font-size="14">SKILL.md</text>
+                <text class="svg-mono" x="104" y="240" font-size="14">references/</text>
+                <text class="svg-mono" x="104" y="268" font-size="14">scripts/</text>
+                <rect x="430" y="68" width="220" height="94" rx="8" fill="#f0faf5" stroke="#98cfb7"/>
+                <text class="svg-text" x="468" y="105" font-size="22" font-weight="850">Tools / MCP</text>
+                <text class="svg-muted" x="468" y="132" font-size="15">提供可调用能力</text>
+                <rect x="430" y="210" width="220" height="94" rx="8" fill="#fff7e8" stroke="#e5ba73"/>
+                <text class="svg-text" x="468" y="247" font-size="22" font-weight="850">Subagent</text>
+                <text class="svg-muted" x="468" y="274" font-size="15">提供独立执行上下文</text>
+                <rect x="790" y="112" width="220" height="142" rx="8" fill="#fff0f3" stroke="#df9aad"/>
+                <text class="svg-text" x="840" y="154" font-size="24" font-weight="850">用户任务</text>
+                <text class="svg-muted" x="824" y="190" font-size="15">完成一个具体目标</text>
+                <text class="svg-muted" x="824" y="218" font-size="15">并交付可验证结果</text>
+                <path d="M306 185 H410M660 115 H772M660 257 H772" stroke="#1769e0" stroke-width="3"/>
+              </svg>
+              <figcaption>Skill 不替代工具；skill 教 agent 如何可靠地使用工具。</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="ai-create" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">6</span>
+              <h2>现代写法：让 AI 生成 Skill 草稿</h2>
+              <p>很多场景下，skill 不必从空白文件手写，可以先用 `skill-creator` 这类 creator skill 生成结构化草稿。注意：AI 生成只解决“起草成本”，不证明 skill 准确、可用或符合要求；人的工作重点是提供真实输入、审核逻辑、控制边界并验证效果。</p>
+            </div>
+
+            <figure class="info-figure" aria-labelledby="fig-ai-create-title">
+              <div class="info-canvas">
+                <div class="info-heading">
+                  <strong id="fig-ai-create-title">用 `skill-creator` 时，人和 AI 分别负责什么？</strong>
+                  <span class="info-badge">关键不是“自动写”，而是“可审核地生成”</span>
+                </div>
+                <div class="split-figure">
+                  <div class="responsibility-card">
+                    <h3><span class="role-dot"></span>你负责决策</h3>
+                    <ul>
+                      <li>任务边界：什么请求应该触发，什么不该触发。</li>
+                      <li>真实素材：任务记录、输入样例、失败案例、已有脚本。</li>
+                      <li>验收标准：成功输出长什么样，必须验证什么。</li>
+                      <li>风险边界：哪些动作必须先问，哪些不能做。</li>
+                    </ul>
+                    <div class="handoff-row">你给的是“真实工作流和判断标准”。</div>
+                  </div>
+                  <div class="responsibility-card">
+                    <h3><span class="role-dot green"></span>AI 负责生成</h3>
+                    <ul>
+                      <li>把流程整理成 `SKILL.md` 的可执行步骤。</li>
+                      <li>把长资料拆到 `references/`，把重复操作建议脚本化。</li>
+                      <li>生成触发描述、不触发条件、停止条件和输出模板。</li>
+                      <li>根据审核和验证结果重写，而不是一次定稿。</li>
+                    </ul>
+                    <div class="handoff-row">AI 产出的是“可审查的 skill 草稿”。</div>
+                  </div>
+                </div>
+              </div>
+              <figcaption>这张图强调职责分工：人给真实边界和验收，AI 做结构化生成，最后仍由人审核和测试逻辑是否成立。</figcaption>
+            </figure>
+
+            <div class="grid-four">
+              <div class="step-card"><strong>1. 给目标</strong><span>说明这个 skill 要解决哪类重复任务，什么时候应该触发，什么时候不应该触发。</span></div>
+              <div class="step-card"><strong>2. 给素材</strong><span>提供真实任务记录、示例输入、输出样例、失败案例、已有脚本或模板。</span></div>
+              <div class="step-card"><strong>3. 让 AI 生成</strong><span>用 `$skill-creator` 或同类 creator skill 生成目录、`SKILL.md`、references、scripts 建议。</span></div>
+              <div class="step-card"><strong>4. 人来审核和验证</strong><span>重点看触发边界、执行顺序、安全停止条件、是否过度宽泛，并用真实 prompt 跑一次。</span></div>
+            </div>
+
+            <div class="code-block" style="margin-top: 20px;">
+              <div class="code-title"><span>推荐请求方式</span><span>给 skill-creator</span></div>
+              <pre><code>$skill-creator
+请根据下面这类真实任务，先提炼 workflow，再生成一个可安装的 skill。
+要求：
+1. 先输出中文 workflow 框架让我审核。
+2. 审核通过后再生成完整 skill 内容。
+3. 如果团队认为更利于模型理解，可把给模型读取的核心说明转成英文。
+4. 无论 skill 内部说明用什么语言，与用户交互和最终输出默认保持中文。
+5. 标出触发条件、不触发条件、安全停止条件和验证方式。
+6. 生成后先用 2-3 个真实 prompt 手工试跑；准备分享前再扩展到 10-20 个测试 prompt。</code></pre>
+            </div>
+
+            <p class="takeaway">AI 生成不是跳过设计，也不是质量保证；它只是把“写 Markdown 草稿”的体力活交给 AI，把“这个 workflow 是否真的成立、是否经过验证”的判断留给人。</p>
+          </div>
+        </section>
+
+        <section id="distill" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">7</span>
+              <h2>从真实链路提炼，而不是凭空设计</h2>
+              <p>自己撰写 skill 时，更可靠的素材来自已经跑通过的真实链路：工作过的线程、runbook、测试命令、评审规则、失败修复记录。等任务跑通后，再从真实过程里提炼 skill，而不是一开始就写一份抽象规则。</p>
+            </div>
+
+            <figure class="info-figure" aria-labelledby="fig-distill-info-title">
+              <div class="info-canvas">
+                <div class="info-heading">
+                  <strong id="fig-distill-info-title">从一次真实执行提炼 skill：不要跳过中间审核层</strong>
+                  <span class="info-badge">真实轨迹 → 可审核框架 → Skill 草稿</span>
+                </div>
+                <div class="timeline-figure">
+                  <div class="timeline-step">
+                    <strong>1. 真实跑通</strong>
+                    <span>让 AI 在真实文件、真实环境、真实目标下完整完成一次任务。</span>
+                  </div>
+                  <div class="timeline-step">
+                    <strong>2. 抽取轨迹</strong>
+                    <span>记录输入假设、工具顺序、失败恢复、验证命令和输出格式。</span>
+                  </div>
+                  <div class="timeline-step">
+                    <strong>3. 可审核框架</strong>
+                    <span>先让 AI 提炼 workflow 框架。中文团队可先用中文，方便检查逻辑是否完整。</span>
+                  </div>
+                  <div class="timeline-step">
+                    <strong>4. 生成 skill</strong>
+                    <span>审核通过后再生成 `description`、正文、references 和 scripts。</span>
+                  </div>
+                  <div class="timeline-step">
+                    <strong>5. 规范化核心</strong>
+                    <span>核心规则要短、明确、可触发。是否英文化是可选实践，不是标准要求。</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption>这张图把“从经验到 skill”的中间层画出来：先审核 workflow，再进入完整 skill 生成；中文框架和英文化只是可选语言策略。</figcaption>
+            </figure>
+
+            <figure class="diagram">
+              <svg viewBox="0 0 1080 430" role="img" aria-labelledby="fig-pipeline-title">
+                <title id="fig-pipeline-title">从真实任务到 Skill 的生产线</title>
+                <rect width="1080" height="430" fill="#ffffff"/>
+                <g>
+                  <rect x="42" y="118" width="132" height="116" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                  <text class="svg-text" x="70" y="158" font-size="19" font-weight="850">真实任务</text>
+                  <text class="svg-muted" x="64" y="190" font-size="14">真实文件</text>
+                  <text class="svg-muted" x="64" y="214" font-size="14">真实环境</text>
+                </g>
+                <g>
+                  <rect x="214" y="118" width="132" height="116" rx="8" fill="#f0faf5" stroke="#98cfb7"/>
+                  <text class="svg-text" x="242" y="158" font-size="19" font-weight="850">完整跑通</text>
+                  <text class="svg-muted" x="236" y="190" font-size="14">分步指导</text>
+                  <text class="svg-muted" x="236" y="214" font-size="14">真实验证</text>
+                </g>
+                <g>
+                  <rect x="386" y="118" width="132" height="116" rx="8" fill="#fff7e8" stroke="#e5ba73"/>
+                  <text class="svg-text" x="414" y="158" font-size="19" font-weight="850">审核框架</text>
+                  <text class="svg-muted" x="408" y="190" font-size="14">workflow</text>
+                  <text class="svg-muted" x="408" y="214" font-size="14">先人工审核</text>
+                </g>
+                <g>
+                  <rect x="558" y="118" width="132" height="116" rx="8" fill="#fff0f3" stroke="#df9aad"/>
+                  <text class="svg-text" x="586" y="158" font-size="19" font-weight="850">生成草稿</text>
+                  <text class="svg-muted" x="580" y="190" font-size="14">SKILL.md</text>
+                  <text class="svg-muted" x="580" y="214" font-size="14">资源拆分</text>
+                </g>
+                <g>
+                  <rect x="730" y="118" width="132" height="116" rx="8" fill="#eef4f8" stroke="#cbd8e5"/>
+                  <text class="svg-text" x="758" y="158" font-size="19" font-weight="850">规范化</text>
+                  <text class="svg-muted" x="752" y="190" font-size="14">短而明确</text>
+                  <text class="svg-muted" x="752" y="214" font-size="14">语言策略可选</text>
+                </g>
+                <g>
+                  <rect x="902" y="118" width="132" height="116" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                  <text class="svg-text" x="930" y="158" font-size="19" font-weight="850">测试迭代</text>
+                  <text class="svg-muted" x="924" y="190" font-size="14">真实 prompt</text>
+                  <text class="svg-muted" x="924" y="214" font-size="14">with/without</text>
+                </g>
+                <path d="M174 176 H206M346 176 H378M518 176 H550M690 176 H722M862 176 H894" stroke="#6b7c90" stroke-width="2"/>
+                <path d="M195 166 L210 176 L195 186M367 166 L382 176 L367 186M539 166 L554 176 L539 186M711 166 L726 176 L711 186M883 166 L898 176 L883 186" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <rect x="142" y="296" width="796" height="60" rx="8" fill="#17243a"/>
+                <text x="178" y="334" font-family="SFMono-Regular, Consolas, monospace" font-size="17" fill="#dbe9ff">好 skill = 真实执行轨迹 + 人工审核 workflow + 明确触发边界 + 可验证反馈环</text>
+              </svg>
+              <figcaption>真实任务比抽象“最佳实践”更能暴露 skill 需要处理的边界。</figcaption>
+            </figure>
+
+            <div class="grid-two">
+              <div class="note-card">
+                <h3>推荐提炼顺序</h3>
+                <ol>
+                  <li>先让 AI 按你的指导完整完成一次真实任务。</li>
+                  <li>让 AI 先提炼可审核的 workflow 框架，而不是直接写最终 skill。</li>
+                  <li>你审核框架，补上遗漏边界、失败恢复和验收标准。</li>
+                  <li>审核后再生成完整 skill 内容，必要时先保留中文。</li>
+                  <li>如果团队认为有必要，再把给 AI 读取的核心说明转成英文；这不是官方强制要求。</li>
+                </ol>
+              </div>
+              <div class="note-card">
+                <h3>语言策略</h3>
+                <ul>
+                  <li>官方资料强调清晰、具体、可触发，没有把英文写成硬性标准。</li>
+                  <li>给模型读的流程、触发条件、停止条件可以英文，也可以用团队更容易审核的语言。</li>
+                  <li>面向用户的交互、输出格式、报告语言要单独明确，例如“默认中文输出”。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="iterate" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">8</span>
+              <h2>使用中迭代：变稳，但不要过拟合</h2>
+              <p>Skill 很难一次做到很好。正确做法是多使用、记录偏差、提炼共性，再用真实 prompt 和执行 trace 验证改动；错误做法是每遇到一个孤立失败就加一条很窄的规则。</p>
+            </div>
+
+            <figure class="info-figure" aria-labelledby="fig-iterate-info-title">
+              <div class="info-canvas">
+                <div class="info-heading">
+                  <strong id="fig-iterate-info-title">迭代 skill 时，什么是过拟合？什么是通用改进？</strong>
+                  <span class="info-badge">先看模式，再改规则</span>
+                </div>
+                <div class="compare-figure">
+                  <div class="compare-card bad">
+                    <h3>过拟合式修改</h3>
+                    <ul>
+                      <li>只因为一次失败，就写一条很窄的特判。</li>
+                      <li>把某个文件名、某个临时路径、某个异常状态写死。</li>
+                      <li>规则越加越多，但触发范围越来越混乱。</li>
+                    </ul>
+                    <span class="rule-chip">结果：这个案例好了，其他任务更容易坏</span>
+                  </div>
+                  <div class="compare-card good">
+                    <h3>通用改进式修改</h3>
+                    <ul>
+                      <li>先比较 2-3 个真实样例，确认失败有共性；分享前扩展到 10-20 个 prompt。</li>
+                      <li>把共性提炼成触发边界、决策树、验证步骤或脚本。</li>
+                      <li>同时补充反例，说明哪些请求不该触发。</li>
+                    </ul>
+                    <span class="rule-chip">结果：一类任务整体更稳定</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption>这张图把“迭代优化”和“过拟合修补”区分开：只有能改善一类任务，并经真实 prompt 或 trace 验证的规则，才适合写进 skill。</figcaption>
+            </figure>
+
+            <figure class="diagram">
+              <svg viewBox="0 0 1080 470" role="img" aria-labelledby="fig-resource-title">
+                <title id="fig-resource-title">内容应该放在哪里的决策图</title>
+                <rect width="1080" height="470" fill="#ffffff"/>
+                <rect x="420" y="38" width="240" height="72" rx="8" fill="#eef7ff" stroke="#9cc4ea"/>
+                <text class="svg-text" x="462" y="82" font-size="20" font-weight="850">这次反馈是什么？</text>
+                <rect x="88" y="182" width="210" height="96" rx="8" fill="#f0faf5" stroke="#98cfb7"/>
+                <text class="svg-text" x="124" y="220" font-size="19" font-weight="850">触发不准</text>
+                <text class="svg-mono" x="124" y="250" font-size="16">改 description</text>
+                <rect x="326" y="182" width="210" height="96" rx="8" fill="#eef4f8" stroke="#cbd8e5"/>
+                <text class="svg-text" x="362" y="220" font-size="19" font-weight="850">流程漏步</text>
+                <text class="svg-mono" x="362" y="250" font-size="16">改 SKILL.md</text>
+                <rect x="564" y="182" width="210" height="96" rx="8" fill="#fff7e8" stroke="#e5ba73"/>
+                <text class="svg-text" x="600" y="220" font-size="19" font-weight="850">重复易错</text>
+                <text class="svg-mono" x="600" y="250" font-size="16">加 scripts/</text>
+                <rect x="802" y="182" width="210" height="96" rx="8" fill="#fff0f3" stroke="#df9aad"/>
+                <text class="svg-text" x="838" y="220" font-size="19" font-weight="850">长资料缺失</text>
+                <text class="svg-mono" x="838" y="250" font-size="16">加 references/</text>
+                <path d="M500 110 C410 140, 280 140, 198 176M500 110 C470 140, 450 145, 432 176M580 110 C620 140, 640 145, 668 176M580 110 C690 140, 820 140, 908 176" fill="none" stroke="#6b7c90" stroke-width="2"/>
+                <rect x="148" y="340" width="784" height="56" rx="8" fill="#17243a"/>
+                <text x="184" y="375" font-family="SFMono-Regular, Consolas, monospace" font-size="16" fill="#dbe9ff">原则：先判断失败属于哪一类，再改最小合适位置，不要把正文越写越臃肿。</text>
+              </svg>
+              <figcaption>迭代时要改对位置：触发问题改 description，稳定操作脚本化，长资料放 reference。</figcaption>
+            </figure>
+
+            <div class="quality-grid">
+              <div class="check"><span class="mark">✓</span><span><strong>多跑真实任务</strong><br>早期至少保留 2-3 个不同输入；准备复用或分享时扩展到 10-20 个 prompt。</span></div>
+              <div class="check"><span class="mark">✓</span><span><strong>记录失败类型</strong><br>区分触发错误、流程漏步、工具误用、验收不清。</span></div>
+              <div class="check"><span class="mark">✓</span><span><strong>优先通用规则</strong><br>把共性写成原则、决策树或脚本，不写狭窄特判。</span></div>
+              <div class="check"><span class="mark">✓</span><span><strong>保留反例</strong><br>明确哪些请求不应该触发，避免 skill 过宽。</span></div>
+              <div class="check"><span class="mark">✓</span><span><strong>with/without 对照</strong><br>比较有 skill 和没 skill 时输出稳定性是否真的提高。</span></div>
+              <div class="check"><span class="mark">✓</span><span><strong>审查副作用</strong><br>第三方或脚本型 skill 要审查依赖、网络、凭据和写入边界。</span></div>
+            </div>
+
+            <p class="takeaway warn">避免过拟合的判断：如果一条规则只能解释一次失败，而且会让其他任务更难做，先不要写进 skill；先把它放进待观察记录。</p>
+          </div>
+        </section>
+
+        <section id="types" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">9</span>
+              <h2>常见 Skills 类型</h2>
+              <p>最适合做 skill 的不是“某个知识点”，而是会反复出现、容易出错、带固定验收标准的工作流。</p>
+            </div>
+
+            <div class="grid-three">
+              <div class="mini-card">
+                <span class="tag">文件类</span>
+                <h3>PDF / DOCX / PPTX / XLSX</h3>
+                <p>适合封装工具选择、格式坑、渲染检查和模板复用。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">工程类</span>
+                <h3>CI / 安全 / 部署</h3>
+                <p>适合封装日志读取顺序、审批边界、验证命令和停止条件。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">研究类</span>
+                <h3>搜索 / 引用 / 证据</h3>
+                <p>适合封装来源优先级、过滤标准、引用格式和不确定性标注。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">前端类</span>
+                <h3>设计 / 截图 / 响应式</h3>
+                <p>适合封装 UI 标准、浏览器验证、截图检查和常见布局风险。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">团队类</span>
+                <h3>Runbook / 评审 / 文档</h3>
+                <p>适合封装团队偏好、输出格式、角色分工和历史教训。</p>
+              </div>
+              <div class="mini-card">
+                <span class="tag">内容类</span>
+                <h3>日报 / PPT / 长文</h3>
+                <p>适合封装选题、素材整理、风格统一、发布前检查。</p>
+              </div>
+            </div>
+
+            <p class="takeaway">选题原则：高频、易错、有固定资源、有验收标准，四个条件满足得越多，越值得做成 skill。</p>
+          </div>
+        </section>
+
+        <section id="practice" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">10</span>
+              <h2>练习：用 AI 起草第一个最小 Skill</h2>
+              <p>这个练习的目标不是背答案，而是学会把“功能要求、触发边界、输出格式、停止条件和 description”说清楚，再让 `$skill-creator` 起草。</p>
+            </div>
+
+            <div class="grid-two">
+              <div class="note-card">
+                <h3>题目要求</h3>
+                <ul>
+                  <li>创建一个 `commit-message-helper` skill。</li>
+                  <li>当用户要求“写、润色、选择 commit message”时触发。</li>
+                  <li>输入来源必须是当前仓库的 staged git diff。</li>
+                  <li>输出 3 个 Conventional Commit 候选。</li>
+                  <li>每个 subject 不超过 72 个字符。</li>
+                  <li>只有从路径或 diff 能明显看出 scope 时才写 scope。</li>
+                </ul>
+              </div>
+              <div class="note-card">
+                <h3>边界和停止条件</h3>
+                <ul>
+                  <li>如果没有 staged diff，必须说明无法生成，不要编造。</li>
+                  <li>不要执行 `git commit`，只生成候选信息。</li>
+                  <li>用户只是问 Conventional Commit 规范时，不一定要触发这个 skill。</li>
+                  <li>`description` 要准确、简洁、具体：说明任务对象、输入来源和触发场景。</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="grid-two" style="margin-top: 16px;">
+              <div class="code-block">
+                <div class="code-title"><span>commit-message-helper/SKILL.md</span><span>参考草稿</span></div>
+                <pre><code>---
+name: commit-message-helper
+description: Draft 3 concise Conventional Commit candidates
+  from staged git diffs. Use when the user asks to write,
+  polish, or choose a commit message for staged changes.
+  Do not use for general Conventional Commit explanations.
+---
+
+1. Inspect the staged diff with `git diff --staged`.
+2. If no staged changes exist, stop and say no staged diff is available.
+3. Identify the primary change type from the diff.
+4. Output 3 candidate Conventional Commit messages.
+5. Do not run `git commit`.
+6. Keep each subject under 72 characters.
+7. Mention scope only when it is obvious from changed paths.</code></pre>
+              </div>
+              <div class="note-card">
+                <h3>为什么不再强调 15 行</h3>
+                <ul>
+                  <li>行数不是官方标准，也不是质量指标。</li>
+                  <li>“短”只是练习约束：迫使你先写清最小闭环。</li>
+                  <li>真正的验收是：触发准、边界清、输出稳、可验证。</li>
+                  <li>当 workflow 变复杂时，应该拆 `references/` 或 `scripts/`，而不是硬压行数。</li>
+                </ul>
+              </div>
+            </div>
+
+            <figure class="info-figure" aria-labelledby="fig-checklist-title">
+              <div class="info-canvas">
+                <div class="info-heading">
+                  <strong id="fig-checklist-title">Skill 创建前检查清单</strong>
+                  <span class="info-badge">description 单独检查</span>
+                </div>
+                <div class="grid-three">
+                  <div class="info-panel">
+                    <h3>值得写吗？</h3>
+                    <div class="criteria-list">
+                      <div class="criterion"><b>1</b><span>是否先找过高质量已有 skill？</span></div>
+                      <div class="criterion"><b>2</b><span>任务是否反复出现且容易漏？</span></div>
+                      <div class="criterion"><b>3</b><span>是否有固定验收标准？</span></div>
+                      <div class="criterion"><b>4</b><span>是否比普通 prompt 更稳定？</span></div>
+                    </div>
+                  </div>
+                  <div class="info-panel">
+                    <h3>怎么生成？</h3>
+                    <div class="criteria-list">
+                      <div class="criterion"><b>1</b><span>是否先跑通过真实链路？</span></div>
+                      <div class="criterion"><b>2</b><span>是否先审核可读 workflow？</span></div>
+                      <div class="criterion"><b>3</b><span>是否区分 AI 读取语言和用户输出语言？</span></div>
+                      <div class="criterion"><b>4</b><span>`description` 是否准确、简洁、具体？</span></div>
+                    </div>
+                  </div>
+                  <div class="info-panel">
+                    <h3>怎么验证？</h3>
+                    <div class="criteria-list">
+                      <div class="criterion"><b>1</b><span>是否有真实 prompt 和负例？</span></div>
+                      <div class="criterion"><b>2</b><span>是否比较 with / without？</span></div>
+                      <div class="criterion"><b>3</b><span>是否避免只为单例失败加规则？</span></div>
+                      <div class="criterion"><b>4</b><span>是否测试应该触发和不该触发的请求？</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <figcaption>这张清单把“发现、真实链路、AI 生成、description 审核、触发测试、迭代”串成一个完整闭环。</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="sources" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">S</span>
+              <h2>资料来源和取舍</h2>
+              <p>教程核心事实优先来自官方文档、Agent Skills 规范和一手仓库。社区文章只作为表达参考，不作为规范依据。</p>
+            </div>
+            <div class="source-list">
+              <a href="https://developers.openai.com/codex/skills">OpenAI Developers: Agent Skills - Codex</a>
+              <a href="https://developers.openai.com/codex/use-cases/reusable-codex-skills">OpenAI Developers: Save workflows as skills</a>
+              <a href="https://developers.openai.com/blog/eval-skills">OpenAI Developers: Testing Agent Skills Systematically with Evals</a>
+              <a href="https://agentskills.io/specification">Agent Skills Specification</a>
+              <a href="https://agentskills.io/skill-creation/best-practices">Agent Skills Best Practices</a>
+              <a href="https://agentskills.io/skill-creation/optimizing-descriptions">Optimizing Skill Descriptions</a>
+              <a href="https://agentskills.io/skill-creation/evaluating-skills">Evaluating Skills</a>
+              <a href="https://agentskills.io/skill-creation/using-scripts">Using Scripts in Skills</a>
+              <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Anthropic Engineering: Agent Skills</a>
+              <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview">Claude Docs: Agent Skills Overview</a>
+              <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices">Claude Docs: Skill authoring best practices</a>
+              <a href="https://github.com/openai/skills">openai/skills</a>
+              <a href="https://github.com/anthropics/skills">anthropics/skills</a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <p>本教程文件为单文件静态 HTML，可直接在浏览器中打开。资料来源列在文末，重点信息图使用 HTML/SVG 原生文字绘制，保证中文内容可读、可搜索、可缩放。</p>
+    </footer>
+  </div>
+</body>
+</html>
