@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Clarifier"
-  short_description: "低打扰但强对齐的任务澄清路由器"
-  default_prompt: "Use $task-clarifier to align an ambiguous or risky task, form an execution contract, and decide whether to ask, search, default, confirm, or proceed."
+  short_description: "Convergent need-alignment before execution"
+  default_prompt: "Use $task-clarifier: ask in my language, 1–3 questions per turn with recommended answers, until my outcome, constraints and success criteria are clear — then confirm your understanding before searching or executing. I can say '直接做' to skip clarification."

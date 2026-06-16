@@ -1,140 +1,153 @@
 ---
 name: task-clarifier
-description: Requirement clarification and alignment router for Codex, Claude Code, and other agents. Use before ambiguous, high-cost, high-risk, evidence-sensitive, user-intent-sensitive, privacy/security-sensitive, externally visible, coding/debugging, research, benchmark, paper-writing, figure/design, install/release, automation, prompt/design/spec tasks to decide whether to proceed, read files, search, ask, confirm risk, offer method choices, or block. Ensures the user understands the requirement, the agent understands it, and the user can verify that understanding. Do not use for simple, low-risk, reversible tasks with enough context.
+description: >-
+  Convergent need-alignment system. Before executing any non-trivial request,
+  ask questions (1–3 per turn, each with a recommended answer) until the user's
+  outcome, constraints, and acceptance criteria are clear — then confirm shared
+  understanding and execute. Use when the request is ambiguous, high-cost,
+  high-risk, preference-sensitive, or when the user says "best/better/which
+  one/recommend/help me choose/you decide/最好/推荐/哪个/你来决定". Also use
+  for: coding tasks with unclear scope, research/academic work, debugging
+  without full context, purchase/tool/model selection, prompt/design/spec
+  creation, experiment or benchmark design, and installation or automation with
+  external side effects. Do NOT use for single-fact lookups, trivial edits, or
+  requests where the user has already specified outcome + constraints +
+  acceptance criteria.
 ---
 
 # Task Clarifier
 
-这是一个需求对齐路由 skill，不是会议模拟器。核心任务是防止 agent 在不该猜的地方猜、在能自证的地方反复问、在高风险地方擅自行动。
+**Language rule:** Always use the user's language. If the user writes Chinese, ask and confirm in Chinese throughout.
 
-一句话：把模糊想法对齐成三方一致的可执行需求：用户想清楚，agent 听准确，用户能确认 agent 没理解偏。
+Your first action on any non-bypass request is to **identify which decisions the user needs to make** — not answer, not search, not execute. User-owned decisions must be asked before external research. Every non-bypass request goes through at least one question.
 
-## Global Objective
+## Portability
 
-用最小足够的澄清成本，把用户的真实需求转化为可执行契约，并确保三方一致：
+This skill is platform-neutral. It should work in Codex, Claude Code, OpenClaw, OpenCode, and other agent harnesses that can read a `SKILL.md` file and its `references/` directory. It does not require shell scripts, absolute local paths, POSIX-only commands, Windows-specific commands, or network access to start the clarification loop.
 
-- 目标、受众、交付物、证据边界、范围、非目标和验收标准清楚。
-- 用户能完全、准确、清晰、具体、无歧义地理解自己的需求。
-- agent 能完全、准确、清晰、具体、无歧义地理解用户的需求。
-- 用户知道 agent 如何理解该需求，并能纠正偏差。
-- 关键假设被标注，高风险选择被显式确认。
-- 能从上下文、代码、文件或可靠来源查到的信息，不要求用户重复提供。
-- 对不同用户、背景和任务复杂度，动态调整提问方式；可选读取本地低敏用户画像摘要，但不做心理诊断，不自行写入长期画像。
+When another local skill such as `$user-profile-keeper` is available, use it through the agent's normal skill mechanism. Do not assume a Codex-specific installation path.
 
-## Core Rule
+## Three Goals
 
-不要把每个不确定性都变成用户问题。
+1. Help the user know their own needs — including dimensions they haven't considered.
+2. Know the user's needs yourself — completely, specifically, unambiguously.
+3. Show the user your understanding so they can confirm or correct it.
 
-只在缺口满足至少一项条件时提问：决策属于用户、答案会改变执行路径、错误代价高、不可逆、证据无法可靠自证，或涉及安全/隐私/外部副作用。能从 repo、文件、官方资料、当前网页、用户已给上下文、本地低敏画像摘要或安全默认值解决的，先自己解决并标注假设。
+All three must be satisfied before execution begins.
 
-低打扰不是低对齐。问题可以少，但执行前必须能形成足够清晰的 alignment verdict；重大、不可逆或高影响动作必须由用户确认。
+## Execution Loop
 
-## Activation Gate
+```
+[Optional] If `$user-profile-keeper` provides clarification_summary
+  → Use it only as soft context for better questions and recommended answers
+  → Do not run profile scripts directly; if unavailable, continue without profile
+  ↓
+Receive request (or answer to a previous question)
+  ↓
+Scan alignment tree — mark each dimension ✅ ❓ or ➖
+  ↓
+For each ❓: fact or user-owned decision?
+  User-owned decision → keep ❓ — do NOT research before asking
+  Fact → look up now only if it helps phrase the question more precisely
+  ↓
+Any core dimension still ❓?
+  YES → ask 1–3 questions about highest-impact ❓ decisions → wait for reply
+  NO → alignment confirmation → user confirms → [now external research is allowed] → execute
+```
 
-使用本 skill 当至少一个条件成立：
+**External research** (product rankings, prices, specs, benchmarks) happens **after** core decisions are resolved — not before.
 
-- 请求存在多个实质不同的解释。
-- 错误假设会导致返工、数据丢失、隐私暴露、错误研究结论或外部副作用。
-- 交付格式、成功标准、证据标准、目标受众、范围边界或沟通方式不明确，且会改变工作。
-- 任务属于 coding、debugging、仓库修改、实验、文献/事实研究、论文写作、科研图表、设计制品、安全、安装、自动化、发布等精度敏感场景。
-- 用户使用了 "更好"、"现代"、"鲁棒"、"best practice"、"dashboard"、"agent"、"paper polish"、"你看着办" 这类可能隐藏真实目标的宽泛词。
+### Alignment Tree
 
-不要使用本 skill 当：
+Track these 10 dimensions internally. Do not show the tree — use it to choose what to ask next. See `references/alignment-tree-guide.md` for per-dimension guidance.
 
-- 请求简单、低风险、可逆。
-- 缺失信息能从本地文件、已给材料或当前对话安全发现。
-- 保守默认值明显，且可边做边说明。
-- 用户明确要求不要提问，且任务可以安全推进。
+**Core (must be resolved before execution):**
 
-## Workflow
+| # | Dimension | What to resolve |
+|---|-----------|----------------|
+| 1 | Outcome | What result does the user actually want? |
+| 2 | Constraints | Hard limits — budget, time, tech, format, region… |
+| 3 | Acceptance | What counts as success? |
 
-1. 先检查可用上下文：用户消息、附件、repo、文档、日志、报错、约束、已触发 skill；如果安装了 `user-profile-keeper` 且任务需要长期沟通偏好，可尝试读取低敏 `clarification_summary`，失败则忽略。
-2. 分类任务：`coding-change`、`debugging`、`research-fact`、`academic-writing`、`experiment-benchmark`、`figure-table-design`、`security-install`、`automation-side-effect`、`product-discovery`、`prompt-design`、`intent-discovery`。
-3. 建立 uncertainty ledger：缺什么、是否可发现、谁拥有决策、错了的影响、可逆性、证据需求、安全/隐私/外部风险。
-4. 选择动作：
-   - `proceed`: 安全默认值或下一步可逆。
-   - `research-first`: 本地或外部证据可以解决缺口。
-   - `ask`: 答案会改变范围、方法、格式、证据或验收。
-   - `confirm`: 高风险、隐私、破坏性、credential、远程、公开发布或外部副作用。
-   - `offer-method-choice`: 多种沟通/工作流都合理。
-   - `block`: 没有安全默认值，且必须由用户决定。
-5. 选择最小有效沟通方式。独立问题可批量；意图不明、用户可能不知道怎么回答、或存在隐藏约束时，一次只问一个问题。
-6. 长任务、高风险任务、多轮澄清任务或用户要求完全对齐时，输出 alignment contract 或 alignment verdict，必要时要求显式确认。
+**Auxiliary (fill with safe defaults + label if unresolved):**
+Audience · Deliverable · Scope · Tradeoffs · Evidence Boundary · Safety/Permission · Non-goals/Stop Condition
 
-读 `references/decision-model.md` 来判断 ask/search/default/confirm/block。读 `references/user-profile-integration.md` 判断是否使用本地画像摘要。
+Dimension states: ✅ resolved — ❓ unresolved, important — ➖ not applicable.
 
-## Adaptive Clarification
+### How to Ask
 
-提问方式要服务于用户理解，而不是显得完整：
+**Question count:** Ask 1–3 questions per turn. Batch only when each question is about a completely separate core dimension AND the answer to one would not change what you ask about another. When unsure, ask 1.
 
-- 专业用户：直接问变量、边界、tradeoff 和验收标准。
-- 非专业或语义模糊用户：先用通俗语言解释为什么问，再给 1 个示例答案或推荐默认值。
-- 高压力/低耐心场景：优先给推荐选项，允许用户只回答编号。
-- 研究/安全/发布/删除/安装/公开材料场景：即使用户想快速推进，也要保留必要确认。
+**What to ask first:** Choose the ❓ dimension whose answer most changes the execution path. Upstream dimensions first (if Outcome is unclear, asking about Scope is premature). When the request contains vague quality words ("最好", "optimize", "best"), delegation phrases ("你来定", "随便"), or when context contradicts the request — treat those as signals to prioritize Outcome as the first question, not as a separate route.
 
-不要在本 skill 中持久化用户画像；若用户明确要求记录或更新画像，路由到 `$user-profile-keeper`。不要推断敏感属性。读 `references/adaptive-communication.md` 获取交互画像和提问梯度。读 `references/person-context-fit.md` 获取不同表达状态下的提问流程。
+**Question format** (adapt to user's language and register):
 
-## Method Router
+```
+我需要确认 [具体变量]，因为 [它如何影响结果]。
+我的建议：[推荐答案]。
+你也可以选：[2–4个选项] / 或者告诉我你的想法。
+```
 
-按不确定性的形状选方法：
+When you have a prior from profile or context: "我 60% 认为你想要 [X]，如果不是，更接近 [A]、[B] 还是 [C]？"
 
-- **Direct default**: 任务足够清楚且低风险。说明假设后推进。
-- **Research-first**: 缺失事实可从代码、文件、官方文档、论文、primary repo 或当前 web 获取。
-- **Batch clarification**: 1-5 个互相独立、用户拥有且容易回答的决策。
-- **Method picker**: 多个工作流合理。提供 2-3 个选项、推荐项和取舍。
-- **Intent interview**: 真实目标、受众、成功标准或约束不清。提出假设和置信度，一次问一个问题。
-- **Spec gate**: 功能、系统、实验、论文、设计或工作流需要稳定执行契约。
-- **Risk gate**: 安全、隐私、安装、删除、发布、credential、远程系统或外部副作用。
+Consult `references/question-bank.md` for domain-specific high-signal questions.
 
-读 `references/method-router.md` 获取详细路由、handoff 和用户覆盖规则。读 `references/domain-forcing-questions.md` 获取 coding/research/debugging 等场景的高信号问题包。读 `references/anti-profile-bubble.md` 避免历史偏好或当前假设造成局部最优。
+### How to Stop
 
-## Question Quality
+When all 3 core dimensions are ✅:
 
-每个问题必须满足：
+1. Restate your understanding in 2–5 lines of natural language (not a template).
+2. Explicitly label any defaults or profile-sourced assumptions used for auxiliary dimensions.
+3. Ask: "这样理解对吗？有没有我漏掉的？"
+4. User confirms → execute.
+5. User corrects → update, ask at most 1 follow-up question, loop back.
 
-- **Decision-changing**: 答案改变范围、方法、证据、格式、安全或验收。
-- **Grounded**: 基于已检查上下文，或说明为什么这个缺口重要。
-- **Specific**: 点名变量，不问泛泛的 "请澄清"。
-- **Bounded**: 能用一两句话或选项回答。
-- **Non-leading**: 不诱导用户选择不安全或无证据方案。
-- **Minimal**: 不问已存在或可低成本发现的信息。
+**High-risk operations** (delete, publish, install, credentials, irreversible): even after alignment confirmation, list the exact actions you will take and wait for explicit approval before executing.
 
-困难问题优先使用结构：问题、为什么问、我当前猜测、示例答案、用户可怎样回答。读 `references/question-bank.md`。当用户话语可能隐藏真实目标、受众或约束时，读 `references/hidden-intent-interview.md`。
+### Bypass — The Only Way to Skip Questions
 
-## Evidence And Safety
+Skip the question loop and execute directly (stating your assumptions) ONLY when:
 
-事实可发现时，先查再问。优先级：用户文件/current repo/exact logs > 官方文档/primary repo/论文/标准 > 维护良好的高质量 repo/benchmark > 博客/论坛 > 社交帖/模型输出。
+- User explicitly says: "don't ask" / "just do it" / "go ahead" / "your call" / "直接做" / "不用问" / "你看着办" / "随便".
+- Request is a single-file typo or format fix with the file already specified.
+- Request is a pure factual lookup with zero choices ("Python 3.12 什么时候发布的？").
+- User's request already covers all 3 core dimensions explicitly.
 
-即使已有证据，也必须在这些动作前确认：
+**Bypass skips the clarification loop only. It never skips high-risk confirmation.**
 
-- 删除、覆盖、迁移、全局安装或共享配置修改。
-- 使用 credential、私有浏览器会话、私有 repo、secret。
-- 发送、发布、排程、PR、远程写入或触发外部系统。
-- 安全、隐私、法律、财务或研究结论的重大 tradeoff。
-- 将低置信证据用于论文、benchmark、公开材料或高影响决策。
+**If unsure whether bypass applies, it does not. Ask.**
 
-读 `references/evidence-policy.md` 获取 source tiers、联网搜索隐私门槛和确认规则。
+## Fact vs. Decision Rule
 
-## Alignment Contract
+Every unresolved dimension is one of two kinds:
 
-长任务、高风险任务或多轮澄清后，用 alignment verdict 收尾：
+- **Fact** — answerable from code, config, logs, docs, or reliable web sources. Resolve it yourself, mark ✅. Only look up facts when needed to phrase a question more precisely.
+- **Decision** — depends on user preference, priority, risk tolerance, budget, or success criteria. Must ask. No safe default for budget, deadline, region, or priority ranking.
 
-- `aligned`: 可以执行，无重大未决问题。
-- `aligned-with-assumptions`: 可以执行，但列出可逆假设。
-- `needs-answer`: 需要用户回答后才能安全推进。
-- `blocked`: 没有安全默认值，继续执行会造成明显风险或偏离。
+User-owned decisions always come before external research. Looking up product specs or rankings before the user has stated their budget and use case is wrong even if the information is accurate.
 
-读 `references/alignment-contract.md` 获取契约字段、何时要求用户显式确认，以及多选项拆分规则。
+See `references/evidence-policy.md` for source tiers and search-before-asking rules.
 
-## Defaults
+## User Profile Integration
 
-用户要求 best effort 或不回答时，仅在安全时使用默认：
+If `$user-profile-keeper` is available, use its `clarification_summary` as an optional information source for need alignment.
 
-- 保留现有文件；重大改写先复制或最小 patch。
-- 不做 destructive、external publish、global install、credential access、remote write。
-- 研究任务区分事实、推断和不确定性，并引用来源。
-- 学术任务不编造结果、引用、baseline 或 novelty claim。
-- 代码任务先读本地模式，做最小连贯改动，先窄验证再广验证。
-- 设计任务优先信息清晰、证据忠实、目标受众和现有风格。
+If available, use the profile to:
+- Enrich the information used to choose questions, options, and recommended answers.
+- Phrase questions more precisely (e.g., if the summary says the user often prefers Chinese brands, reflect that as an option or recommendation).
+- Label profile-sourced assumptions in the alignment confirmation so the user can correct stale assumptions.
 
-读 `references/examples.md` 获取行为检查场景。
+**Profile rules:**
+- Profile provides priors, not answers. It must not resolve core dimensions by itself; `Outcome`, `Constraints`, and `Acceptance` are resolved only by the current user message, current task context, or explicit user confirmation.
+- Current message always overrides profile. If user says something that contradicts the profile, use what they said now.
+- If `$user-profile-keeper` is unavailable or has no `clarification_summary`, continue without it — never block on profile.
+- Do not read full profiles, private background, pending proposals, or raw evidence from inside `$task-clarifier`.
+- Do not write or update profile data from inside `$task-clarifier`.
+- In alignment confirmation, label profile-sourced assumptions explicitly: "根据历史偏好我假设……"
+
+## References (tools, not steps)
+
+- `references/examples.md` — **read first if unsure how to behave** — 9 complete scenarios with correct and incorrect responses
+- `references/question-bank.md` — domain-specific high-signal questions
+- `references/alignment-tree-guide.md` — dimension definitions, defaults, detection hints
+- `references/evidence-policy.md` — source tiers, search rules, privacy gate

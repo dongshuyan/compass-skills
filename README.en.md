@@ -62,7 +62,7 @@ COMPASS organizes that state into three local workflows:
 
 ## How The Three Skills Work Together
 
-`task-clarifier` is the entry point for ambiguous, high-cost, high-risk, evidence-sensitive, or externally visible work. It decides whether the agent should proceed, research first, ask a narrow question, confirm risk, offer workflow options, or block.
+`task-clarifier` is the entry point for ambiguous, high-cost, high-risk, evidence-sensitive, or externally visible work. It first identifies the user-owned decisions that must be made, asks 1-3 focused questions with recommended answers, confirms shared understanding, and only then searches or executes.
 
 `task-forest` records long-running work structure: why a task exists, where it fits, how far it progressed, what changed, and what remains unresolved.
 
@@ -131,8 +131,8 @@ Use $task-clarifier to align the task below.
 
 Task: ...
 Material: ...
-Constraints: infer what you can from files, context, or reliable sources. Ask only questions that change scope, method, evidence, format, safety, or acceptance criteria.
-Output: decide whether to proceed, research-first, ask, confirm, offer-method-choice, or block, and explain why.
+Constraints: ask user-owned decisions first; infer discoverable facts from files, context, or reliable sources. Ask only questions that change scope, method, evidence, format, safety, or acceptance criteria.
+Output: ask 1-3 key questions with recommended answers first; once the core need is clear, restate your understanding in 2-5 lines and ask me to confirm.
 ```
 
 Maintain the task forest for a workspace:

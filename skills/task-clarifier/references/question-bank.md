@@ -1,144 +1,150 @@
-# Task Clarifier Question Bank
+# Question Bank
 
-选择性使用。只问会改变下一步的问题。能从本地文件、repo、日志、primary source 或当前 web 查到的，不问用户。
+High-signal questions by domain. Each entry: **variable** — why it matters — recommended default.
 
-## 目录
+Use these to pick the right question for an unresolved dimension. Do not ask all of them — pick the one that most changes the execution path.
 
-- Question Shape
-- Universal High-Signal Questions
-- Method Choice
-- Adaptive Phrasing Examples
-- Research-First Filtering
-- Hidden Intent And Audience
-- Coding Changes
-- Debugging
-- Research Facts And Literature
-- Academic Story And Writing
-- Experiments And Benchmarks
-- Figures, Tables, Posters, Diagrams
-- Security, Installation, Supply Chain
-- Automation And External Side Effects
+---
 
-## Question Shape
+## 1. Universal
 
-高影响或难回答的问题优先写成：
+**Outcome** — Determines everything downstream. — Default: ask; no safe assumption.
+> What end result do you need? (e.g., a working fix / a recommendation list / a written report / a deployed change)
 
-```markdown
-我需要确认 [变量]。
-为什么重要：[它会改变什么]。
-我的当前猜测：[默认值/推荐值]。
-你可以回答：[选项或示例答案]。
-```
+**Acceptance criteria** — Without this you cannot verify success. — Default: "works correctly and doesn't break existing behavior."
+> How will you judge whether this is done well? (e.g., tests pass / looks right visually / approved by reviewer / fits in N pages)
 
-低风险问题可以直接问。不要为了模板牺牲简洁。
+**Deliverable format** — Affects scope and effort. — Default: same format as the existing artifact.
+> What form should the result take? (e.g., code PR / document / verbal answer / prototype / production-ready)
 
-## Universal High-Signal Questions
+**Hard constraints** — Prevents wasted work on infeasible paths. — Default: infer tech/format constraints from context; **ask about budget, deadline, region** (user-owned, no safe default).
+> Are there hard limits I should know about? (budget, deadline, word count, framework, compatibility…)
 
-- 你要的交付物是什么：直接答案、代码 patch、报告、Markdown、slides、figure、table、script、runnable app？
-- 验收标准是什么：正确性、速度、美观、复现性、publication readiness、安全、最小改动？
-- 证据边界是什么：只用本地文件、只用提供来源、允许 web、只用官方来源、完整文献搜索？
-- 什么不能变：API、文件名、数据格式、叙事 claim、视觉风格、依赖栈、运行环境？
-- 风险容忍度是什么：探索草稿、production-safe、publication-safe、security-sensitive、无外部副作用？
-- 为了确认我们完全对齐，我当前会按 [X] 执行；有没有一个关键目标、非目标或验收标准我漏掉了？
+**Evidence boundary** — Determines research depth. — Default: "use reliable sources; flag uncertainty."
+> How certain does the information need to be? (verified primary sources only / reputable secondary OK / rough estimate fine)
 
-## Method Choice
+**What did I miss?** — Catches blind spots. — No default.
+> Is there anything else that would change what "good" looks like?
 
-- 你希望快速澄清、证据优先，还是一问一答深度对齐？
-- 你想用 guided、context dump，还是 best-guess with assumptions？
-- 如果速度、严谨性、低打扰、用户控制不能同时满足，优先哪个？
-- 是否允许我路由到更专门的 skill/workflow？如果不允许，我会保留轻量澄清。
+---
 
-## Adaptive Phrasing Examples
+## 2. Coding
 
-专业版：
+**Acceptance scope** — Minimum patch vs. refactor vs. performance overhaul produce very different PRs. — Default: minimum coherent change that passes tests.
+> Should this be the smallest fix, a clean refactor, or a deeper improvement?
 
-- "范围是最小 patch 还是允许同模块重构？"
+**Immutable boundaries** — Breaking public API / CLI / file format is usually not acceptable. — Default: preserve all public interfaces.
+> Are there interfaces, contracts, or formats I must not change?
 
-通俗版：
+**Test scope** — Determines verification effort. — Default: run existing tests; add a test for the changed behavior.
+> What testing do you expect — existing tests pass, new tests added, or manual verification?
 
-- "我需要确认改动范围。比如只修眼前 bug 会更快；顺手重构会更稳但可能碰到更多文件。你更想要哪种？"
+**Rollback strategy** — Affects how cautious the change should be. — Default: changes should be easily revertible.
+> If this goes wrong, how do we undo it? (git revert / feature flag / manual rollback)
 
-推荐默认版：
+---
 
-- "我建议先做最小 patch，因为当前风险来自单一路径。除非你明确授权，我不会改 public API。"
+## 3. Debugging
 
-## Research-First Filtering
+**Reproduction** — Cannot debug what you cannot reproduce. — Default: ask.
+> Can you describe the steps to reproduce, or share the error output?
 
-- 是否完全排除弱来源，还是保留但标低置信？
-- 需要 current/latest，还是稳定背景知识足够？
-- 优先官方文档、primary repo、peer-reviewed papers、benchmark，还是 practitioner examples？
-- 如果来源冲突，我应该暂停确认，还是给出 alternatives + confidence？
+**Environment** — Same code behaves differently across environments. — Default: check from context (package.json, Dockerfile, CI config).
+> What environment are you seeing this in? (OS, runtime version, local/CI/production)
 
-## Hidden Intent And Audience
+**Recent changes** — Most bugs come from recent changes. — Default: check git log.
+> Did anything change recently before this started happening? (deploy, dependency update, config change)
 
-- 我当前假设是 [X]，置信度 [N]%。如果错了，真实目标更接近 A、B 还是 C？
-- 真正受众是谁：你、合作者、reviewer、用户、评估者、未来 agent？
-- 即使技术上正确，什么会让结果感觉不对？
-- 什么应排除，因为会制造社交、政治、隐私或维护风险？
-- 如果你不需要向任何人解释选择，你真正想要的结果是什么？
+**Urgency** — Determines depth vs. speed tradeoff. — Default: thorough fix.
+> Is this blocking something right now, or can we take time to fix it properly?
 
-## Coding Changes
+---
 
-- 应优先最小 patch、可维护 refactor，还是更广的 cleanup？
-- 如果测试、文档和当前代码冲突，哪个是 canonical？
-- 需要守住什么兼容边界：CLI、public API、file format、checkpoint、saved output、downstream script？
-- 测试只覆盖改动行为，还是顺带覆盖附近脆弱边界？
-- 是否允许网络调用、依赖升级、migration、全局配置变更？
+## 4. Recommendation / Selection
 
-## Debugging
+**Primary use case** — "Best" is meaningless without context. — Default: ask.
 
-- exact failing command、input、expected output、observed output 是什么？
-- 这是最近 regression 吗？开始失败前改了什么？
-- 你要 root-cause proof、最快 workaround，还是 durable fix with tests？
-- 我能重跑失败流程吗？有没有时间、API、数据或费用限制？
-- 哪些 logs/artifacts/checkpoints/prior runs 应视为 ground truth？
+Anti-pattern — ❌ "What does 'best' mean to you?"
+✅ Instead, offer concrete scenarios:
+> Which scenario fits you best?
+> A) Everyday portable use — light, compact
+> B) Heavy-duty / professional — durability and capacity first
+> C) Travel-specific — airline/regulation compliant
+> D) Best value — good enough at lowest cost
+> My recommendation: [A/B/C/D based on any context clues].
 
-## Research Facts And Literature
+**Hard constraints** — Budget, region, compatibility narrow the field fast. — Default: **none — always ask.** Budget and region are user-owned decisions with no safe assumption.
+> Are there hard constraints? (max budget, must ship to [region], must work with [existing thing])
 
-- 证据标准是什么：快速定位、source-grounded summary、systematic search、citation audit、publication-grade verification？
-- 哪些来源算数：官方文档、论文、GitHub repo、benchmark、新闻、博客、社交帖、专利？
-- 时间边界是什么：当前最新、某历史日期、last 30 days、稳定背景？
-- 比较维度是什么：能力、安全、采用度、成本、可复现性、与你 workflow 的适配？
-- 不确定或弱证据 claim 是排除，还是显式标置信度？
+**Ranking criteria** — What to optimize for when tradeoffs arise. — Default: reliability > usability > price.
+> When two options are close, what matters more to you? (price / durability / features / brand / aesthetics)
 
-## Academic Story And Writing
+**Output format** — A ranked list vs. a single pick vs. a comparison table. — Default: single top pick + 2 alternatives with tradeoffs.
+> Do you want one recommendation, a shortlist, or a detailed comparison?
 
-- 当前阶段是 story selection、drafting from frozen story，还是 polishing？
-- 目标 venue、读者、页数/字数限制是什么？
-- 哪些 claim 已由现有证据锁定，哪些仍是假设或待实验？
-- 写作应优先 novelty framing、mechanism clarity、reviewer defensibility，还是 concision？
-- 有哪些 forbidden framing、term、baseline、comparison 会造成 overclaim？
+**Evidence standard** — Professional review vs. crowd opinion vs. your own testing. — Default: cite professional reviews and specs; flag anecdotal sources.
+> Should I stick to verified specs and professional reviews, or include community opinions too?
 
-## Experiments And Benchmarks
+---
 
-- primary metric 是什么，哪些 secondary/guardrail metrics 不能退化？
-- dataset split、seed policy、baseline set、evaluation protocol 哪个权威？
-- 目标是 diagnosis、rerun planning、result aggregation、figure generation，还是 claim validation？
-- compute/API budget 和最大 runtime 是多少？
-- 什么会让结果无效：leakage、missing baseline、wrong split、non-determinism、failed run、sample size 不足？
+## 5. Research / Academic
 
-## Figures, Tables, Posters, Diagrams
+**Research question clarity** — Vague question = unfocused output. — Default: ask for refinement.
+> Can you state the specific question you want answered — who/what/where/when/why/how?
 
-- artifact 类型和最终媒介是什么：manuscript figure、statistical plot、workflow diagram、architecture diagram、table、poster、slide、webpage？
-- 它必须让读者第一眼看懂的单一信息是什么？
-- 哪些 source data/text 是权威？我能转换数据，还是只能重排/重绘？
-- 输出格式需要 SVG、PDF、PNG、PPTX、HTML、LaTeX table、CSV，还是 editable source？
-- 风格约束是什么：venue template、brand、colorblind-safe、grayscale print、journal aesthetics、existing project style？
+**Methodology constraints** — Qualitative, quantitative, mixed, systematic review, etc. — Default: whatever fits the question best.
+> Do you have a required methodology, or should I choose based on the question?
 
-## Security, Installation, Supply Chain
+**Literature scope** — Time range, disciplines, languages. — Default: last 10 years, English, core discipline + adjacent fields.
+> How far back should I search, and should I include adjacent fields?
 
-- 目标是 recommendation、pre-install audit、local install、global install，还是 modify before install？
-- 允许权限是什么：read-only clone、本地写、shell、network、package install、credential、global config？
-- 审计要假设 hostile intent，还是只报告确认漏洞？
-- 安装范围是 project-local、agent-local、user-global，还是 system-wide？
-- secrets、private repo、browser session、SSH key、token 是否全部 out of scope？
-- 哪些动作需要最终确认：copy files、run scripts、update dashboard、edit config、install dependencies？
-- 是否允许删除、覆盖或迁移现有文件？如果允许，范围和回滚点是什么？
+**Audience level** — Expert peers vs. general readers vs. funding body. — Default: expert peers in the same field.
+> Who is the primary reader — peers, students, reviewers, or a general audience?
 
-## Automation And External Side Effects
+---
 
-- 哪些外部系统可触碰：GitHub、email、calendar、social platform、cloud API、payment、publishing endpoint？
-- workflow 运行一次、定时、还是只在人工确认后运行？
-- 失败行为是什么：立即停止、best effort、限次 retry、只通知？
-- audit trail 需要 logs、generated report、diff、artifact folder，还是 notification summary？
-- 哪些动作执行前必须 final confirmation？
+## 6. Design / Architecture
+
+**Scale requirements** — Orders-of-magnitude differences in scale change everything. — Default: ask.
+> What scale do you expect? (users, requests/sec, data volume, team size)
+
+**Tradeoffs** — Consistency vs. availability, speed vs. correctness, simplicity vs. flexibility. — Default: start simple, make it easy to change later.
+> When forced to choose, which matters more — [X] or [Y]?
+
+**Migration constraints** — Greenfield vs. brownfield changes scope dramatically. — Default: assume existing system unless stated.
+> Is this greenfield, or does it need to integrate with / replace something existing?
+
+**Team familiarity** — Choosing tools the team doesn't know adds hidden cost. — Default: prefer tools already in the stack.
+> Are there technologies the team already knows well, or is anything off-limits?
+
+---
+
+## 7. Security / Installation
+
+**Scope of access** — Determines what is being trusted. — Default: minimal necessary access.
+> What level of access does this need? (read-only / read-write / admin / root)
+
+**Reversibility** — Installation and permission changes can be hard to undo. — Default: prefer reversible approaches.
+> If something goes wrong, can this be cleanly uninstalled or reverted?
+
+**Credential handling** — Determines security posture. — Default: never store in code; use env vars or secret manager.
+> How should credentials be stored and passed? (env vars / secret manager / config file)
+
+**Environment isolation** — Production vs. staging vs. local sandbox. — Default: ask; never assume production.
+> Where will this run — local dev, staging, or production?
+
+---
+
+## 8. Automation / External Effects
+
+**Trigger conditions** — When should this run? — Default: manual trigger; escalate to automatic only if user confirms.
+> Should this run automatically (on schedule / on event) or only when you trigger it?
+
+**Failure handling** — What happens when it goes wrong. — Default: stop and notify; do not retry automatically.
+> If this fails, should it retry, skip, or stop and alert you?
+
+**Notification preferences** — Over-notification is as bad as under-notification. — Default: notify on failure only.
+> When should you be notified? (every run / only failures / never)
+
+**Rollback strategy** — Automation mistakes compound fast. — Default: keep last-known-good state; require manual approval to proceed after failure.
+> If the automation produces a bad result, how do we undo it?
