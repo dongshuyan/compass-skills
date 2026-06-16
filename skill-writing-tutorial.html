@@ -778,6 +778,117 @@
       font-size: 20px;
     }
 
+    .route-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+      gap: 16px;
+      margin: 22px 0 18px;
+      align-items: stretch;
+    }
+
+    .route-principle {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+    }
+
+    .route-principle.primary {
+      border-color: #a9c8e8;
+      background: #f2f8ff;
+    }
+
+    .route-principle strong {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--navy);
+      font-size: 17px;
+    }
+
+    .route-principle p {
+      font-size: 15px;
+    }
+
+    .route-table-wrap {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      overflow-x: auto;
+    }
+
+    .route-table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+    }
+
+    .route-table th,
+    .route-table td {
+      padding: 14px 13px;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      color: #3d4f64;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .route-table th {
+      background: #eef6fd;
+      color: var(--navy);
+      font-weight: 880;
+      white-space: nowrap;
+    }
+
+    .route-table th:last-child,
+    .route-table td:last-child {
+      border-right: 0;
+    }
+
+    .route-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .route-table code {
+      color: #13213a;
+      font-size: 13px;
+      white-space: normal;
+    }
+
+    .method-index {
+      display: inline-grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      margin-right: 8px;
+      border-radius: 8px;
+      background: var(--navy);
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    .bad-cell {
+      background: #fff8fa;
+    }
+
+    .good-cell {
+      background: #f6fbf8;
+    }
+
+    .route-note {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--amber);
+      border-radius: 0 8px 8px 0;
+      background: var(--amber-2);
+      color: #6d4310;
+      font-size: 15px;
+      font-weight: 730;
+    }
+
     .rule-chip {
       display: inline-flex;
       margin-top: 10px;
@@ -993,7 +1104,8 @@
       .quality-grid,
       .source-list,
       .split-figure,
-      .compare-figure {
+      .compare-figure,
+      .route-summary {
         grid-template-columns: 1fr;
       }
 
@@ -1059,6 +1171,7 @@
         <a href="#compare">区别</a>
         <a href="#ai-create">AI 生成</a>
         <a href="#distill">提炼</a>
+        <a href="#routing">路由</a>
         <a href="#iterate">迭代</a>
         <a href="#practice">练习</a>
       </nav>
@@ -1071,7 +1184,7 @@
         <h1 id="hero-title">如何编写 Skills</h1>
         <div class="hero-meta" aria-label="课程信息">
           <span class="pill"><span class="dot"></span>30 分钟主线</span>
-          <span class="pill"><span class="dot" style="background: var(--blue)"></span>11 个递进模块</span>
+          <span class="pill"><span class="dot" style="background: var(--blue)"></span>12 个递进模块</span>
           <span class="pill"><span class="dot" style="background: var(--amber)"></span>6 张重点信息图 + 7 张结构图</span>
         </div>
       </div>
@@ -1116,9 +1229,10 @@ description: Use when the user asks to run this recurring workflow.
             <a href="#compare">5. 概念对比</a>
             <a href="#ai-create">6. AI 生成</a>
             <a href="#distill">7. 真实链路</a>
-            <a href="#iterate">8. 迭代优化</a>
-            <a href="#types">9. 常见类型</a>
-            <a href="#practice">10. 练习清单</a>
+            <a href="#routing">8. 路由稳定</a>
+            <a href="#iterate">9. 迭代优化</a>
+            <a href="#types">10. 常见类型</a>
+            <a href="#practice">11. 练习清单</a>
           </nav>
         </div>
         <div class="side-card">
@@ -1127,8 +1241,9 @@ description: Use when the user asks to run this recurring workflow.
             <div class="timebox-row"><span>价值</span><span class="bar"><span style="width: 10%"></span></span></div>
             <div class="timebox-row"><span>发现</span><span class="bar"><span style="width: 24%"></span></span></div>
             <div class="timebox-row"><span>结构</span><span class="bar"><span style="width: 43%"></span></span></div>
-            <div class="timebox-row"><span>生成</span><span class="bar"><span style="width: 64%"></span></span></div>
-            <div class="timebox-row"><span>迭代</span><span class="bar"><span style="width: 84%"></span></span></div>
+            <div class="timebox-row"><span>生成</span><span class="bar"><span style="width: 62%"></span></span></div>
+            <div class="timebox-row"><span>路由</span><span class="bar"><span style="width: 74%"></span></span></div>
+            <div class="timebox-row"><span>迭代</span><span class="bar"><span style="width: 88%"></span></span></div>
             <div class="timebox-row"><span>练习</span><span class="bar"><span style="width: 100%"></span></span></div>
           </div>
         </div>
@@ -1723,10 +1838,90 @@ requested number of sides.</code></pre>
           </div>
         </section>
 
-        <section id="iterate" class="section">
+        <section id="routing" class="section">
           <div class="section-inner">
             <div class="section-head">
               <span class="section-number">8</span>
+              <h2>路由要少、强、可验证</h2>
+              <p>路由就是让 agent 选择分支。分支本身是正常工程结构，真正的风险来自弱验证和延迟反馈。写 skill 时要减少弱验证分支，把必要分支接到用户确认、脚本、测试、schema、diff 或外部证据。</p>
+            </div>
+
+            <div class="route-summary" aria-label="路由风险根因">
+              <div class="route-principle primary">
+                <strong>根本原因</strong>
+                <p>路由的主要风险来自“弱验证 + 延迟反馈”；直接执行更稳，是因为路径已定、动作更局部、结果更容易被外部证据验证。</p>
+              </div>
+              <div class="route-principle">
+                <strong>设计目标</strong>
+                <p>保留能带来真实稳定性的分支，删掉只增加判断负担的分支。能用低风险执行产生证据时，先执行，再让证据决定下一步。</p>
+              </div>
+            </div>
+
+            <div class="route-table-wrap">
+              <table class="route-table">
+                <thead>
+                  <tr>
+                    <th>方法</th>
+                    <th>差的做法</th>
+                    <th>好的做法</th>
+                    <th>为什么准确率更高</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="method-index">1</span>直接减少不必要分支</td>
+                    <td class="bad-cell"><code>if 当前上下文足够构建画像: 跳过问卷 else: 推荐问卷</code></td>
+                    <td class="good-cell">删除这条判断。首次建档固定推荐问卷；用户拒绝就继续当前任务，候选画像进入 proposal。</td>
+                    <td>直接移除“上下文是否足够”这个弱验证分支。牺牲少量灵活性，换来更稳定的主流程。</td>
+                  </tr>
+                  <tr>
+                    <td><span class="method-index">2</span>弱验证路由改成强验证路由</td>
+                    <td class="bad-cell"><code>if 这个操作看起来风险不高: 直接执行</code></td>
+                    <td class="good-cell"><code>if 操作包含 delete / publish / push / credentials / global config: 显式确认</code></td>
+                    <td>“看起来风险不高”依赖感觉；具体动作词和作用域更容易被文件、命令和用户确认验证。</td>
+                  </tr>
+                  <tr>
+                    <td><span class="method-index">3</span>用执行替换路由</td>
+                    <td class="bad-cell"><code>if 可能影响很多文件: 跑全量测试 else: 跑局部测试</code></td>
+                    <td class="good-cell">先执行 <code>git diff --name-only</code>、<code>rg</code> 引用、检查测试目录，再决定测试范围。</td>
+                    <td>先产生证据，再选择路径。判断对象从“影响大不大”变成“实际改了哪些文件、哪些引用存在”。</td>
+                  </tr>
+                  <tr>
+                    <td><span class="method-index">4</span>缩短反馈距离</td>
+                    <td class="bad-cell">产品推荐里先搜索、筛选、排序，最后才让用户看结果。</td>
+                    <td class="good-cell">先确认用途、预算、购买地区和成功标准，再开始外部研究。</td>
+                    <td>方向错误会更早暴露。反馈越近，后续执行建立在错误目标上的概率越低。</td>
+                  </tr>
+                  <tr>
+                    <td><span class="method-index">5</span>用户拥有的判断交给用户</td>
+                    <td class="bad-cell"><code>if 我判断用户更重视耐用: 推荐 A</code></td>
+                    <td class="good-cell">问用户优先级：耐用、轻便、颜值、价格、保修；给一个推荐答案，等待确认。</td>
+                    <td>用户偏好没有公共真值。让用户确认，比模型根据上下文猜测更可靠。</td>
+                  </tr>
+                  <tr>
+                    <td><span class="method-index">6</span>机器能判的交给机器</td>
+                    <td class="bad-cell"><code>if 我觉得 YAML 没问题: 结束</code></td>
+                    <td class="good-cell">运行 YAML parser、schema check、<code>git diff --check</code>、lint 或测试脚本。</td>
+                    <td>格式、schema、语法、测试结果属于可验证事实。工具检查比模型主观判断稳定。</td>
+                  </tr>
+                  <tr>
+                    <td><span class="method-index">7</span>必要分支收窄，但避免过拟合</td>
+                    <td class="bad-cell"><code>if 用户问行李箱: 永远先问 20 寸还是 24 寸</code></td>
+                    <td class="good-cell"><code>if 购买推荐缺少用途、预算或购买地区: 先问缺失的核心约束</code></td>
+                    <td>好分支有通用触发条件和明确反例。它解决一类问题，不把一次失败固化成狭窄特判。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p class="route-note">检查一条新分支是否值得写进 skill：它能否被快速验证，是否有明确反例，是否能被用户、脚本或外部证据纠偏，是否解决一类稳定问题。</p>
+          </div>
+        </section>
+
+        <section id="iterate" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">9</span>
               <h2>使用中迭代：变稳，但不要过拟合</h2>
               <p>Skill 很难一次做到很好。正确做法是多使用、记录偏差、提炼共性，再用真实 prompt 和执行 trace 验证改动；错误做法是每遇到一个孤立失败就加一条很窄的规则。</p>
             </div>
@@ -1802,7 +1997,7 @@ requested number of sides.</code></pre>
         <section id="types" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">9</span>
+              <span class="section-number">10</span>
               <h2>常见 Skills 类型</h2>
               <p>最适合做 skill 的不是“某个知识点”，而是会反复出现、容易出错、带固定验收标准的工作流。</p>
             </div>
@@ -1847,7 +2042,7 @@ requested number of sides.</code></pre>
         <section id="practice" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">10</span>
+              <span class="section-number">11</span>
               <h2>练习：用 AI 起草第一个最小 Skill</h2>
               <p>这个练习的目标不是背答案，而是学会把“功能要求、触发边界、输出格式、停止条件和 description”说清楚，再让 `$skill-creator` 起草。</p>
             </div>
