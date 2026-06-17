@@ -2,6 +2,10 @@
 
 [中文](README.zh.md) · [Security](SECURITY.md) · [License](LICENSE)
 
+> **Start here: [Use & develop your own Skill ecosystem](https://dongshuyan.com/compass-skills/skill-writing-tutorial.html)**
+>
+> A practical tutorial for using `SKILL.md`, auditing reusable skills, drafting skills with AI, extracting real workflows, and building a local Skill ecosystem.
+
 ```bash
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```

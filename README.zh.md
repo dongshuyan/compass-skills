@@ -5,6 +5,10 @@
 **司南：个性化 AI 任务总控 Skills 系统**  
 **COMPASS: Personal Alignment Skills OS for AI Agents**
 
+> **推荐先读：[使用 & 开发自己的 Skill 生态教程](https://dongshuyan.com/compass-skills/skill-writing-tutorial.html)**
+>
+> 从使用 `SKILL.md` 到搭建本地 Skill 系统，讲清楚最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
+
 COMPASS 提供三类本地 skills：用户画像、任务图谱和需求对齐。它把长任务、跨 session 协作和多 agent 工作从聊天记录里移到可查、可更新的本地结构中。
 
 ## 快速理解
@@ -51,8 +55,6 @@ DAG 关系视图：
 - **目标关系**：当前任务和原始目的之间的贡献关系，以及是否出现偏移。
 
 COMPASS 提供一套长期协作流程：先读取用户协作画像，再查看任务森林，最后在行动前完成目标对齐。
-
-如果你还不熟悉 `SKILL.md` skills 的编写和使用方式，可以先看这个中文教程：[如何编写 Skills](https://dongshuyan.com/compass-skills/skill-writing-tutorial.html)。它是单文件静态 HTML，讲清楚 skill 的最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
 
 ## 三省模型
 
