@@ -93,10 +93,20 @@
       height: 20px;
     }
 
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+
     .top-links {
       display: flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
       overflow-x: auto;
       padding-bottom: 2px;
     }
@@ -116,6 +126,32 @@
 
     .top-links a:hover,
     .top-links a:focus-visible {
+      background: var(--blue-2);
+      color: var(--blue);
+      outline: none;
+    }
+
+    .repo-link {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--navy);
+    }
+
+    .repo-link svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .repo-link:hover,
+    .repo-link:focus-visible {
+      border-color: #8eb9e5;
       background: var(--blue-2);
       color: var(--blue);
       outline: none;
@@ -1135,6 +1171,130 @@
       font-weight: 900;
     }
 
+    .repo-intro {
+      display: grid;
+      gap: 22px;
+    }
+
+    .repo-lead {
+      max-width: 980px;
+      margin: 0;
+      color: #405066;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .repo-install {
+      margin: 0;
+    }
+
+    .repo-install pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .repo-skill-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .repo-skill-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 18px;
+    }
+
+    .repo-skill-kicker {
+      display: inline-flex;
+      margin-bottom: 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--blue-2);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .repo-skill-card:nth-child(2) .repo-skill-kicker {
+      background: var(--green-2);
+      color: var(--green);
+    }
+
+    .repo-skill-card:nth-child(3) .repo-skill-kicker {
+      background: var(--amber-2);
+      color: #8a5614;
+    }
+
+    .repo-skill-card h3 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 18px;
+    }
+
+    .repo-skill-card p {
+      margin: 0;
+      color: #405066;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .repo-checks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .repo-check {
+      min-width: 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--green);
+      border-radius: 0 8px 8px 0;
+      background: var(--green-2);
+      color: #164a3b;
+      font-size: 14px;
+      font-weight: 760;
+      line-height: 1.55;
+    }
+
+    .repo-visual-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .repo-visual {
+      margin: 0;
+      min-width: 0;
+      border: 1px solid #c9d8e5;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .repo-visual.wide {
+      grid-column: 1 / -1;
+    }
+
+    .repo-visual img {
+      display: block;
+      width: 100%;
+      max-height: 460px;
+      object-fit: contain;
+      background: #ffffff;
+    }
+
+    .repo-visual figcaption {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: #f7fafc;
+      color: #506176;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
     .source-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       margin-top: 18px;
@@ -1262,8 +1422,24 @@
       .source-list,
       .split-figure,
       .compare-figure,
-      .route-summary {
+      .route-summary,
+      .repo-skill-grid,
+      .repo-checks,
+      .repo-visual-grid {
         grid-template-columns: 1fr;
+      }
+
+      .top-actions {
+        width: 100%;
+      }
+
+      .top-links {
+        width: auto;
+        flex: 1;
+      }
+
+      .repo-visual.wide {
+        grid-column: auto;
       }
 
       .info-heading {
@@ -1319,20 +1495,28 @@
         </span>
         <span>Skills 编写教程</span>
       </a>
-      <nav class="top-links" aria-label="顶部章节导航">
-        <a href="#why">价值</a>
-        <a href="#minimum">最小模型</a>
-        <a href="#discover">发现</a>
-        <a href="#anatomy">构成</a>
-        <a href="#disclosure">原理</a>
-        <a href="#compare">区别</a>
-        <a href="#ai-create">AI 生成</a>
-        <a href="#distill">提炼</a>
-        <a href="#quality">质量</a>
-        <a href="#routing">路由</a>
-        <a href="#iterate">迭代</a>
-        <a href="#practice">练习</a>
-      </nav>
+      <div class="top-actions">
+        <nav class="top-links" aria-label="顶部章节导航">
+          <a href="#why">价值</a>
+          <a href="#minimum">最小模型</a>
+          <a href="#discover">发现</a>
+          <a href="#anatomy">构成</a>
+          <a href="#disclosure">原理</a>
+          <a href="#compare">区别</a>
+          <a href="#ai-create">AI 生成</a>
+          <a href="#distill">提炼</a>
+          <a href="#quality">质量</a>
+          <a href="#routing">路由</a>
+          <a href="#iterate">迭代</a>
+          <a href="#practice">练习</a>
+          <a href="#compass-repo">仓库</a>
+        </nav>
+        <a class="repo-link" href="https://github.com/dongshuyan/compass-skills" aria-label="打开 GitHub 仓库 dongshuyan/compass-skills">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.16 1.18.92-.26 1.9-.38 2.88-.39.98 0 1.96.13 2.88.39 2.2-1.49 3.16-1.18 3.16-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.42-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.68.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
+          </svg>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -1392,6 +1576,7 @@ description: Use when the user asks to run this recurring workflow.
             <a href="#iterate">10. 迭代优化</a>
             <a href="#types">11. 常见类型</a>
             <a href="#practice">12. 练习清单</a>
+            <a href="#compass-repo">13. 仓库安装</a>
           </nav>
         </div>
         <div class="side-card">
@@ -2445,6 +2630,73 @@ description: Draft 3 concise Conventional Commit candidates
               </div>
               <figcaption>这张清单把“发现、真实链路、AI 生成、description 审核、触发测试、迭代”串成一个完整闭环。</figcaption>
             </figure>
+          </div>
+        </section>
+
+        <section id="compass-repo" class="section">
+          <div class="section-inner">
+            <div class="section-head">
+              <span class="section-number">13</span>
+              <h2>司南 COMPASS 仓库</h2>
+              <p>COMPASS 提供三类本地 skills：用户画像、任务图谱和需求对齐。它把长任务、跨 session 协作和多 agent 工作从聊天记录里移到可查、可更新的本地结构中。</p>
+            </div>
+
+            <div class="repo-intro">
+              <p class="repo-lead">这三个 skills 互相配合：`$user-profile-keeper` 让 agent 知道“你是谁、怎么协作”，`$task-forest` 让 agent 知道“任务在哪里、做到哪里、为什么做”，`$task-clarifier` 让 agent 在行动前确认“用户的需求到底是什么”。它们都围绕本地文件工作，不上传用户数据，也不读取 credential、浏览器 cookie 或远程会话。</p>
+
+              <div class="code-block repo-install">
+                <div class="code-title"><span>一键安装</span><span>Codex + Claude Code</span></div>
+                <pre><code>npx skills add dongshuyan/compass-skills --skill '*' -a codex -a claude-code</code></pre>
+              </div>
+
+              <div class="repo-skill-grid" aria-label="COMPASS 三个核心 skills">
+                <article class="repo-skill-card">
+                  <span class="repo-skill-kicker">知向</span>
+                  <h3>$task-clarifier</h3>
+                  <p>当需求模糊、成本高或有安全风险时，把想法整理成可执行需求：目标、范围、证据、验收标准和风险边界都写清楚。它先识别必须由用户决定的关键分叉，可查事实由 agent 自己从材料中补足。</p>
+                </article>
+                <article class="repo-skill-card">
+                  <span class="repo-skill-kicker">知事</span>
+                  <h3>$task-forest</h3>
+                  <p>把当前 session 分解成任务森林 / DAG，并记录每个任务的目标、进度、偏差、依赖、待办和决策。确认 proposal 后生成树视图、DAG 视图、任务详情卡和推荐队列。</p>
+                </article>
+                <article class="repo-skill-card">
+                  <span class="repo-skill-kicker">知人</span>
+                  <h3>$user-profile-keeper</h3>
+                  <p>在本地保存可审计、可纠错、可撤回的协作画像。画像只记录用户确认或低敏的协作信号；secret、token、密码、私钥和验证码不进入画像。</p>
+                </article>
+              </div>
+
+              <div class="repo-checks" aria-label="需求对齐验收标准">
+                <div class="repo-check">用户能说清自己的目标和约束。</div>
+                <div class="repo-check">agent 能复述可执行的范围和下一步。</div>
+                <div class="repo-check">用户能确认 agent 的理解没有偏离。</div>
+              </div>
+
+              <figure class="repo-visual wide">
+                <img src="assets/compass-system-map.zh.svg" alt="司南 COMPASS 技能生态 DAG" loading="lazy" decoding="async">
+                <figcaption>三个 skills 的关系：先理解人，再维护事，最后在行动前对齐方向。</figcaption>
+              </figure>
+
+              <div class="repo-visual-grid" aria-label="COMPASS README 配图">
+                <figure class="repo-visual">
+                  <img src="assets/task-forest-demo.gif" alt="task-forest 导出的任务关系树和 session 更新流程" loading="lazy" decoding="async">
+                  <figcaption>`$task-forest` 导出的任务关系树和 session 更新流程。</figcaption>
+                </figure>
+                <figure class="repo-visual">
+                  <img src="assets/task-forest-live-dag.png" alt="task-forest live DAG 关系视图" loading="lazy" decoding="async">
+                  <figcaption>DAG 关系视图：展示任务、依赖和当前推进位置。</figcaption>
+                </figure>
+                <figure class="repo-visual">
+                  <img src="assets/task-forest-live-detail.png" alt="task-forest 任务详情、目的、要求、证据和调度建议" loading="lazy" decoding="async">
+                  <figcaption>任务详情、目的、要求、证据和调度建议。</figcaption>
+                </figure>
+                <figure class="repo-visual">
+                  <img src="assets/profile-alignment-flow.zh.png" alt="司南用户画像与需求对齐流程" loading="lazy" decoding="async">
+                  <figcaption>用户画像与需求对齐的协作方式。</figcaption>
+                </figure>
+              </div>
+            </div>
           </div>
         </section>
 
