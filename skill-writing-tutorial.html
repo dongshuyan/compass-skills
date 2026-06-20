@@ -344,16 +344,16 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 252px minmax(0, 1fr);
+      grid-template-columns: 260px minmax(0, 1fr);
       gap: 28px;
       align-items: start;
-      padding-bottom: 72px;
+      padding-bottom: 0;
       transition: grid-template-columns 180ms ease, gap 180ms ease;
     }
 
     body.nav-collapsed .layout {
-      grid-template-columns: 0 minmax(0, 1fr);
-      gap: 0;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 24px;
     }
 
     .hero > *,
@@ -368,83 +368,76 @@
 
     .side {
       position: sticky;
-      top: 148px;
+      top: 86px;
       display: grid;
-      gap: 14px;
-      max-height: calc(100vh - 166px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      padding-right: 4px;
-      transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
-      scrollbar-width: thin;
+      max-height: calc(100vh - 104px);
+      overflow: visible;
+      transition: opacity 180ms ease, transform 180ms ease;
     }
 
     body.nav-collapsed .side {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transform: translateX(-16px);
+      overflow: hidden;
+      padding-right: 0;
     }
 
     .nav-toggle {
-      position: fixed;
-      top: 86px;
-      left: max(16px, calc((100vw - 1420px) / 2 + 16px));
-      z-index: 30;
-      min-width: 112px;
-      min-height: 50px;
+      position: relative;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 11px 15px;
-      border: 1px solid rgba(23, 105, 224, 0.35);
+      padding: 0;
+      border: 1px solid #d8e3ee;
       border-radius: 8px;
       background: #ffffff;
-      color: var(--blue);
-      box-shadow: 0 12px 30px rgba(23, 105, 224, 0.16);
+      color: #516174;
       cursor: pointer;
       font: inherit;
-      font-size: 14px;
-      font-weight: 850;
     }
 
     .nav-toggle:hover,
     .nav-toggle:focus-visible {
-      border-color: rgba(23, 105, 224, 0.72);
+      border-color: rgba(23, 105, 224, 0.58);
       background: #eef7ff;
+      color: var(--blue);
       outline: none;
     }
 
     .nav-toggle-icon {
-      width: 18px;
-      height: 14px;
+      width: 20px;
+      height: 20px;
       position: relative;
       flex: 0 0 auto;
+      border: 2px solid currentColor;
+      border-radius: 7px;
+      box-sizing: border-box;
     }
 
-    .nav-toggle-icon::before,
-    .nav-toggle-icon::after,
-    .nav-toggle-icon span {
+    .nav-toggle-icon::before {
       position: absolute;
-      left: 0;
-      width: 18px;
-      height: 2px;
+      top: 2px;
+      bottom: 2px;
+      left: 8px;
+      width: 2px;
       border-radius: 999px;
       background: currentColor;
       content: "";
     }
 
-    .nav-toggle-icon::before {
-      top: 0;
-    }
-
+    .nav-toggle-icon::after,
     .nav-toggle-icon span {
-      top: 6px;
+      display: none;
     }
 
-    .nav-toggle-icon::after {
-      bottom: 0;
+    .nav-toggle-text {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
 
     .side-card,
@@ -456,40 +449,76 @@
     }
 
     .side-card {
-      padding: 16px;
+      padding: 18px 16px;
+      min-height: calc(100vh - 96px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
     }
 
     .side-title {
-      margin: 0 0 12px;
+      margin: 0;
       color: var(--navy);
-      font-size: 13px;
+      font-size: 16px;
       font-weight: 900;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
+    }
+
+    body.nav-collapsed .side-card {
+      min-height: calc(100vh - 96px);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 14px 10px;
+      box-shadow: none;
+    }
+
+    body.nav-collapsed .side-card + .side-card,
+    body.nav-collapsed .side-title,
+    body.nav-collapsed .side-nav {
+      display: none;
+    }
+
+    body.nav-collapsed .side-header {
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 0;
     }
 
     .side-nav {
       display: grid;
+      flex: 1;
       gap: 6px;
+      align-content: space-between;
     }
 
     .side-nav a {
-      padding: 8px 10px;
+      min-height: clamp(34px, 4vh, 46px);
+      padding: 8px 12px;
       border-radius: 8px;
       color: #4a5d73;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 720;
+      line-height: 1.25;
     }
 
     .side-nav a.nav-group {
-      margin-top: 6px;
+      margin-top: 4px;
       background: #f4f8fd;
       color: var(--navy);
       font-weight: 900;
     }
 
     .side-nav a.nav-sub {
-      padding-left: 18px;
-      font-size: 13px;
+      padding-left: 20px;
+      font-size: 15px;
       font-weight: 700;
     }
 
@@ -500,33 +529,31 @@
       outline: none;
     }
 
-    .timebox {
-      display: grid;
-      gap: 10px;
+    .section-anchor {
+      scroll-margin-top: 88px;
     }
 
-    .timebox-row {
-      display: grid;
-      grid-template-columns: 52px 1fr;
-      align-items: center;
-      gap: 10px;
-      color: #506176;
-      font-size: 13px;
-      font-weight: 740;
+    .merged-section-head {
+      margin: 32px 0 18px;
+      padding: 16px 18px;
+      border: 1px solid #cfe1f4;
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: #f7fbff;
     }
 
-    .bar {
-      height: 8px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: #edf2f7;
+    .merged-section-head h3 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1.28;
     }
 
-    .bar span {
-      display: block;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--blue), var(--green));
+    .merged-section-head p {
+      max-width: 920px;
+      color: #405066;
+      font-size: 16px;
     }
 
     main {
@@ -534,12 +561,10 @@
       grid-template-columns: minmax(0, 1fr);
       gap: 22px;
       min-width: 0;
-      max-height: calc(100vh - 86px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      padding-right: 4px;
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
       scroll-behavior: smooth;
-      scrollbar-width: thin;
     }
 
     .section-inner {
@@ -600,6 +625,13 @@
       color: var(--navy);
       font-size: 19px;
       line-height: 1.35;
+    }
+
+    .section .merged-section-head h3 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 2vw, 28px);
+      font-weight: 900;
+      line-height: 1.28;
     }
 
     .section p {
@@ -1728,12 +1760,6 @@
       outline: none;
     }
 
-    .footer {
-      padding: 24px 0 64px;
-      color: #627386;
-      font-size: 14px;
-    }
-
     @media (max-width: 1100px) {
       .hero {
         grid-template-columns: 1fr;
@@ -1751,22 +1777,34 @@
 
       .side {
         position: fixed;
-        top: 134px;
+        top: 76px;
         left: 16px;
         right: 16px;
         z-index: 28;
-        max-height: calc(100vh - 156px);
+        max-height: calc(100vh - 98px);
         padding-right: 0;
       }
 
-      .nav-toggle {
-        top: 76px;
-        left: 16px;
+      body.nav-collapsed .layout {
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 16px;
       }
 
-      body.nav-collapsed .layout {
-        grid-template-columns: 1fr;
-        gap: 22px;
+      body.nav-collapsed .side {
+        position: sticky;
+        top: 76px;
+        left: auto;
+        right: auto;
+        z-index: auto;
+        max-height: calc(100vh - 96px);
+      }
+
+      body.nav-collapsed .side-card {
+        min-height: calc(100vh - 96px);
+      }
+
+      body.nav-collapsed main {
+        grid-column: 2;
       }
 
       body:not(.nav-collapsed) .side {
@@ -1826,6 +1864,15 @@
         width: 100%;
       }
 
+      body.nav-collapsed .side {
+        top: 118px;
+        max-height: calc(100vh - 138px);
+      }
+
+      body.nav-collapsed .side-card {
+        min-height: calc(100vh - 138px);
+      }
+
       .hero {
         padding: 40px 0 28px;
       }
@@ -1851,11 +1898,6 @@
       .layout {
         padding-top: 22px;
         gap: 22px;
-      }
-
-      .nav-toggle {
-        min-width: 104px;
-        min-height: 48px;
       }
 
       .grid-two,
@@ -1944,7 +1986,6 @@
           <a href="#skill-basics" data-i18n-en="Basics">基本介绍</a>
           <a href="#using-skills" data-i18n-en="Use Skills">使用 Skill</a>
           <a href="#building-skills" data-i18n-en="Build Skills">开发 Skill</a>
-          <a href="#install-intake" data-i18n-en="Targeted Install">按需安装</a>
           <a href="#practice" data-i18n-en="Practice">练习</a>
         </nav>
         <button class="lang-toggle" id="languageToggle" type="button" aria-label="Switch language to English" title="Switch language to English">
@@ -1959,11 +2000,6 @@
       </div>
     </div>
   </header>
-
-  <button class="nav-toggle" id="navToggle" type="button" aria-expanded="true" aria-controls="learningPathPanel" aria-label="收起学习路径" title="收起学习路径">
-    <span class="nav-toggle-icon" aria-hidden="true"><span></span></span>
-    <span class="nav-toggle-text">收起目录</span>
-  </button>
 
   <div id="top" class="page">
     <section class="hero" aria-labelledby="hero-title">
@@ -2006,36 +2042,29 @@ description: Use when the user asks to run this recurring workflow.
     <div class="layout">
       <aside class="side" id="learningPathPanel" aria-label="页面目录">
         <div class="side-card">
-          <p class="side-title">学习路径</p>
+          <div class="side-header">
+            <p class="side-title">学习路径</p>
+            <button class="nav-toggle" id="navToggle" type="button" aria-expanded="true" aria-controls="learningPathPanel" aria-label="收起学习路径" title="收起学习路径">
+              <span class="nav-toggle-icon" aria-hidden="true"><span></span></span>
+              <span class="nav-toggle-text">收起目录</span>
+            </button>
+          </div>
           <nav class="side-nav">
             <a class="nav-group" href="#skill-basics" data-i18n-en="1. Skill Basics">1. Skill 基本介绍</a>
             <a class="nav-sub" href="#why" data-i18n-en="1.1 Why Skills">1.1 为什么需要</a>
-            <a class="nav-sub" href="#minimum" data-i18n-en="1.2 Minimum Model">1.2 最小模型</a>
-            <a class="nav-sub" href="#anatomy" data-i18n-en="1.3 File Anatomy">1.3 文件构成</a>
-            <a class="nav-sub" href="#disclosure" data-i18n-en="1.4 Loading Model">1.4 加载原理</a>
-            <a class="nav-sub" href="#compare" data-i18n-en="1.5 Concept Boundaries">1.5 概念对比</a>
-            <a class="nav-sub" href="#types" data-i18n-en="1.6 Common Types">1.6 常见类型</a>
+            <a class="nav-sub" href="#minimum" data-i18n-en="1.2 Model / Files">1.2 最小模型 / 文件构成</a>
+            <a class="nav-sub" href="#disclosure" data-i18n-en="1.3 Loading Model">1.3 加载原理</a>
+            <a class="nav-sub" href="#compare" data-i18n-en="1.4 Concept Boundaries">1.4 概念对比</a>
+            <a class="nav-sub" href="#types" data-i18n-en="1.5 Common Types">1.5 常见类型</a>
             <a class="nav-group" href="#using-skills" data-i18n-en="2. How to Use Skills">2. 如何使用 Skill</a>
-            <a class="nav-sub" href="#discover" data-i18n-en="2.1 Discovery Sources">2.1 发现来源</a>
-            <a class="nav-sub" href="#install-intake" data-i18n-en="2.2 Targeted Install">2.2 按需安装</a>
-            <a class="nav-sub" href="#compass-repo" data-i18n-en="2.3 COMPASS System">2.3 COMPASS 系统</a>
+            <a class="nav-sub" href="#discover" data-i18n-en="2.1 Discovery / Install">2.1 发现来源 / 按需安装</a>
+            <a class="nav-sub" href="#compass-repo" data-i18n-en="2.2 COMPASS System">2.2 COMPASS 系统</a>
             <a class="nav-group" href="#building-skills" data-i18n-en="3. How to Build Skills">3. 如何开发 Skill</a>
-            <a class="nav-sub" href="#distill" data-i18n-en="3.1 Real Workflow">3.1 真实链路</a>
-            <a class="nav-sub" href="#ai-create" data-i18n-en="3.2 AI Drafting">3.2 AI 生成</a>
-            <a class="nav-sub" href="#quality" data-i18n-en="3.3 Quality Gates">3.3 质量门槛</a>
-            <a class="nav-sub" href="#routing" data-i18n-en="3.4 Stable Routing">3.4 路由稳定</a>
-            <a class="nav-sub" href="#iterate" data-i18n-en="3.5 Iteration">3.5 迭代优化</a>
-            <a class="nav-sub" href="#practice" data-i18n-en="3.6 Practice Checklist">3.6 练习清单</a>
+            <a class="nav-sub" href="#distill" data-i18n-en="3.1 Workflow / AI Drafting">3.1 真实链路 / AI 生成</a>
+            <a class="nav-sub" href="#quality" data-i18n-en="3.2 Quality / Routing">3.2 质量门槛 / 路由稳定</a>
+            <a class="nav-sub" href="#iterate" data-i18n-en="3.3 Iteration">3.3 迭代优化</a>
+            <a class="nav-sub" href="#practice" data-i18n-en="3.4 Practice Checklist">3.4 练习清单</a>
           </nav>
-        </div>
-        <div class="side-card">
-          <p class="side-title">30 分钟分配</p>
-          <div class="timebox">
-            <div class="timebox-row"><span data-i18n-en="Basics">入门</span><span class="bar"><span style="width: 22%"></span></span></div>
-            <div class="timebox-row"><span data-i18n-en="Use">使用</span><span class="bar"><span style="width: 52%"></span></span></div>
-            <div class="timebox-row"><span data-i18n-en="Build">开发</span><span class="bar"><span style="width: 86%"></span></span></div>
-            <div class="timebox-row"><span data-i18n-en="Practice">练习</span><span class="bar"><span style="width: 100%"></span></span></div>
-          </div>
         </div>
       </aside>
 
@@ -2120,8 +2149,8 @@ description: Use when the user asks to run this recurring workflow.
           <div class="section-inner">
             <div class="section-head">
               <span class="section-number">1.2</span>
-              <h2>Skill 的最小可运行模型</h2>
-              <p>最小 skill 只有一个文件夹和一个 `SKILL.md`。`name` 是身份，`description` 是触发入口，正文是触发后才会读取的操作说明。</p>
+              <h2 data-i18n-en="Minimal Model and File Anatomy">Skill 的最小可运行模型 / 文件构成</h2>
+              <p data-i18n-en="Start with the smallest runnable form, then read the file anatomy. The minimal skill only needs one folder and one `SKILL.md`; mature skills split always-needed instructions and branch-specific resources across files.">先看最小可运行形态，再看文件如何分层。最小 skill 只需要一个文件夹和一个 `SKILL.md`；成熟 skill 会把每次都要读的核心说明和特定分支才要读的资源拆开。</p>
             </div>
 
             <div class="grid-two">
@@ -2168,14 +2197,10 @@ requested number of sides.</code></pre>
             </div>
 
             <p class="takeaway">如果 `description` 写得模糊，skill 再强也可能不会被正确触发。</p>
-          </div>
-        </section>
 
-        <section id="anatomy" class="section">
-          <div class="section-inner">
-            <div class="section-head">
-              <span class="section-number">1.3</span>
-              <h2>Skill 的构成：四类文件各司其职</h2>
+            <div id="anatomy" class="section-anchor"></div>
+            <div class="merged-section-head">
+              <h3 data-i18n-en="File Anatomy: Four File Types, Four Jobs">文件构成：四类文件各司其职</h3>
               <p>无论是复用别人的 skill，还是让 AI 生成自己的 skill，都要看懂它的文件结构。把所有信息塞进一个 `SKILL.md` 会污染上下文；好的 skill 会把“每次都要看”和“特定分支才要看”的内容分层。</p>
             </div>
 
@@ -2243,8 +2268,8 @@ requested number of sides.</code></pre>
         <section id="disclosure" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">1.4</span>
-              <h2 data-i18n-en="Loading Model: Progressive Disclosure">加载原理：Progressive Disclosure</h2>
+              <span class="section-number">1.3</span>
+              <h2 data-i18n-en="Loading Model">加载原理</h2>
               <p>Skill 的关键设计是渐进披露：先暴露最小索引，任务匹配后再逐层加载，避免一开始把所有资料塞进上下文。</p>
             </div>
 
@@ -2288,7 +2313,7 @@ requested number of sides.</code></pre>
         <section id="compare" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">1.5</span>
+              <span class="section-number">1.4</span>
               <h2>Skill 和 Prompt、Tool、MCP、Subagent 的区别</h2>
               <p>这些概念经常被混在一起。最简单的判断：skill 是“如何完成一类任务”的可复用知识和流程，tool/MCP 是“能调用什么”，subagent 是“谁来做”。</p>
             </div>
@@ -2357,7 +2382,7 @@ requested number of sides.</code></pre>
         <section id="types" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">1.6</span>
+              <span class="section-number">1.5</span>
               <h2>常见 Skills 类型</h2>
               <p>最适合做 skill 的对象是会反复出现、容易出错、带固定验收标准的工作流。</p>
             </div>
@@ -2413,8 +2438,8 @@ requested number of sides.</code></pre>
           <div class="section-inner">
             <div class="section-head">
               <span class="section-number">2.1</span>
-              <h2 data-i18n-en="Discover Reusable Skills from Three Sources">从三个来源发现可复用 Skills</h2>
-              <p data-i18n-en="When you want to use someone else's skill, start by finding candidates from GitHub, Skills.sh, and SkillsMP. Discovery only gives you candidates; installation still depends on scope selection, audit, and local adaptation.">如果要使用别人提供的 skill，先从 GitHub、Skills.sh 和 SkillsMP 这三个来源找到候选。发现只负责提供候选，是否安装还要进入范围选择、审计和本地定制。</p>
+              <h2 data-i18n-en="Discovery Sources and Targeted Install">发现来源 / 按需安装</h2>
+              <p data-i18n-en="When you want to use someone else's skill, first find candidates from GitHub, Skills.sh, and SkillsMP, then choose scope, audit, and adapt locally when needed. Discovery and installation are one continuous decision chain.">如果要使用别人提供的 skill，先从 GitHub、Skills.sh 和 SkillsMP 这三个来源找到候选，再进入范围选择、审计和本地定制。发现和安装是一条连续决策链。</p>
             </div>
 
             <div class="grid-three">
@@ -2436,14 +2461,10 @@ requested number of sides.</code></pre>
             </div>
 
             <p class="takeaway" data-i18n-en="Use these sources to find candidates, then move to targeted install: choose the exact skill, audit the relevant files, and adapt the local copy when your workflow boundaries differ.">这些来源只负责发现候选，下一步是按需安装：选定具体 skill，审计相关文件；工作流边界不一致时，先改成本地版本。</p>
-          </div>
-        </section>
 
-        <section id="install-intake" class="section">
-          <div class="section-inner">
-            <div class="section-head">
-              <span class="section-number">2.2</span>
-              <h2 data-i18n-en="Targeted Install, Audit, and Local Adaptation">按需安装、审计与本地定制</h2>
+            <div id="install-intake" class="section-anchor"></div>
+            <div class="merged-section-head">
+              <h3 data-i18n-en="Targeted Install, Audit, and Local Adaptation">按需安装、审计与本地定制</h3>
               <p data-i18n-en="Using someone else's skill starts with scope selection. For multi-skill repositories, identify the functions that match your workflow, audit only the relevant files completely, and adapt boundaries before installation when needed.">使用别人提供的 skill，第一步是选清范围。多 skill 仓库先确认哪些功能匹配自己的工作流，再完整审计相关文件；边界不合适时，先改成本地版本再安装。</p>
             </div>
             <figure class="info-figure" aria-labelledby="fig-discover-info-title">
@@ -2516,7 +2537,7 @@ requested number of sides.</code></pre>
         <section id="compass-repo" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">2.3</span>
+              <span class="section-number">2.2</span>
               <h2 data-i18n-en="COMPASS Skill System">司南 COMPASS Skill 系统</h2>
               <p data-i18n-en="COMPASS provides four local skills: user profiles, task graphs, AI conversation handoff prompts, and requirement alignment. It moves long-running tasks, cross-session collaboration, and multi-agent work out of chat history into local structures that can be inspected and updated.">COMPASS 提供四类本地 skills：用户画像、任务图谱、AI 对话续接和需求对齐。它把长任务、跨 session 协作和多 agent 工作从聊天记录里移到可查、可更新的本地结构中。</p>
             </div>
@@ -2614,8 +2635,8 @@ requested number of sides.</code></pre>
           <div class="section-inner">
             <div class="section-head">
               <span class="section-number">3.1</span>
-              <h2 data-i18n-en="Distill Teachable Rules from Real Workflows">从真实链路提炼可教学规则</h2>
-              <p>自己撰写 skill 时，更可靠的素材来自已经跑通过的真实链路：工作过的线程、runbook、测试命令、评审规则、失败修复记录。任务跑通后，再从真实过程里提炼 skill。</p>
+              <h2 data-i18n-en="Real Workflow Distillation and AI Drafting">真实链路 / AI 生成</h2>
+              <p data-i18n-en="A reliable skill starts from a real workflow, then uses AI to draft a reviewable structure. The source material is a completed task: worked threads, runbooks, test commands, review rules, and failure fixes.">可靠的 skill 先来自真实跑通过的链路，再用 AI 起草可审核的结构。素材不是空想流程，而是工作过的线程、runbook、测试命令、评审规则和失败修复记录。</p>
             </div>
 
             <figure class="info-figure" aria-labelledby="fig-experience-calibration-title">
@@ -2755,14 +2776,10 @@ requested number of sides.</code></pre>
                 </ul>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section id="ai-create" class="section">
-          <div class="section-inner">
-            <div class="section-head">
-              <span class="section-number">3.2</span>
-              <h2>现代写法：让 AI 生成 Skill 草稿</h2>
+            <div id="ai-create" class="section-anchor"></div>
+            <div class="merged-section-head">
+              <h3 data-i18n-en="AI Drafting: Generate a Reviewable Skill Draft">AI 生成：让 AI 起草可审核的 Skill</h3>
               <p>很多场景下，skill 不必从空白文件手写，可以先用 `skill-creator` 这类 creator skill 生成结构化草稿。注意：AI 生成只解决“起草成本”，不证明 skill 准确、可用或符合要求；人的工作重点是提供真实输入、审核逻辑、控制边界并验证效果。</p>
             </div>
 
@@ -2825,9 +2842,9 @@ requested number of sides.</code></pre>
         <section id="quality" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">3.3</span>
-              <h2>稳定 Skill 的质量门槛</h2>
-              <p>最符合要求的 skill 是：从真实反复任务中提炼出来，`description` 触发边界准确，`SKILL.md` 保留连续可读的核心流程和少量强路由，长资料放 `references/`，重复易错动作放 `scripts/`，并且用正例、反例、工具验证和 with/without 测试证明它确实让任务更稳定的 skill。</p>
+              <span class="section-number">3.2</span>
+              <h2 data-i18n-en="Quality Gates and Stable Routing">质量门槛 / 路由稳定</h2>
+              <p data-i18n-en="Stable skills rely on two things at the same time: quality gates that prove the skill is worth using, and routing rules that are few, strong, and verifiable. The skill should come from real repeated work, trigger accurately, keep a continuous core path, and prove stability with positive examples, negative examples, tool checks, and with/without comparisons.">稳定 skill 同时依赖两件事：能证明它值得使用的质量门槛，以及少、强、可验证的路由规则。它应该来自真实反复任务，触发边界准确，核心路径连续，并用正例、反例、工具验证和 with/without 对照证明稳定性。</p>
             </div>
 
             <div class="condition-panel" aria-labelledby="condition-ladder-title">
@@ -2975,14 +2992,10 @@ requested number of sides.</code></pre>
               </div>
               <p class="condition-bottom">稳定 skill 依赖少数关键规则：触发准确、核心路径连续、结果可验证、反例能约束边界。下一节继续展开路由设计：把弱判断从热路径移出，把必要判断接到用户、脚本、测试、schema、diff 或外部证据上。形式底线：`name` 用小写连字符，短且可识别；`description` 准确、具体、不过长；`SKILL.md` 有 YAML frontmatter 和正文；资源目录只放有独立职责边界、读取条件、执行用途或产物用途的内容；`agents/openai.yaml` 承载 UI 元数据、默认 prompt 和工具依赖；skill 的触发设计放在 `description` 和 `SKILL.md`。</p>
             </div>
-          </div>
-        </section>
 
-        <section id="routing" class="section">
-          <div class="section-inner">
-            <div class="section-head">
-              <span class="section-number">3.4</span>
-              <h2>路由要少、强、可验证</h2>
+            <div id="routing" class="section-anchor"></div>
+            <div class="merged-section-head">
+              <h3 data-i18n-en="Stable Routing: Few, Strong, and Verifiable">路由稳定：少、强、可验证</h3>
               <p>路由就是让 agent 选择分支。分支本身是正常工程结构，真正的风险来自弱验证和延迟反馈。写 skill 时要减少弱验证分支，把必要分支接到用户确认、脚本、测试、schema、diff 或外部证据。</p>
             </div>
 
@@ -3061,7 +3074,7 @@ requested number of sides.</code></pre>
         <section id="iterate" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">3.5</span>
+              <span class="section-number">3.3</span>
               <h2>使用中迭代：变稳，但不要过拟合</h2>
               <p>Skill 很难一次做到很好。正确做法是多使用、记录偏差、提炼共性，再用真实 prompt 和执行 trace 验证改动；错误做法是每遇到一个孤立失败就加一条很窄的规则。</p>
             </div>
@@ -3137,7 +3150,7 @@ requested number of sides.</code></pre>
         <section id="practice" class="section">
           <div class="section-inner">
             <div class="section-head">
-              <span class="section-number">3.6</span>
+              <span class="section-number">3.4</span>
               <h2 data-i18n-en="Exercise: Draft a Minimal Skill with AI">练习：用 AI 起草第一个最小 Skill</h2>
               <p data-i18n-en="This exercise uses commit message drafting because it is small, common, easy to verify, and easy to get subtly wrong. The goal is to practice writing clear trigger scope, evidence sources, side-effect boundaries, output format, and trigger tests.">这个练习用 commit message 起草做样例，因为它小、高频、容易验证，也很容易写偏。目标是练习把触发范围、证据来源、副作用边界、输出格式和触发测试写清楚。</p>
             </div>
@@ -3349,9 +3362,6 @@ Trigger tests:
       </main>
     </div>
 
-    <footer class="footer">
-      <p>本教程文件为单文件静态 HTML，可直接在浏览器中打开。资料来源列在文末，重点信息图使用 HTML/SVG 原生文字绘制，保证中文内容可读、可搜索、可缩放。</p>
-    </footer>
   </div>
   <div class="image-lightbox" id="imageLightbox" role="dialog" aria-modal="true" aria-label="图片预览" hidden>
     <div class="lightbox-panel" role="document">
@@ -3360,7 +3370,7 @@ Trigger tests:
       <p class="lightbox-caption" id="lightboxCaption"></p>
     </div>
   </div>
-  <script type="application/json" id="i18n-en">{"$skill-creator 请根据下面这类真实任务，先提炼 workflow，再生成一个可安装的 skill。 要求： 1. 先输出中文 workflow 框架让我审核。 2. 审核通过后再生成完整 skill 内容。 3. 如果团队认为更利于模型理解，可把给模型读取的核心说明转成英文。 4. 无论 skill 内部说明用什么语言，与用户交互和最终输出默认保持中文。 5. 标出触发条件、不触发条件、安全停止条件和验证方式。 6. 生成后先用 2-3 个真实 prompt 手工试跑；准备分享前再扩展到 10-20 个测试 prompt。":"$skill-creator\nPlease extract the workflow from the real task below, then generate an installable skill.\n\nRequirements:\n1. First output a reviewable workflow outline.\n2. After review, generate the complete skill content.\n3. If it improves model comprehension, write the core model-facing instructions in English.\n4. Keep user-facing interaction and final output in the user's requested language.\n5. Mark trigger conditions, non-trigger conditions, safety stop conditions, and verification methods.\n6. After generation, test it manually with 2-3 real prompts; before sharing, expand to 10-20 test prompts.","0. 为什么需要":"0. Why skills","1. 最小模型":"1. Minimum model","1. 真实跑通":"1. Real run-through","1. 给目标":"1. Give goals","10. 迭代优化":"10. Iteration","11. 常见类型":"11. Common types","12 个递进模块":"12 progressive modules","12. 练习清单":"12. Practice checklist","13. 仓库安装":"13. Repo install","2. 发现复用":"2. Discover and reuse","2. 抽取轨迹":"2. Extract trajectories","2. 给素材":"2. Provide materials","3. 可审核框架":"3. Auditable Framework","3. 文件构成":"3. Anatomy","3. 让 AI 生成":"3. Let AI generate","30 分钟主线":"30-minute main path","30 分钟分配":"30-minute plan","4. 人来审核和验证":"4. People to review and verify","4. 加载原理":"4. Loading model","4. 生成 skill":"4. Generate skills","5. 概念对比":"5. Concepts","5. 规范化核心":"5. Standardized core","6 张重点信息图 + 7 张结构图":"6 key diagrams + 7 structure charts","6. AI 生成":"6. AI drafting","7. 真实链路":"7. Real workflow","8. 质量门槛":"8. Quality gates","9. 路由稳定":"9. Routing stability","AI 产出的是“可审查的 skill 草稿”。":"What the AI ​​produces is a “reviewable draft of the skill.”","AI 生成":"AI Drafting","AI 生成承担 Markdown 草稿整理；workflow 成立性、验证结果和风险边界由人审核。":"The AI ​​generation is responsible for organizing the Markdown draft; the validity of the workflow, verification results and risk boundaries are reviewed by humans.","AI 生成草稿":"AI generated draft","AI 负责生成":"AI is responsible for generating","API 文档、schema、规范":"API docs, schema, specs","CI / 安全 / 部署":"CI/Security/Deployment","COMPASS README 配图":"COMPASS README screenshots","COMPASS 三个核心 skills":"The three core COMPASS skills","COMPASS 提供三类本地 skills：用户画像、任务图谱和需求对齐。它把长任务、跨 session 协作和多 agent 工作从聊天记录里移到可查、可更新的本地结构中。":"COMPASS provides three local skills: user profiles, task graphs, and requirement alignment. It moves long-running tasks, cross-session collaboration, and multi-agent work out of chat history into local structures that can be inspected and updated.","Codex + Claude Code":"Codex + Claude Code","Codex 用这些信息判断是否相关。":"Codex uses it for matching.","DAG 关系视图：展示任务、依赖和当前推进位置。":"DAG view: tasks, dependencies, and current progress.","GitHub、Playwright、数据库":"GitHub, Playwright, database","OpenAI 文档说明 Codex 初始 skills 列表有上下文预算，skill 多时会优先缩短 description。":"OpenAI documentation states that the initial skills list in Codex has a context budget, and when there are many skills, the description will be shortened first.","P0 · 触发边界":"P0 · Trigger boundary","P0 · 路由与判断":"P0 · Routing and Judgment","P0 · 选题与素材":"P0 · Topic selection and materials","P1 · 结构与资源":"P1 · Structure and Resources","P1 · 风险与验收":"P1 · Risk and Acceptance","P2 · 测试与迭代":"P2 · Test and iterate","PDF、CI 修复、安全威胁建模":"PDF, CI remediation, security threat modeling","Progressive Disclosure 三层加载":"Progressive Disclosure three-layer loading","Runbook / 评审 / 文档":"Runbook / Review / Documentation","Skill 创建前检查清单":"skill pre-creation checklist","Skill 和 Prompt、Tool、MCP、Subagent 的区别":"The difference between skill and prompt, Tool, MCP and Subagent","Skill 在 Agent 工作中的位置":"The position of skill in agent’s work","Skill 很难一次做到很好。正确做法是多使用、记录偏差、提炼共性，再用真实 prompt 和执行 trace 验证改动；错误做法是每遇到一个孤立失败就加一条很窄的规则。":"skill is hard to do well all at once. The correct approach is to use more, record deviations, refine commonalities, and then use real prompts and execution traces to verify the changes; the wrong approach is to add a very narrow rule every time an isolated failure is encountered.","Skill 教 agent 如何可靠地使用工具，工具负责提供实际能力。":"skills teach agents how to use tools reliably, and tools are responsible for providing actual capabilities.","Skill 的关键设计是渐进披露：先暴露最小索引，任务匹配后再逐层加载，避免一开始把所有资料塞进上下文。":"The key design of skill is progressive disclosure: first expose the minimum index, and then load it layer by layer after the task is matched, to avoid stuffing all the information into the context at the beginning.","Skill 的最小可运行模型":"Minimal runnable model of skill","Skill 的构成：四类文件各司其职":"The composition of skill: four types of documents each perform their own duties","Skill 目录结构和职责":"skill directory structure and responsibilities","Skill 解决的是同一类工作每次都要重新解释、重新纠错、重新找资料的问题。当一个工作流反复出现、容易漏步骤、需要固定资源或脚本时，就值得沉淀成 skill。":"skill solves the problem of having to re-explain, re-correct, and re-find information every time for the same type of work. When a workflow occurs repeatedly, is easy to miss steps, and requires fixed resources or scripts, it is worth accumulating into a skill.","Skills 编写教程":"Skills Writing Tutorial","Star 只作线索":"Star only for clues","UI 元数据、默认 prompt、工具依赖":"UI metadata, prompt, tools","YAML、schema、lint、测试、diff、文件存在性属于可验证事实，工具检查比主观判断稳定。":"YAML, schema, lint, testing, diff, and file existence are verifiable facts, and tool inspection is more stable than subjective judgment.","`$task-forest` 导出的任务关系树和 session 更新流程。":"The task relationship tree and session update flow exported by `$task-forest`.","`SKILL.md` 保持短、核心、可执行":"`SKILL.md` keeps it short, core, and executable","`description` 同时写“做什么”和“什么时候用”。":"`description` writes both “what to do” and “when to use it”.","`description` 同时写清“做什么”和“什么时候用”":"`description` Write down “what to do” and “when to use it” at the same time","`description` 是否准确、简洁、具体？":"Is the `description` accurate, concise and specific?","`description` 是触发入口，正文只有触发后才会读。触发不准时，正文写得再好也用不上。":"`description` is the trigger entry, and the text will only be read after triggering. If the trigger is not timed, no matter how well the text is written, it will be of no use.","`description` 要准确、简洁、具体：说明任务对象、输入来源和触发场景。":"`description` should be accurate, concise and specific: describe the task object, input source and triggering scenario.","`name` 使用小写和连字符，短且可识别。":"Use lowercase and hyphens to make `name` short and recognizable.","agent 能复述可执行的范围和下一步。":"The agent can restate the executable scope and next step.","description 单独检查":"description is checked individually","if 可能影响很多文件: 跑全量测试 else: 跑局部测试":"if many files may be affected: run full tests else: run focused tests","if 当前上下文足够构建画像: 跳过问卷 else: 推荐问卷":"if current context is enough for a profile: skip questionnaire else: suggest questionnaire","if 我判断用户更重视耐用: 推荐 A":"if I infer the user values durability most: recommend A","if 我觉得 YAML 没问题: 结束":"if I think the YAML is fine: finish","if 操作包含 delete / publish / push / credentials / global config: 显式确认":"if operation includes delete / publish / push / credentials / global config: require explicit confirmation","if 用户问行李箱: 永远先问 20 寸还是 24 寸":"if the user asks about luggage: always ask 20-inch or 24-inch first","if 购买推荐缺少用途、预算或购买地区: 先问缺失的核心约束":"if a buying recommendation lacks purpose, budget, or purchase region: ask for the missing core constraints first","if 这个操作看起来风险不高: 直接执行":"if this operation seems low risk: execute directly","optional: 资源目录和 UI 元数据":"optional: resources + UI metadata","schema、模板、示例":"Schema, templates, examples","skill 的价值来自稳定复用。低频、纯主观、没有验收标准的任务，用普通 prompt 往往更合适。":"The value of a skill comes from stable reuse. For tasks that are low-frequency, purely subjective, and have no acceptance criteria, it is often more appropriate to use ordinary prompts.","task-forest live DAG 关系视图":"task-forest live DAG relationship view","task-forest 任务详情、目的、要求、证据和调度建议":"task-forest task details, purpose, requirements, evidence and scheduling suggestions","task-forest 导出的任务关系树和 session 更新流程":"Task relationship tree and session update process exported by task-forest","with/without 对照":"with/without comparison","“帮我写一个提交信息”":"\"Write a commit message for me\"","“把工作过的线程、runbook、测试命令转成 skill”有官方支持；中文 workflow 审核是适合中文团队的实践。":"\"Converting worked threads, runbooks, and test commands into skills\" has official support; Chinese workflow review is a practice suitable for Chinese teams.","“看起来风险不高”依赖感觉；具体动作词和作用域更容易被文件、命令和用户确认验证。":"\"Seems low risk\" relies on feel; concrete action words and scope can be verified through files, commands, and user confirmation.","、lint 或测试脚本。":", lint or test script.","一件事：让 agent 在触发后稳定做对":"One job: help the agent do the right thing after the skill triggers.","一句话：Skill 是给 agent 的可复用操作手册和工具包，用来减少重复解释、重复纠错和重复找资料。":"In a word: skill is a reusable operation manual and toolkit for agents to reduce repeated explanations, repeated error corrections and repeated information searches.","一次失败只能作为线索；进入 skill 的规则应覆盖一类稳定问题，并有反例或 holdout 检查。":"A failure can only be used as a clue; the rules entering the skill should cover a class of stable problems and have counterexamples or holdout checks.","一次性指令":"one-time instruction","一次性简单请求":"A one-time simple request","一键安装":"One-Command Install","三个 skills 的关系：先理解人，再维护事，最后在行动前对齐方向。":"How the three skills relate: understand the user, maintain the work, then align direction before action.","上下文预算：先少量索引，再按需展开；description 要前置关键词。":"Context budget: index first, expand on demand; front-load description keywords.","不必写":"No need to write","不必默认从空白文件开始写。更稳的路径是先看官方 skill、一手仓库和维护良好的社区案例；但安装前必须完整审计，确认没有错误、隐私泄露风险或安全风险，再决定安装、改造或放弃。":"You don't have to start writing from a blank file by default. A more stable path is to first look at official skills, first-hand warehouses, and well-maintained community cases; but before installation, a complete audit must be conducted to confirm that there are no errors, privacy leakage risks, or security risks before deciding to install, modify, or give up.","不要执行 `git commit`，只生成候选信息。":"Do not execute `git commit`, only generate candidate information.","不要直接上真实项目。先用样例或临时目录试跑，观察是否触发准确、步骤完整、输出稳定。":"Don’t go directly to real projects. First use the sample or temporary directory to test run and observe whether the trigger is accurate, the steps are complete, and the output is stable.","不负责教学流程":"Not responsible for the teaching process","为什么":"Why","为什么准确率更高":"Why is the accuracy higher?","为什么需要 Skills":"Why skills are needed","主要用途":"Main purpose","产品推荐里先搜索、筛选、排序，最后才让用户看结果。":"In product recommendations, search, filter, and rank only after the key constraints are known.","从一次真实执行提炼 skill：不要跳过中间审核层":"Refining skills from a real execution: don’t skip the intermediate review layer","从临时提示到可复用 Skill":"From temporary prompts to reusable skills","从真实任务到 Skill 的生产线":"Production line from real tasks to skills","从真实跑通过的链路提炼":"Extracted from real running links","从真实链路提炼":"Extracted from real links","从重复提示到 Skill 的示意图":"Diagram from repeat prompt to skill","仓库":"Repo","代码风格、权限、沟通规则":"Coding style, permissions, communication rules","价值":"Value","任务是否反复出现且容易漏？":"Are tasks recurring and easy to miss?","任务本身高频、易错、有固定资源、有验收标准":"The tasks themselves are high-frequency, error-prone, have fixed resources, and have acceptance criteria.","任务能力包":"mission capability package","任务详情、目的、要求、证据和调度建议。":"Task details, purpose, requirements, evidence, and scheduling suggestions.","任务边界：什么请求应该触发，什么不该触发。":"Task boundaries: what requests should be triggered and what should not be triggered.","优先看官方示例、活跃维护的 repo、star 较高且最近仍有更新的 skill 集合。Star 只作线索。":"Start with official examples, actively maintained repos, and skill collections with strong stars and recent updates. Stars are only a signal.","优先通用规则":"priority general rules","低风险环境试跑":"Low-risk environment test run","低，复制粘贴为主":"Low, mainly copy and paste","何时、为何、按什么顺序做":"When, why, and in what order","你审核框架，补上遗漏边界、失败恢复和验收标准。":"You review the framework and add missing boundaries, failure recovery, and acceptance criteria.","你给的是“真实工作流和判断标准”。":"What you give is \"real workflow and judgment standards\".","你负责决策":"You are responsible for making decisions","使用中迭代：变稳，但不要过拟合":"Use iteration in use: stabilize, but don’t overfit","例如内部 schema、团队规范、模板、常用脚本和验收标准。":"Such as internal schema, team specifications, templates, common scripts and acceptance criteria.","例如每周报告、固定文件转换、CI 失败排查、设计实现检查。":"For example, weekly reports, fixed file conversion, CI failure troubleshooting, design implementation inspection.","保留反例":"Keep counterexamples","保留好结构，替换业务规则、私有资源、验收标准和语言偏好，避免无意义重写。":"Preserve the structure and replace business rules, private resources, acceptance criteria and language preferences to avoid meaningless rewrites.","保留少数强分支，把判断接到用户、工具或证据。":"Keep a few strong branches to connect judgments to users, tools, or evidence.","保留能带来真实稳定性的分支，删掉只增加判断负担的分支。能用低风险执行产生证据时，先执行，再让证据决定下一步。":"Keep branches that bring real stability and delete branches that only increase judgment burden. When evidence can be generated through low-risk execution, execute first and let the evidence determine the next step.","候选来源":"candidate source","值得写吗？":"Is it worth writing?","偏好、预算、成功标准、风险容忍度没有公共真值，模型猜测会放大后续偏差。":"There is no public truth value for preferences, budgets, success criteria, and risk tolerance, and model guessing will amplify subsequent biases.","做 with/without 或旧版/新版对照":"Do with/without or old/new comparisons","先产生证据，再选择路径。判断对象从“影响大不大”变成“实际改了哪些文件、哪些引用存在”。":"Generate evidence before choosing a path. The decision shifts from impact guessing to changed files and real references.","先人工审核":"Human review first","先发现和复用高质量 Skills":"Discover and reuse high-quality skills first","先审":"first trial","先执行":"Run","先找":"Find first","先把最小文件写对，再决定是否增加资源目录。":"Write the minimum file correctly first, and then decide whether to add a resource directory.","先比较 2-3 个真实样例，确认失败有共性；分享前扩展到 10-20 个 prompt。":"First compare 2-3 real examples to confirm that failures have commonalities; expand to 10-20 prompts before sharing.","先看 P0：选题、真实链路、触发边界和路由判断。P0 站不住，后面的结构优化和测试设计都无法稳定发挥作用。":"Let’s look at P0 first: topic selection, real link, trigger boundary and routing judgment. P0 cannot stand, and subsequent structural optimization and test design cannot function stably.","先看模式，再改规则":"Look at the pattern first, then change the rules","先确认 skill 是否值得做，以及素材是否来自真实链路。":"First confirm whether the skill is worth doing and whether the material comes from a real link.","先确认用途、预算、购买地区和成功标准，再开始外部研究。":"Confirm purpose, budget, purchase region, and success criteria before external research.","先让 AI 按你的指导完整完成一次真实任务。":"First let the AI ​​complete a real task according to your guidance.","先让 AI 提炼 workflow 框架。中文团队可先用中文，方便检查逻辑是否完整。":"Let AI refine the workflow framework first. The Chinese team can use Chinese first to check whether the logic is complete.","典型例子":"Typical example","内容应该放在哪里的决策图":"Decision map of where content should be placed","内容类":"Content category","再改":"Change again","再试":"try again","分层的目标是减少上下文占用，同时让 agent 知道每个资源在什么时候有用。":"The goal of layering is to reduce context usage while letting the agent know when each resource is useful.","分步指导":"Guided steps","分类":"Classification","创建一个 `commit-message-helper` skill。":"Create a `commit-message-helper` skill.","删除、发布、push、凭据、全局配置、外部副作用等必须显式确认，避免 skill 自动越界。":"Deletion, release, push, credentials, global configuration, external side effects, etc. must be explicitly confirmed to avoid automatic skill out of bounds.","删除这条判断。首次建档固定推荐问卷；用户拒绝就继续当前任务，候选画像进入 proposal。":"Remove this branch. For first-time profiling, suggest the questionnaire by default; if the user declines, continue the current task and store candidate profile notes as a proposal.","判断标准：如果你已经第三次写同一段长 prompt，通常该考虑 skill。":"Rule of thumb: if this is the third time you have written the same long prompt, it is usually time to consider a skill.","前端类":"Front-end class","加 references/":"Add references/","加 scripts/":"Add scripts/","匹配任务时":"On match","区分触发错误、流程漏步、工具误用、验收不清。":"Distinguish between trigger errors, missed steps in the process, misuse of tools, and unclear acceptance.","区别":"Concepts","压缩复杂度":"Compression complexity","原则：先判断失败属于哪一类，再改最小合适位置，不要把正文越写越臃肿。":"Principle: classify the failure, then change the smallest right place.","原理":"Loading","原理：Progressive Disclosure":"Principle: Progressive Disclosure","参考草稿":"Reference draft","反例能防止 skill 过宽，避免关键词相似但任务目标不同的请求误触发。":"Counterexamples can prevent skills from being too broad and avoid false triggering of requests with similar keywords but different task goals.","发现":"Discover","只因为一次失败，就写一条很窄的特判。":"Just because of one failure, write a very narrow special judgment.","只有从路径或 diff 能明显看出 scope 时才写 scope。":"Only write scope if it is obvious from the path or diff.","只有对照后才能判断 skill 是否真的提升稳定性；单纯增加说明层不等于质量提升。":"Only after comparison can we judge whether the skill really improves stability; simply adding a description layer does not equal an improvement in quality.","只有触发边界、权限风险、证据来源、工具选择、输出格式和停止条件这类关键分支，才值得写成路由。":"Only critical branches such as trigger boundaries, permission risks, evidence sources, tool selection, output formats, and stopping conditions are worth writing down routes.","可复用、可审查、可迭代":"Reusable, reviewable, iterative","可审核地生成":"Auditable generation","可直接运行":"Runnable directly","可选资源目录":"Optional resources","司南 COMPASS 仓库":"COMPASS Repository","司南 COMPASS 技能生态 DAG":"COMPASS skills ecosystem DAG","司南用户画像与需求对齐流程":"COMPASS user profile and requirement-alignment flow","同时补充反例，说明哪些请求不该触发。":"At the same time, add counterexamples to explain which requests should not be triggered.","同类任务历史：和你的真实工作流最接近。":"Similar task history: closest to your real workflow.","否":"no","启动时":"Startup","告诉 agent":"Tells the agent","回到顶部":"Back to top","团队类":"Team class","在本地保存可审计、可纠错、可撤回的协作画像。画像只记录用户确认或低敏的协作信号；secret、token、密码、私钥和验证码不进入画像。":"It stores a local collaboration profile that can be audited, corrected, and revoked. The profile records only user-confirmed or low-sensitivity collaboration signals; secrets, tokens, passwords, private keys, and verification codes stay out.","基于成熟模式定制":"Customized based on mature models","处理结果":"Processing results","复用已有 skill":"Reuse existing skills","多跑真实任务":"Run more real tasks","好 skill = 真实执行轨迹 + 人工审核 workflow + 明确触发边界 + 可验证反馈环":"Good skill = real trace + reviewed workflow + clear trigger + verifiable feedback","好分支有通用触发条件和明确反例。它解决一类问题，不把一次失败固化成狭窄特判。":"A good branch has a general trigger and clear counterexamples. It handles a class of problems without freezing one failure into a narrow special case.","好的做法":"good practice","好的触发测试要包含 should-trigger 和 should-not-trigger，尤其是近邻负例。":"Good trigger tests include should-trigger and should-not-trigger, especially negative neighbor examples.","如何判断一个已有 skill 值不值得安装？":"How to determine whether an existing skill is worth installing?","如何编写 Skills":"How to Write Skills","如果 `description` 写得模糊，skill 再强也可能不会被正确触发。":"If the `description` is written vaguely, the skill may not be triggered correctly no matter how strong it is.","如果团队认为有必要，再把给 AI 读取的核心说明转成英文；官方资料强调清晰、具体、可触发。":"If the team deems it necessary, the core instructions for AI reading will be converted into English; the official information emphasizes clarity, specificity, and triggerability.","如果模型本来就能稳定完成，普通 prompt 更轻。":"If the model can be completed stably, the normal prompt is lighter.","如果没有 staged diff，必须说明无法生成，不要编造。":"If there is no staged diff, it must be explained that it cannot be generated, don't make it up.","学习路径":"Learning path","安装前完整审计":"Complete pre-installation audit","安装前自己读完，或让 AI 辅助审计所有说明、脚本、依赖、网络访问和隐私风险。":"Read it yourself before installing, or let the AI ​​assist you in auditing all instructions, scripts, dependencies, network access, and privacy risks.","完成一个具体目标":"Complete one concrete goal","完整跑通":"Full run","完整阅读 `SKILL.md`、references、scripts、assets 和依赖说明。":"Read `SKILL.md`, references, scripts, assets and dependency notes in full.","完整阅读和安全检查":"Full reading and safety check","官方 eval 建议用真实 prompt、trace 和检查项防回归；单个失败不要直接写成狭窄特判。":"Official eval recommends using real prompts, traces, and check items to prevent regressions; do not write a narrow special judgment directly for a single failure.","官方和一手仓库可作为高置信参考；GitHub star 只能作为发现线索，不能当作质量证明。":"Official and first-hand repositories are high-confidence references; GitHub stars are only discovery signals, not proof of quality.","官方和高质量仓库":"Official and high-quality repositories","官方文档支持用 `$skill-creator` 起步；但草稿不等于可用 skill，后面必须审核和验证。":"The official documentation supports starting with `$skill-creator`; however, the draft is not equal to the available skill and must be reviewed and verified later.","官方示例：优先级最高，规范最可信。":"Official example: highest priority, most credible specification.","官方资料强调清晰、具体、可触发，没有把英文写成硬性标准。":"Official information emphasizes clarity, specificity, and triggerability, and does not set English as a rigid standard.","实际外部能力接口":"actual external capability interface","审查副作用":"Review side effects","审核后再生成完整 skill 内容，必要时先保留中文。":"After review, the complete skill content will be generated, and the Chinese version will be retained if necessary.","审核框架":"Review outline","审核通过后再生成 `description`、正文、references 和 scripts。":"After passing the review, `description`, body, references and scripts will be generated.","审计通过，任务匹配，先在低风险环境试用。":"After passing the audit, the tasks are matched, and the system is first tried in a low-risk environment.","工具顺序、输出格式":"Tool order, output format","工程类":"Engineering","差的做法":"poor practice","常见 Skills 类型":"Common skills Types","并交付可验证结果":"Deliver a verifiable result","并行调研、独立验证、对抗审查":"Parallel research, independent verification, adversarial review","弃":"abandoned","引用、检查测试目录，再决定测试范围。":"references and inspect test directories before choosing the test scope.","弱分支如“看起来风险不高”“上下文似乎足够”不稳；强分支应绑定具体动作、文件、schema、测试、diff、用户确认或外部证据。":"Weak branches such as \"the risk does not seem high\" or \"the context seems sufficient\" are unstable; strong branches should be bound to specific actions, files, schema, tests, diffs, user confirmation or external evidence.","弱验证路由改成强验证路由":"Change weak authentication route to strong authentication route","当用户要求“写、润色、选择 commit message”时触发。":"Triggered when the user asks to \"write, polish, and select a commit message.\"","当需求模糊、成本高或有安全风险时，把想法整理成可执行需求：目标、范围、证据、验收标准和风险边界都写清楚。它先识别必须由用户决定的关键分叉，可查事实由 agent 自己从材料中补足。":"When a request is ambiguous, costly, or risky, it turns the idea into executable requirements: goal, scope, evidence, acceptance criteria, and risk boundaries. It identifies the decisions only the user can make; discoverable facts are filled in by the agent from the available material.","很多场景下，skill 不必从空白文件手写，可以先用 `skill-creator` 这类 creator skill 生成结构化草稿。注意：AI 生成只解决“起草成本”，不证明 skill 准确、可用或符合要求；人的工作重点是提供真实输入、审核逻辑、控制边界并验证效果。":"In many scenarios, the skill does not need to be handwritten from a blank file. You can first use a creator skill such as `skill-creator` to generate a structured draft. Note: AI generation only solves the \"drafting cost\" and does not prove that the skill is accurate, usable or meets the requirements; the focus of human work is to provide real input, review logic, control boundaries and verify effects.","必要分支收窄，但避免过拟合":"Narrow necessary branches but avoid overfitting","必须遵守的流程和安全边界。":"Processes and security boundaries that must be adhered to.","怎么生成？":"How to generate?","怎么验证？":"How to verify?","所以正文不负责“提醒触发”。":"The body does not trigger itself.","打开 GitHub 仓库 dongshuyan/compass-skills":"Open the GitHub repository dongshuyan/compass-skills","执行中":"During execution","把个人经验校准成可教学规则":"Calibrate personal experience into teachable rules","把共性写成原则、决策树或脚本，不写狭窄特判。":"Write commonalities into principles, decision trees, or scripts instead of narrow and specific judgments.","把共性提炼成触发边界、决策树、验证步骤或脚本。":"Distill commonalities into trigger boundaries, decision trees, validation steps, or scripts.","把当前 session 分解成任务森林 / DAG，并记录每个任务的目标、进度、偏差、依赖、待办和决策。确认 proposal 后生成树视图、DAG 视图、任务详情卡和推荐队列。":"It decomposes the current session into a task forest / DAG and records each task’s goal, progress, deviations, dependencies, todos, and decisions. After proposal confirmation, it generates tree views, DAG views, task detail cards, and a recommended queue.","把某个文件名、某个临时路径、某个异常状态写死。":"Write down a certain file name, a certain temporary path, and a certain abnormal status.","把流程整理成 `SKILL.md` 的可执行步骤。":"Organize the process into executable steps in `SKILL.md`.","把长资料拆到 `references/`，把重复操作建议脚本化。":"Split long data into `references/` and script repeated operation suggestions.","抽象边界清楚，避免微型拆分":"Keep abstract boundaries clear and avoid micro-splits","按任务临时使用":"Temporary use according to tasks","按优先级检查":"Check by priority","按场景读取":"Load by branch","按需读取和执行":"Load and run","排序":"sort","推荐提炼顺序":"Recommended extraction order","推荐请求方式":"Recommendation request method","提供可调用能力":"Callable capability","提供独立执行上下文":"Isolated execution context","提供真实任务记录、示例输入、输出样例、失败案例、已有脚本或模板。":"Provide real task records, sample inputs, output samples, failure cases, existing scripts or templates.","提炼":"Distill","搜索 / 引用 / 证据":"Search / Quote / Evidence","改":"change","改 SKILL.md":"Edit SKILL.md","改 description":"Edit description","教程后续会把“经验”写成经过来源校准的推荐流程：能被官方或一手实践支持的强化，缺少标准依据的加限定。":"Later in the tutorial, \"experience\" will be written as a recommended process calibrated by the source: it can be strengthened by official or first-hand practical support, and it can be limited if it lacks standard basis.","教程核心事实优先来自官方文档、Agent Skills 规范和一手仓库。社区文章只作为表达参考，不作为规范依据。":"The tutorial’s core facts come first from official documentation, the Agent Skills specification, and first-hand repositories. Community articles are used only as expression references, not as normative evidence.","文/A":"文/A","文件类":"File class","方向错误会更早暴露。反馈越近，后续执行建立在错误目标上的概率越低。":"Wrong direction surfaces earlier. Shorter feedback loops lower the chance of building on the wrong goal.","方法":"method","无论是复用别人的 skill，还是让 AI 生成自己的 skill，都要看懂它的文件结构。把所有信息塞进一个 `SKILL.md` 会污染上下文；好的 skill 会把“每次都要看”和“特定分支才要看”的内容分层。":"Whether you are reusing someone else's skill or letting AI generate your own skill, you must understand its file structure. Cramming all the information into one SKILL.md pollutes the context; a good skill will layer in content that needs to be seen every time and content that needs to be seen only in specific branches.","日报 / PPT / 长文":"Daily / PPT / long article","早期至少保留 2-3 个不同输入；准备复用或分享时扩展到 10-20 个 prompt。":"Keep at least 2-3 different inputs early on; expand to 10-20 prompts when you're ready to reuse or share.","明确停止条件、输出契约和基础结构验证。":"Explicit stopping conditions, output contracts, and infrastructure verification.","明确哪些请求不应该触发，避免 skill 过宽。":"Make it clear which requests should not be triggered to avoid the skill being too wide.","是":"yes","是否先审核可读 workflow？":"Do you want to review the readable workflow first?","是否先找过高质量已有 skill？":"Have you looked for high-quality existing skills first?","是否先跑通过真实链路？":"Should it run through the real link first?","是否区分 AI 读取语言和用户输出语言？":"Is there a distinction between AI reading language and user output language?","是否只保留必要判断和路由？":"Are only necessary judgments and routing retained?","是否可复用":"Is it reusable?","是否携带文件":"Whether to carry documents","是否有固定验收标准？":"Are there fixed acceptance criteria?","是否有真实 prompt 和负例？":"Are there real prompts and negative examples?","是否比普通 prompt 更稳定？":"Is it more stable than normal prompt?","是否比较 with / without？":"Compare with / without?","是否测试应该触发和不该触发的请求？":"Are you testing what requests should and shouldn't fire?","是否避免只为单例失败加规则？":"Should we avoid adding rules only for singleton failures?","最小 Skill 文件结构":"Minimal skill file structure","最小 skill 只有一个文件夹和一个 `SKILL.md`。`name` 是身份，`description` 是触发入口，正文是触发后才会读取的操作说明。":"The minimal skill has only one folder and a `SKILL.md`. `name` is the identity, `description` is the trigger entry, and the text is the operation description that will be read after the trigger.","最小模型":"Minimum model","最小版只需要 SKILL.md。":"Minimum: SKILL.md only.","最小示例":"Minimal example","最符合要求的 skill 是：从真实反复任务中提炼出来，`description` 触发边界准确，`SKILL.md` 保留连续可读的核心流程和少量强路由，长资料放 `references/`，重复易错动作放 `scripts/`，并且用正例、反例、工具验证和 with/without 测试证明它确实让任务更稳定的 skill。":"The skills that best meet the requirements are: extracted from real repeated tasks, `description` trigger boundaries are accurate, `SKILL.md` retains continuously readable core processes and a small number of strong routes, long data is placed in `references/`, repeated error-prone actions are placed in `scripts/`, and it is proved by positive examples, counterexamples, tool verification and with/without testing that it indeed makes the task more stable.","最终输出要复用的模板和素材。":"Finally output the templates and materials to be reused.","最适合做 skill 的对象是会反复出现、容易出错、带固定验收标准的工作流。":"The most suitable objects for skills are workflows that are recurring, error-prone, and have fixed acceptance criteria.","有安全停止条件":"There are safe stopping conditions","有明确不触发条件和反例":"There are clear non-triggering conditions and counterexamples","有私有上下文的任务":"Tasks with private context","有稳定输出格式和验收标准":"Have stable output format and acceptance criteria","本教程文件为单文件静态 HTML，可直接在浏览器中打开。资料来源列在文末，重点信息图使用 HTML/SVG 原生文字绘制，保证中文内容可读、可搜索、可缩放。":"This tutorial is a single static HTML file that can be opened directly in a browser. Sources are listed at the end. Key diagrams use native HTML/SVG text so the content remains readable, searchable, and scalable.","机器能判的交给工具":"What the machine can judge is left to the tools","机器能判的交给机器":"Whatever the machine can judge, leave it to the machine","条件":"condition","构成":"Anatomy","核心执行路径要连续可读；只有内容有独立职责边界、独立读取条件、稳定复用价值、机器验证价值，或会显著拖长主流程时，才拆到 `references/`、`scripts/`、`evals/` 或 companion skill。":"The core execution path must be continuously readable; only when the content has independent responsibility boundaries, independent reading conditions, stable reuse value, machine verification value, or will significantly lengthen the main process, it should be split into `references/`, `scripts/`, `evals/` or companion skill.","核心流程、决策树、输出模板":"Core flow, decisions, templates","核心流程放 `SKILL.md`；API、schema、长规范放 `references/`；确定性重复动作放 `scripts/`；模板素材放 `assets/`。":"Put the core process in `SKILL.md`; put API, schema, and long specifications in `references/`; put deterministic repetitive actions in `scripts/`; put template materials in `assets/`.","核心规则要短、明确、可触发。英文化是可选实践。":"Core rules should be short, clear, and triggerable. English literacy is an optional practice.","核心路径连续可读，资源按职责边界和读取条件拆分。":"The core path is continuously readable, and resources are split according to responsibility boundaries and read conditions.","根据审核和验证结果持续重写，保留可审查的迭代过程。":"Continuously rewrite based on review and validation results, maintaining an auditable iterative process.","根本原因":"root cause","格式、schema、语法、测试结果属于可验证事实。工具检查比模型主观判断稳定。":"Format, schema, syntax, and test results are verifiable facts. Tool checks are more stable than subjective judgment.","检查一条新分支是否值得写进 skill：它能否被快速验证，是否有明确反例，是否能被用户、脚本或外部证据纠偏，是否解决一类稳定问题。":"Check whether a new branch is worth adding to the skill: whether it can be quickly verified, whether there are clear counterexamples, whether it can be corrected by users, scripts, or external evidence, and whether it solves a type of stability problem.","检查是否有硬编码密钥、私有路径、上传日志、外部回传等隐私风险。":"Check for privacy risks such as hardcoded keys, private paths, upload logs, external postbacks, etc.","检查脚本是否会删除文件、改全局配置、联网、读取凭据或自动执行危险命令。":"Check whether the script deletes files, changes global configurations, connects to the Internet, reads credentials, or automates dangerous commands.","概念":"concept","概念对比表":"Concept comparison table","模板、图片、字体、样例":"Templates, media, samples","正文只写触发后才需要知道的执行方法。":"The main text only writes the execution methods that need to be known after triggering.","正文适合放什么":"What is suitable for the main text?","每个 skill 只暴露一点索引。":"Expose a small index only.","每个 subject 不超过 72 个字符。":"Each subject cannot exceed 72 characters.","每个模型判断都会增加误判概率。只有触发边界、权限风险、证据来源、工具选择、输出格式、停止条件这类分支值得进入热路径。":"Each model judgment increases the probability of misjudgment. Only branches such as trigger boundaries, permission risks, evidence sources, tool selection, output formats, and stopping conditions are worth entering the hot path.","每次触发都会读正文；正文越臃肿，越容易稀释关键规则并占用上下文。":"The text is read on every trigger; the more bloated the text, the easier it is to dilute key rules and take up context.","每次触发都要读":"Always loaded","每次都要提醒 agent：先读文件、再跑验证、最后输出固定格式。":"The agent must be reminded every time: read the file first, then run verification, and finally output a fixed format.","每次都要纠正：触发条件、边界、常见错误和验收标准。":"Correct Every Time: Triggers, Boundaries, Common Mistakes, and Acceptance Criteria.","每次都要重复写：哪些工具可以用，哪些资料必须先看。":"You have to write repeatedly every time: which tools can be used and which materials must be read first.","比较有 skill 和没 skill 时输出稳定性是否真的提高。":"Comparing whether the output stability is really improved with skill and without skill.","沉淀为一个可复用能力包":"Precipitated into a reusable capability package","流程、边界、关键示例":"Flow, boundaries, examples","流程漏步":"Missing step","测试与迭代":"Test and iterate","测试迭代":"Test and iterate","独立上下文执行者":"independent context executor","现代写法：让 AI 生成 Skill 草稿":"Modern writing: let AI generate skill drafts","生成":"generate","生成草稿":"Draft skill","生成触发描述、不触发条件、停止条件和输出模板。":"Generate trigger descriptions, non-trigger conditions, stop conditions, and output templates.","用 `$skill-creator` 或同类 creator skill 生成目录、`SKILL.md`、references、scripts 建议。":"Use `$skill-creator` or similar creator skill to generate directory, `SKILL.md`, references and scripts suggestions.","用 `skill-creator` 时，人和 AI 分别负责什么？":"What are the responsibilities of humans and AI when using `skill-creator`?","用 progressive disclosure 组织资源":"Organize resources with progressive disclosure","用于最终产物":"For final outputs","用户任务":"User task","用户偏好没有公共真值。让用户确认，比模型根据上下文猜测更可靠。":"User preferences have no public ground truth. Confirmation is more reliable than inference from context.","用户只是问 Conventional Commit 规范时，不一定要触发这个 skill。":"This skill does not necessarily need to be triggered when the user simply asks for Conventional Commit specifications.","用户拥有的判断交给用户":"Judgment owned by the user is left to the user","用户画像与需求对齐的协作方式。":"How the user profile and requirement alignment work together.","用户能确认 agent 的理解没有偏离。":"The user can confirm that the agent’s understanding has not drifted.","用户能说清自己的目标和约束。":"The user can state their goal and constraints clearly.","用执行替换路由":"Replace route with execute","用真实 prompt 和负例验证触发":"Verify triggering with real prompt and negative examples","用真实 prompt、对照和 holdout 防止纸面改进。":"Prevent paper improvements with real prompts, controls, and holdouts.","由任务决定":"Determined by task","直接减少不必要分支":"Directly reduce unnecessary branches","直接移除“上下文是否足够”这个弱验证分支。牺牲少量灵活性，换来更稳定的主流程。":"Remove the weak \"context is enough\" branch. The flow becomes less flexible but more stable.","真实 prompt":"Real prompts","真实 trace 能暴露工具顺序、失败恢复、验证命令和停止条件；凭空设计容易写成抽象口号。":"Real traces can expose tool sequences, failure recovery, verification commands and stop conditions; it is easy to write abstract slogans out of thin air.","真实任务":"Real task","真实任务比抽象“最佳实践”更能暴露 skill 需要处理的边界。":"Real tasks better expose the boundaries that a skill needs to address than abstract \"best practices\".","真实文件":"Real files","真实环境":"Real environment","真实素材：任务记录、输入样例、失败案例、已有脚本。":"Real materials: task records, input samples, failure cases, existing scripts.","真实轨迹 → 可审核框架 → Skill 草稿":"Real track → Auditable framework → skill draft","真实链路提炼":"Real link extraction","真实链路进入 skill 前要先压缩。完整执行里可能有很多步骤，正文只保留会改变执行路径的判断。":"Real links must be compressed before entering the skill. There may be many steps in the complete execution, and the text only retains the judgments that will change the execution path.","真实验证":"Real checks","知事":"Track","知人":"Profile","知向":"Align","短模板、短示例、关键 gotchas。":"Short templates, short examples, key gotchas.","短而明确":"Short and clear","研究类":"Research","确定性、重复、易错流程":"Deterministic repeat actions","确认触发条件、停止条件、示例和验证方式没有明显错误或 bug。":"Confirm that there are no obvious errors or bugs in trigger conditions, stop conditions, examples, and verification methods.","稳定 Skill 的质量门槛":"Quality Gates for Stable Skills","稳定 skill 依赖少数关键规则：触发准确、核心路径连续、结果可验证、反例能约束边界。下一节继续展开路由设计：把弱判断从热路径移出，把必要判断接到用户、脚本、测试、schema、diff 或外部证据上。形式底线：`name` 用小写连字符，短且可识别；`description` 准确、具体、不过长；`SKILL.md` 有 YAML frontmatter 和正文；资源目录只放有独立职责边界、读取条件、执行用途或产物用途的内容；`agents/openai.yaml` 承载 UI 元数据、默认 prompt 和工具依赖；skill 的触发设计放在 `description` 和 `SKILL.md`。":"Stable skills rely on a few key rules: accurate triggering, continuous core paths, verifiable results, and counterexamples to constrain boundaries. The next section continues to expand routing design: move weak judgments away from hot paths and connect necessary judgments to users, scripts, tests, schema, diff, or external evidence. Bottom line of form: `name` uses lowercase hyphens, is short and recognizable; `description` is accurate, specific, and not too long; `SKILL.md` has YAML frontmatter and body; the resource directory only contains content with independent responsibility boundaries, read conditions, execution purposes or product purposes; `agents/openai.yaml` carries UI metadata, default prompts and tool dependencies; skill trigger design is placed in `description` and `SKILL.md`.","第三方或脚本型 skill 要审查依赖、网络、凭据和写入边界。":"Third-party or scripted skills review dependencies, networking, credentials, and write boundaries.","练习":"Practice","练习：用 AI 起草第一个最小 Skill":"Exercise: Drafting your first minimal skill with AI","经验可用，但必须标注证据级别":"Experience is available but must be marked with level of evidence","结构":"structure","结构与资源":"structure and resources","结构好但边界不同，删除风险内容后定制自己的版本。":"Well structured but with different boundaries, customize your own version after removing risky content.","结果：一类任务整体更稳定":"Result: One type of tasks is more stable overall","结果：这个案例好了，其他任务更容易坏":"Result: This case is good, other tasks are easier to break","给 skill-creator":"for skill-creator","给模型读的流程、触发条件、停止条件可以英文，也可以用团队更容易审核的语言。":"The process, trigger conditions, and stop conditions read to the model can be in English or in a language that is easier for the team to review.","缩短反馈距离":"Shorten feedback distance","能复用也要先审计。自己写或改 skill 的价值，不只是复用结构，更是把隐私、安全、触发边界和验收标准控制在自己能负责的范围内。":"Before it can be reused, it must be audited first. The value of writing or modifying skills yourself is not only to reuse the structure, but also to control privacy, security, trigger boundaries, and acceptance criteria within the scope of your own responsibility.","能靠上下文自然判断的细节，放进示例、reference 或脚本；不要把它们堆成连续路由。":"Put details that can be determined naturally from context into examples, references, or scripts; don't pile them into continuous routes.","脚本可执行，不必全文塞上下文。":"Run scripts; keep context small.","脚本比每次重写代码更稳定，也能被测试和复用。":"Scripts are more stable than rewriting code each time and can be tested and reused.","自己撰写 skill 时，更可靠的素材来自已经跑通过的真实链路：工作过的线程、runbook、测试命令、评审规则、失败修复记录。任务跑通后，再从真实过程里提炼 skill。":"When writing your own skills, the more reliable materials come from real links that have been run: working threads, runbooks, test commands, review rules, and failure repair records. After the task is completed, skills can be refined from the real process.","至少跑 `quick_validate.py`，确保 `SKILL.md`、frontmatter、命名、description 基本合法。":"At least run `quick_validate.py` to ensure that `SKILL.md`, frontmatter, naming, and description are basically legal.","装":"Pack","规则越加越多，但触发范围越来越混乱。":"There are more and more rules, but the triggering scope is getting more and more confusing.","规范化":"Normalize","触发不准":"Wrong trigger","触发模糊、脚本不可审、隐私或安全边界不清。":"Triggers are ambiguous, scripts are not auditable, and privacy or security boundaries are unclear.","触发边界":"trigger boundary","让 AI 先提炼可审核的 workflow 框架，再写最终 skill。":"Let AI refine the auditable workflow framework first, and then write the final skill.","让 AI 在真实文件、真实环境、真实目标下完整完成一次任务。":"Let AI complete a complete task under real files, real environment, and real goals.","让 skill 准确触发，并用反例约束误触发。":"Let the skill fire accurately and use counterexamples to constrain false firings.","记录失败类型":"Logging failure type","记录输入假设、工具顺序、失败恢复、验证命令和输出格式。":"Document input assumptions, tool sequences, failure recovery, verification commands, and output formats.","设计 / 截图 / 响应式":"Design / Screenshot / Responsive","设计目标":"design goals","语言策略":"language strategy","语言策略可选":"Language optional","说明这个 skill 要解决哪类重复任务，什么时候应该触发，什么时候不应该触发。":"Explain what type of repetitive tasks this skill is intended to solve, when it should be triggered, and when it should not be triggered.","读这个示例时看三件事":"Three things to look for when reading this example","课程信息":"Course information","质量":"Quality","资料来源和取舍":"Sources and Tradeoffs","资源拆分":"Split resources","资源目录适合放什么":"What is suitable for the resource directory?","路由":"Routing","路由与判断":"routing and judgment","路由少，只保留关键分支":"Few routes, only key branches are kept","路由就是让 agent 选择分支。分支本身是正常工程结构，真正的风险来自弱验证和延迟反馈。写 skill 时要减少弱验证分支，把必要分支接到用户确认、脚本、测试、schema、diff 或外部证据。":"Routing is to let the agent choose a branch. Branches themselves are normal engineering constructs, the real risk comes from weak validation and delayed feedback. When writing skills, reduce weak verification branches and connect necessary branches to user confirmation, scripts, tests, schema, diff or external evidence.","路由强，可被验证":"The route is strong and can be verified","路由的主要风险来自“弱验证 + 延迟反馈”；直接执行更稳，是因为路径已定、动作更局部、结果更容易被外部证据验证。":"The main risk of routing comes from \"weak verification + delayed feedback\"; direct execution is more stable because the path is determined, the actions are more local, and the results are easier to be verified by external evidence.","路由要少、强、可验证":"Routes Should Be Few, Strong, and Verifiable","路由风险根因":"Routing Risk Root Causes","输入来源必须是当前仓库的 staged git diff。":"The input source must be the staged git diff of the current repository.","输出 3 个 Conventional Commit 候选。":"Output 3 Conventional Commit candidates.","输出模板、字段、长度、文件路径、测试命令让结果可检查，减少“看起来完成了”的假完成。":"Outputting templates, fields, lengths, file paths, and test commands makes results checkable, reducing false “looks done” completions.","边界、gotchas、验收":"Boundaries, gotchas, checks","边界和停止条件":"Boundary and stopping conditions","过拟合式修改":"Overfitting formula modification","运行 YAML parser、schema check、":"Run a YAML parser, schema check,","这三个 skills 互相配合：`$user-profile-keeper` 让 agent 知道“你是谁、怎么协作”，`$task-forest` 让 agent 知道“任务在哪里、做到哪里、为什么做”，`$task-clarifier` 让 agent 在行动前确认“用户的需求到底是什么”。它们都围绕本地文件工作，不上传用户数据，也不读取 credential、浏览器 cookie 或远程会话。":"The three skills work together: `$user-profile-keeper` tells the agent who you are and how to collaborate; `$task-forest` tells the agent where the task fits, how far it has progressed, and why it exists; `$task-clarifier` confirms what the user actually needs before action. They work on local files, do not upload user data, and do not read credentials, browser cookies, or remote sessions.","这个练习的目标是学会把“功能要求、触发边界、输出格式、停止条件和 description”说清楚，再让 `$skill-creator` 起草。":"The goal of this exercise is to learn to clearly state the \"functional requirements, trigger boundaries, output format, stop conditions and description\" and then let `$skill-creator` draft it.","这些概念经常被混在一起。最简单的判断：skill 是“如何完成一类任务”的可复用知识和流程，tool/MCP 是“能调用什么”，subagent 是“谁来做”。":"These concepts are often conflated. The simplest judgment: skill is the reusable knowledge and process of \"how to complete a type of task\", tool/MCP is \"what can be called\", and subagent is \"who does it\".","这张图强调职责分工：人给真实边界和验收，AI 做结构化生成，最后仍由人审核和测试逻辑是否成立。":"This picture emphasizes the division of responsibilities: humans give real boundaries and acceptance, AI does structured generation, and finally humans review and test whether the logic is established.","这张图把“从经验到 skill”的中间层画出来：先审核 workflow，再进入完整 skill 生成；中文框架和英文化只是可选语言策略。":"This picture draws the middle layer of \"from experience to skill\": first review the workflow, and then enter the complete skill generation; Chinese framework and English culture are only optional language strategies.","这张图把“找高质量 skill”拆成来源、安装前审计和处理结果：没有读完和审完，不要安装。":"This picture breaks down \"finding high-quality skills\" into sources, pre-installation audits, and processing results: Do not install until you have finished reading and reviewing them.","这张图把“迭代优化”和“过拟合修补”区分开：只有能改善一类任务，并经真实 prompt 或 trace 验证的规则，才适合写进 skill。":"This diagram distinguishes \"iterative optimization\" and \"over-fitting repair\": only rules that can improve a type of task and have been verified by real prompts or traces are suitable for writing into skills.","这张清单把“发现、真实链路、AI 生成、description 审核、触发测试、迭代”串成一个完整闭环。":"This list strings \"discovery, real links, AI generation, description review, triggered testing, and iteration\" into a complete closed loop.","这时才加载完整操作说明。":"Full instructions load here.","这次反馈是什么？":"What changed?","迭代":"Iterate","迭代 skill 时，什么是过拟合？什么是通用改进？":"What is overfitting when iterating over a skill? What are universal improvements?","迭代但不过拟合":"Iterate but not fit","迭代时提炼共性，避免单例特判":"Extract common features during iteration to avoid single-case special judgments","迭代时要改对位置：触发问题改 description，稳定操作脚本化，长资料放 reference。":"When iterating, you need to change the correct position: change the description of the triggering problem, script the stable operation, and put long data in the reference.","适合写":"suitable for writing","适合封装 UI 标准、浏览器验证、截图检查和常见布局风险。":"Perfect for encapsulating UI standards, browser validation, screenshot checking, and common layout risks.","适合封装团队偏好、输出格式、角色分工和历史教训。":"Suitable for encapsulating team preferences, output formats, role divisions, and historical lessons.","适合封装工具选择、格式坑、渲染检查和模板复用。":"Suitable for encapsulation tool selection, format pit, rendering inspection and template reuse.","适合封装日志读取顺序、审批边界、验证命令和停止条件。":"Suitable for encapsulating log reading order, approval boundaries, verification commands and stop conditions.","适合封装来源优先级、过滤标准、引用格式和不确定性标注。":"Suitable for encapsulating source prioritization, filtering criteria, citation formats and uncertainty annotations.","适合封装选题、素材整理、风格统一、发布前检查。":"It is suitable for encapsulating topic selection, material organization, style unification, and pre-release inspection.","选择路径的决策树。":"Decision tree for selecting paths.","选题与素材":"Topic selection and materials","选题原则：高频、易错、有固定资源、有验收标准，四个条件满足得越多，越值得做成 skill。":"Principles for topic selection: high frequency, error-prone, fixed resources, and acceptance criteria. The more these four conditions are met, the more worthy it is of becoming a skill.","通常否":"Usually no","通用改进式修改":"General improvement modification","通过基础结构验证":"Verified by infrastructure","避免过拟合的判断：如果一条规则只能解释一次失败，而且会让其他任务更难做，先不要写进 skill；先把它放进待观察记录。":"Avoid over-fitting judgment: If a rule can only explain one failure and will make other tasks more difficult to do, don't write it into the skill first; put it into the observation record first.","重复且易错的操作脚本化":"Scripting of repetitive and error-prone operations","重复写错的脚本和验证器。":"Repeatedly writing wrong scripts and validators.","重复出现的工作流":"recurring workflow","重复找资料":"Repeat lookup","重复提示":"Repeat prompt","重复易错":"Repeated error","重复纠错":"Repeat correction","重点看触发边界、执行顺序、安全停止条件、是否过度宽泛，并用真实 prompt 跑一次。":"Focus on the trigger boundary, execution sequence, safe stop conditions, whether it is too broad, and run it with a real prompt.","长 pipeline 会把每个判断点都变成新的失败点；一次误判进入错误分支，后面的步骤会继续放大偏差。":"A long pipeline will turn each judgment point into a new failure point; once a misjudgment enters the wrong branch, subsequent steps will continue to amplify the deviation.","长文档、API 细节、schema、参考表。":"Long documentation, API details, schema, reference tables.","长资料缺失":"Missing long docs","问用户优先级：耐用、轻便、颜值、价格、保修；给一个推荐答案，等待确认。":"Ask for priorities: durability, weight, appearance, price, warranty; provide one recommended answer and wait for confirmation.","需求对齐验收标准":"Requirement-alignment acceptance criteria","需要哪个分支，就读哪个文件。":"Load only the needed branch.","面向用户的交互、输出格式、报告语言要单独明确，例如“默认中文输出”。":"User-oriented interaction, output format, and report language must be clearly specified separately, such as \"default Chinese output\".","页面目录":"Page contents","顶部章节导航":"Top section navigation","项目/全局工作契约":"Project/Global Work Contract","题目要求":"Question requirements","风险与验收":"Risk and Acceptance","风险边界：哪些动作必须先问，哪些不能做。":"Risk boundaries: Which actions must be asked first and which cannot be done.","验收标准：成功输出长什么样，必须验证什么。":"Acceptance criteria: what successful output looks like and what must be verified.","高 star 仓库：说明有人关注，但仍需审查。":"High-star repositories: they show attention, but still need review.","高，但偏长期规则":"High, but biased toward long-term rules","高，偏操作能力":"High, partial operational ability","高，可触发、可迭代":"High, triggerable, iterable","仓库安装":"Repo install","一手仓库":"first-hand repositories","高 star 仓库":"High-star repos"}</script>
+  <script type="application/json" id="i18n-en">{"$skill-creator 请根据下面这类真实任务，先提炼 workflow，再生成一个可安装的 skill。 要求： 1. 先输出中文 workflow 框架让我审核。 2. 审核通过后再生成完整 skill 内容。 3. 如果团队认为更利于模型理解，可把给模型读取的核心说明转成英文。 4. 无论 skill 内部说明用什么语言，与用户交互和最终输出默认保持中文。 5. 标出触发条件、不触发条件、安全停止条件和验证方式。 6. 生成后先用 2-3 个真实 prompt 手工试跑；准备分享前再扩展到 10-20 个测试 prompt。":"$skill-creator\nPlease extract the workflow from the real task below, then generate an installable skill.\n\nRequirements:\n1. First output a reviewable workflow outline.\n2. After review, generate the complete skill content.\n3. If it improves model comprehension, write the core model-facing instructions in English.\n4. Keep user-facing interaction and final output in the user's requested language.\n5. Mark trigger conditions, non-trigger conditions, safety stop conditions, and verification methods.\n6. After generation, test it manually with 2-3 real prompts; before sharing, expand to 10-20 test prompts.","0. 为什么需要":"0. Why skills","1. 最小模型":"1. Minimum model","1. 真实跑通":"1. Real run-through","1. 给目标":"1. Give goals","10. 迭代优化":"10. Iteration","11. 常见类型":"11. Common types","12 个递进模块":"12 progressive modules","12. 练习清单":"12. Practice checklist","13. 仓库安装":"13. Repo install","2. 发现复用":"2. Discover and reuse","2. 抽取轨迹":"2. Extract trajectories","2. 给素材":"2. Provide materials","3. 可审核框架":"3. Auditable Framework","3. 文件构成":"3. Anatomy","3. 让 AI 生成":"3. Let AI generate","30 分钟主线":"30-minute main path","4. 人来审核和验证":"4. People to review and verify","4. 加载原理":"4. Loading model","4. 生成 skill":"4. Generate skills","5. 概念对比":"5. Concepts","5. 规范化核心":"5. Standardized core","6 张重点信息图 + 7 张结构图":"6 key diagrams + 7 structure charts","6. AI 生成":"6. AI drafting","7. 真实链路":"7. Real workflow","8. 质量门槛":"8. Quality gates","9. 路由稳定":"9. Routing stability","AI 产出的是“可审查的 skill 草稿”。":"What the AI ​​produces is a “reviewable draft of the skill.”","AI 生成":"AI Drafting","AI 生成承担 Markdown 草稿整理；workflow 成立性、验证结果和风险边界由人审核。":"The AI ​​generation is responsible for organizing the Markdown draft; the validity of the workflow, verification results and risk boundaries are reviewed by humans.","AI 生成草稿":"AI generated draft","AI 负责生成":"AI is responsible for generating","API 文档、schema、规范":"API docs, schema, specs","CI / 安全 / 部署":"CI/Security/Deployment","COMPASS README 配图":"COMPASS README screenshots","COMPASS 三个核心 skills":"The three core COMPASS skills","COMPASS 提供三类本地 skills：用户画像、任务图谱和需求对齐。它把长任务、跨 session 协作和多 agent 工作从聊天记录里移到可查、可更新的本地结构中。":"COMPASS provides three local skills: user profiles, task graphs, and requirement alignment. It moves long-running tasks, cross-session collaboration, and multi-agent work out of chat history into local structures that can be inspected and updated.","Codex + Claude Code":"Codex + Claude Code","Codex 用这些信息判断是否相关。":"Codex uses it for matching.","DAG 关系视图：展示任务、依赖和当前推进位置。":"DAG view: tasks, dependencies, and current progress.","GitHub、Playwright、数据库":"GitHub, Playwright, database","OpenAI 文档说明 Codex 初始 skills 列表有上下文预算，skill 多时会优先缩短 description。":"OpenAI documentation states that the initial skills list in Codex has a context budget, and when there are many skills, the description will be shortened first.","P0 · 触发边界":"P0 · Trigger boundary","P0 · 路由与判断":"P0 · Routing and Judgment","P0 · 选题与素材":"P0 · Topic selection and materials","P1 · 结构与资源":"P1 · Structure and Resources","P1 · 风险与验收":"P1 · Risk and Acceptance","P2 · 测试与迭代":"P2 · Test and iterate","PDF、CI 修复、安全威胁建模":"PDF, CI remediation, security threat modeling","Progressive Disclosure 三层加载":"Progressive Disclosure three-layer loading","Runbook / 评审 / 文档":"Runbook / Review / Documentation","Skill 创建前检查清单":"skill pre-creation checklist","Skill 和 Prompt、Tool、MCP、Subagent 的区别":"The difference between skill and prompt, Tool, MCP and Subagent","Skill 在 Agent 工作中的位置":"The position of skill in agent’s work","Skill 很难一次做到很好。正确做法是多使用、记录偏差、提炼共性，再用真实 prompt 和执行 trace 验证改动；错误做法是每遇到一个孤立失败就加一条很窄的规则。":"skill is hard to do well all at once. The correct approach is to use more, record deviations, refine commonalities, and then use real prompts and execution traces to verify the changes; the wrong approach is to add a very narrow rule every time an isolated failure is encountered.","Skill 教 agent 如何可靠地使用工具，工具负责提供实际能力。":"skills teach agents how to use tools reliably, and tools are responsible for providing actual capabilities.","Skill 的关键设计是渐进披露：先暴露最小索引，任务匹配后再逐层加载，避免一开始把所有资料塞进上下文。":"The key design of skill is progressive disclosure: first expose the minimum index, and then load it layer by layer after the task is matched, to avoid stuffing all the information into the context at the beginning.","Skill 的最小可运行模型":"Minimal runnable model of skill","Skill 的构成：四类文件各司其职":"The composition of skill: four types of documents each perform their own duties","Skill 目录结构和职责":"skill directory structure and responsibilities","Skill 解决的是同一类工作每次都要重新解释、重新纠错、重新找资料的问题。当一个工作流反复出现、容易漏步骤、需要固定资源或脚本时，就值得沉淀成 skill。":"skill solves the problem of having to re-explain, re-correct, and re-find information every time for the same type of work. When a workflow occurs repeatedly, is easy to miss steps, and requires fixed resources or scripts, it is worth accumulating into a skill.","Skills 编写教程":"Skills Writing Tutorial","Star 只作线索":"Star only for clues","UI 元数据、默认 prompt、工具依赖":"UI metadata, prompt, tools","YAML、schema、lint、测试、diff、文件存在性属于可验证事实，工具检查比主观判断稳定。":"YAML, schema, lint, testing, diff, and file existence are verifiable facts, and tool inspection is more stable than subjective judgment.","`$task-forest` 导出的任务关系树和 session 更新流程。":"The task relationship tree and session update flow exported by `$task-forest`.","`SKILL.md` 保持短、核心、可执行":"`SKILL.md` keeps it short, core, and executable","`description` 同时写“做什么”和“什么时候用”。":"`description` writes both “what to do” and “when to use it”.","`description` 同时写清“做什么”和“什么时候用”":"`description` Write down “what to do” and “when to use it” at the same time","`description` 是否准确、简洁、具体？":"Is the `description` accurate, concise and specific?","`description` 是触发入口，正文只有触发后才会读。触发不准时，正文写得再好也用不上。":"`description` is the trigger entry, and the text will only be read after triggering. If the trigger is not timed, no matter how well the text is written, it will be of no use.","`description` 要准确、简洁、具体：说明任务对象、输入来源和触发场景。":"`description` should be accurate, concise and specific: describe the task object, input source and triggering scenario.","`name` 使用小写和连字符，短且可识别。":"Use lowercase and hyphens to make `name` short and recognizable.","agent 能复述可执行的范围和下一步。":"The agent can restate the executable scope and next step.","description 单独检查":"description is checked individually","if 可能影响很多文件: 跑全量测试 else: 跑局部测试":"if many files may be affected: run full tests else: run focused tests","if 当前上下文足够构建画像: 跳过问卷 else: 推荐问卷":"if current context is enough for a profile: skip questionnaire else: suggest questionnaire","if 我判断用户更重视耐用: 推荐 A":"if I infer the user values durability most: recommend A","if 我觉得 YAML 没问题: 结束":"if I think the YAML is fine: finish","if 操作包含 delete / publish / push / credentials / global config: 显式确认":"if operation includes delete / publish / push / credentials / global config: require explicit confirmation","if 用户问行李箱: 永远先问 20 寸还是 24 寸":"if the user asks about luggage: always ask 20-inch or 24-inch first","if 购买推荐缺少用途、预算或购买地区: 先问缺失的核心约束":"if a buying recommendation lacks purpose, budget, or purchase region: ask for the missing core constraints first","if 这个操作看起来风险不高: 直接执行":"if this operation seems low risk: execute directly","optional: 资源目录和 UI 元数据":"optional: resources + UI metadata","schema、模板、示例":"Schema, templates, examples","skill 的价值来自稳定复用。低频、纯主观、没有验收标准的任务，用普通 prompt 往往更合适。":"The value of a skill comes from stable reuse. For tasks that are low-frequency, purely subjective, and have no acceptance criteria, it is often more appropriate to use ordinary prompts.","task-forest live DAG 关系视图":"task-forest live DAG relationship view","task-forest 任务详情、目的、要求、证据和调度建议":"task-forest task details, purpose, requirements, evidence and scheduling suggestions","task-forest 导出的任务关系树和 session 更新流程":"Task relationship tree and session update process exported by task-forest","with/without 对照":"with/without comparison","“帮我写一个提交信息”":"\"Write a commit message for me\"","“把工作过的线程、runbook、测试命令转成 skill”有官方支持；中文 workflow 审核是适合中文团队的实践。":"\"Converting worked threads, runbooks, and test commands into skills\" has official support; Chinese workflow review is a practice suitable for Chinese teams.","“看起来风险不高”依赖感觉；具体动作词和作用域更容易被文件、命令和用户确认验证。":"\"Seems low risk\" relies on feel; concrete action words and scope can be verified through files, commands, and user confirmation.","、lint 或测试脚本。":", lint or test script.","一件事：让 agent 在触发后稳定做对":"One job: help the agent do the right thing after the skill triggers.","一句话：Skill 是给 agent 的可复用操作手册和工具包，用来减少重复解释、重复纠错和重复找资料。":"In a word: skill is a reusable operation manual and toolkit for agents to reduce repeated explanations, repeated error corrections and repeated information searches.","一次失败只能作为线索；进入 skill 的规则应覆盖一类稳定问题，并有反例或 holdout 检查。":"A failure can only be used as a clue; the rules entering the skill should cover a class of stable problems and have counterexamples or holdout checks.","一次性指令":"one-time instruction","一次性简单请求":"A one-time simple request","一键安装":"One-Command Install","三个 skills 的关系：先理解人，再维护事，最后在行动前对齐方向。":"How the three skills relate: understand the user, maintain the work, then align direction before action.","上下文预算：先少量索引，再按需展开；description 要前置关键词。":"Context budget: index first, expand on demand; front-load description keywords.","不必写":"No need to write","不必默认从空白文件开始写。更稳的路径是先看官方 skill、一手仓库和维护良好的社区案例；但安装前必须完整审计，确认没有错误、隐私泄露风险或安全风险，再决定安装、改造或放弃。":"You don't have to start writing from a blank file by default. A more stable path is to first look at official skills, first-hand warehouses, and well-maintained community cases; but before installation, a complete audit must be conducted to confirm that there are no errors, privacy leakage risks, or security risks before deciding to install, modify, or give up.","不要执行 `git commit`，只生成候选信息。":"Do not execute `git commit`, only generate candidate information.","不要直接上真实项目。先用样例或临时目录试跑，观察是否触发准确、步骤完整、输出稳定。":"Don’t go directly to real projects. First use the sample or temporary directory to test run and observe whether the trigger is accurate, the steps are complete, and the output is stable.","不负责教学流程":"Not responsible for the teaching process","为什么":"Why","为什么准确率更高":"Why is the accuracy higher?","为什么需要 Skills":"Why skills are needed","主要用途":"Main purpose","产品推荐里先搜索、筛选、排序，最后才让用户看结果。":"In product recommendations, search, filter, and rank only after the key constraints are known.","从一次真实执行提炼 skill：不要跳过中间审核层":"Refining skills from a real execution: don’t skip the intermediate review layer","从临时提示到可复用 Skill":"From temporary prompts to reusable skills","从真实任务到 Skill 的生产线":"Production line from real tasks to skills","从真实跑通过的链路提炼":"Extracted from real running links","从真实链路提炼":"Extracted from real links","从重复提示到 Skill 的示意图":"Diagram from repeat prompt to skill","仓库":"Repo","代码风格、权限、沟通规则":"Coding style, permissions, communication rules","价值":"Value","任务是否反复出现且容易漏？":"Are tasks recurring and easy to miss?","任务本身高频、易错、有固定资源、有验收标准":"The tasks themselves are high-frequency, error-prone, have fixed resources, and have acceptance criteria.","任务能力包":"mission capability package","任务详情、目的、要求、证据和调度建议。":"Task details, purpose, requirements, evidence, and scheduling suggestions.","任务边界：什么请求应该触发，什么不该触发。":"Task boundaries: what requests should be triggered and what should not be triggered.","优先看官方示例、活跃维护的 repo、star 较高且最近仍有更新的 skill 集合。Star 只作线索。":"Start with official examples, actively maintained repos, and skill collections with strong stars and recent updates. Stars are only a signal.","优先通用规则":"priority general rules","低风险环境试跑":"Low-risk environment test run","低，复制粘贴为主":"Low, mainly copy and paste","何时、为何、按什么顺序做":"When, why, and in what order","你审核框架，补上遗漏边界、失败恢复和验收标准。":"You review the framework and add missing boundaries, failure recovery, and acceptance criteria.","你给的是“真实工作流和判断标准”。":"What you give is \"real workflow and judgment standards\".","你负责决策":"You are responsible for making decisions","使用中迭代：变稳，但不要过拟合":"Use iteration in use: stabilize, but don’t overfit","例如内部 schema、团队规范、模板、常用脚本和验收标准。":"Such as internal schema, team specifications, templates, common scripts and acceptance criteria.","例如每周报告、固定文件转换、CI 失败排查、设计实现检查。":"For example, weekly reports, fixed file conversion, CI failure troubleshooting, design implementation inspection.","保留反例":"Keep counterexamples","保留好结构，替换业务规则、私有资源、验收标准和语言偏好，避免无意义重写。":"Preserve the structure and replace business rules, private resources, acceptance criteria and language preferences to avoid meaningless rewrites.","保留少数强分支，把判断接到用户、工具或证据。":"Keep a few strong branches to connect judgments to users, tools, or evidence.","保留能带来真实稳定性的分支，删掉只增加判断负担的分支。能用低风险执行产生证据时，先执行，再让证据决定下一步。":"Keep branches that bring real stability and delete branches that only increase judgment burden. When evidence can be generated through low-risk execution, execute first and let the evidence determine the next step.","候选来源":"candidate source","值得写吗？":"Is it worth writing?","偏好、预算、成功标准、风险容忍度没有公共真值，模型猜测会放大后续偏差。":"There is no public truth value for preferences, budgets, success criteria, and risk tolerance, and model guessing will amplify subsequent biases.","做 with/without 或旧版/新版对照":"Do with/without or old/new comparisons","先产生证据，再选择路径。判断对象从“影响大不大”变成“实际改了哪些文件、哪些引用存在”。":"Generate evidence before choosing a path. The decision shifts from impact guessing to changed files and real references.","先人工审核":"Human review first","先发现和复用高质量 Skills":"Discover and reuse high-quality skills first","先审":"first trial","先执行":"Run","先找":"Find first","先把最小文件写对，再决定是否增加资源目录。":"Write the minimum file correctly first, and then decide whether to add a resource directory.","先比较 2-3 个真实样例，确认失败有共性；分享前扩展到 10-20 个 prompt。":"First compare 2-3 real examples to confirm that failures have commonalities; expand to 10-20 prompts before sharing.","先看 P0：选题、真实链路、触发边界和路由判断。P0 站不住，后面的结构优化和测试设计都无法稳定发挥作用。":"Let’s look at P0 first: topic selection, real link, trigger boundary and routing judgment. P0 cannot stand, and subsequent structural optimization and test design cannot function stably.","先看模式，再改规则":"Look at the pattern first, then change the rules","先确认 skill 是否值得做，以及素材是否来自真实链路。":"First confirm whether the skill is worth doing and whether the material comes from a real link.","先确认用途、预算、购买地区和成功标准，再开始外部研究。":"Confirm purpose, budget, purchase region, and success criteria before external research.","先让 AI 按你的指导完整完成一次真实任务。":"First let the AI ​​complete a real task according to your guidance.","先让 AI 提炼 workflow 框架。中文团队可先用中文，方便检查逻辑是否完整。":"Let AI refine the workflow framework first. The Chinese team can use Chinese first to check whether the logic is complete.","典型例子":"Typical example","内容应该放在哪里的决策图":"Decision map of where content should be placed","内容类":"Content category","再改":"Change again","再试":"try again","分层的目标是减少上下文占用，同时让 agent 知道每个资源在什么时候有用。":"The goal of layering is to reduce context usage while letting the agent know when each resource is useful.","分步指导":"Guided steps","分类":"Classification","创建一个 `commit-message-helper` skill。":"Create a `commit-message-helper` skill.","删除、发布、push、凭据、全局配置、外部副作用等必须显式确认，避免 skill 自动越界。":"Deletion, release, push, credentials, global configuration, external side effects, etc. must be explicitly confirmed to avoid automatic skill out of bounds.","删除这条判断。首次建档固定推荐问卷；用户拒绝就继续当前任务，候选画像进入 proposal。":"Remove this branch. For first-time profiling, suggest the questionnaire by default; if the user declines, continue the current task and store candidate profile notes as a proposal.","判断标准：如果你已经第三次写同一段长 prompt，通常该考虑 skill。":"Rule of thumb: if this is the third time you have written the same long prompt, it is usually time to consider a skill.","前端类":"Front-end class","加 references/":"Add references/","加 scripts/":"Add scripts/","匹配任务时":"On match","区分触发错误、流程漏步、工具误用、验收不清。":"Distinguish between trigger errors, missed steps in the process, misuse of tools, and unclear acceptance.","区别":"Concepts","压缩复杂度":"Compression complexity","原则：先判断失败属于哪一类，再改最小合适位置，不要把正文越写越臃肿。":"Principle: classify the failure, then change the smallest right place.","原理":"Loading","原理：Progressive Disclosure":"Principle: Progressive Disclosure","参考草稿":"Reference draft","反例能防止 skill 过宽，避免关键词相似但任务目标不同的请求误触发。":"Counterexamples can prevent skills from being too broad and avoid false triggering of requests with similar keywords but different task goals.","发现":"Discover","只因为一次失败，就写一条很窄的特判。":"Just because of one failure, write a very narrow special judgment.","只有从路径或 diff 能明显看出 scope 时才写 scope。":"Only write scope if it is obvious from the path or diff.","只有对照后才能判断 skill 是否真的提升稳定性；单纯增加说明层不等于质量提升。":"Only after comparison can we judge whether the skill really improves stability; simply adding a description layer does not equal an improvement in quality.","只有触发边界、权限风险、证据来源、工具选择、输出格式和停止条件这类关键分支，才值得写成路由。":"Only critical branches such as trigger boundaries, permission risks, evidence sources, tool selection, output formats, and stopping conditions are worth writing down routes.","可复用、可审查、可迭代":"Reusable, reviewable, iterative","可审核地生成":"Auditable generation","可直接运行":"Runnable directly","可选资源目录":"Optional resources","司南 COMPASS 仓库":"COMPASS Repository","司南 COMPASS 技能生态 DAG":"COMPASS skills ecosystem DAG","司南用户画像与需求对齐流程":"COMPASS user profile and requirement-alignment flow","同时补充反例，说明哪些请求不该触发。":"At the same time, add counterexamples to explain which requests should not be triggered.","同类任务历史：和你的真实工作流最接近。":"Similar task history: closest to your real workflow.","否":"no","启动时":"Startup","告诉 agent":"Tells the agent","回到顶部":"Back to top","团队类":"Team class","在本地保存可审计、可纠错、可撤回的协作画像。画像只记录用户确认或低敏的协作信号；secret、token、密码、私钥和验证码不进入画像。":"It stores a local collaboration profile that can be audited, corrected, and revoked. The profile records only user-confirmed or low-sensitivity collaboration signals; secrets, tokens, passwords, private keys, and verification codes stay out.","基于成熟模式定制":"Customized based on mature models","处理结果":"Processing results","复用已有 skill":"Reuse existing skills","多跑真实任务":"Run more real tasks","好 skill = 真实执行轨迹 + 人工审核 workflow + 明确触发边界 + 可验证反馈环":"Good skill = real trace + reviewed workflow + clear trigger + verifiable feedback","好分支有通用触发条件和明确反例。它解决一类问题，不把一次失败固化成狭窄特判。":"A good branch has a general trigger and clear counterexamples. It handles a class of problems without freezing one failure into a narrow special case.","好的做法":"good practice","好的触发测试要包含 should-trigger 和 should-not-trigger，尤其是近邻负例。":"Good trigger tests include should-trigger and should-not-trigger, especially negative neighbor examples.","如何判断一个已有 skill 值不值得安装？":"How to determine whether an existing skill is worth installing?","如何编写 Skills":"How to Write Skills","如果 `description` 写得模糊，skill 再强也可能不会被正确触发。":"If the `description` is written vaguely, the skill may not be triggered correctly no matter how strong it is.","如果团队认为有必要，再把给 AI 读取的核心说明转成英文；官方资料强调清晰、具体、可触发。":"If the team deems it necessary, the core instructions for AI reading will be converted into English; the official information emphasizes clarity, specificity, and triggerability.","如果模型本来就能稳定完成，普通 prompt 更轻。":"If the model can be completed stably, the normal prompt is lighter.","如果没有 staged diff，必须说明无法生成，不要编造。":"If there is no staged diff, it must be explained that it cannot be generated, don't make it up.","学习路径":"Learning path","安装前完整审计":"Complete pre-installation audit","安装前自己读完，或让 AI 辅助审计所有说明、脚本、依赖、网络访问和隐私风险。":"Read it yourself before installing, or let the AI ​​assist you in auditing all instructions, scripts, dependencies, network access, and privacy risks.","完成一个具体目标":"Complete one concrete goal","完整跑通":"Full run","完整阅读 `SKILL.md`、references、scripts、assets 和依赖说明。":"Read `SKILL.md`, references, scripts, assets and dependency notes in full.","完整阅读和安全检查":"Full reading and safety check","官方 eval 建议用真实 prompt、trace 和检查项防回归；单个失败不要直接写成狭窄特判。":"Official eval recommends using real prompts, traces, and check items to prevent regressions; do not write a narrow special judgment directly for a single failure.","官方和一手仓库可作为高置信参考；GitHub star 只能作为发现线索，不能当作质量证明。":"Official and first-hand repositories are high-confidence references; GitHub stars are only discovery signals, not proof of quality.","官方和高质量仓库":"Official and high-quality repositories","官方文档支持用 `$skill-creator` 起步；但草稿不等于可用 skill，后面必须审核和验证。":"The official documentation supports starting with `$skill-creator`; however, the draft is not equal to the available skill and must be reviewed and verified later.","官方示例：优先级最高，规范最可信。":"Official example: highest priority, most credible specification.","官方资料强调清晰、具体、可触发，没有把英文写成硬性标准。":"Official information emphasizes clarity, specificity, and triggerability, and does not set English as a rigid standard.","实际外部能力接口":"actual external capability interface","审查副作用":"Review side effects","审核后再生成完整 skill 内容，必要时先保留中文。":"After review, the complete skill content will be generated, and the Chinese version will be retained if necessary.","审核框架":"Review outline","审核通过后再生成 `description`、正文、references 和 scripts。":"After passing the review, `description`, body, references and scripts will be generated.","审计通过，任务匹配，先在低风险环境试用。":"After passing the audit, the tasks are matched, and the system is first tried in a low-risk environment.","工具顺序、输出格式":"Tool order, output format","工程类":"Engineering","差的做法":"poor practice","常见 Skills 类型":"Common skills Types","并交付可验证结果":"Deliver a verifiable result","并行调研、独立验证、对抗审查":"Parallel research, independent verification, adversarial review","弃":"abandoned","引用、检查测试目录，再决定测试范围。":"references and inspect test directories before choosing the test scope.","弱分支如“看起来风险不高”“上下文似乎足够”不稳；强分支应绑定具体动作、文件、schema、测试、diff、用户确认或外部证据。":"Weak branches such as \"the risk does not seem high\" or \"the context seems sufficient\" are unstable; strong branches should be bound to specific actions, files, schema, tests, diffs, user confirmation or external evidence.","弱验证路由改成强验证路由":"Change weak authentication route to strong authentication route","当用户要求“写、润色、选择 commit message”时触发。":"Triggered when the user asks to \"write, polish, and select a commit message.\"","当需求模糊、成本高或有安全风险时，把想法整理成可执行需求：目标、范围、证据、验收标准和风险边界都写清楚。它先识别必须由用户决定的关键分叉，可查事实由 agent 自己从材料中补足。":"When a request is ambiguous, costly, or risky, it turns the idea into executable requirements: goal, scope, evidence, acceptance criteria, and risk boundaries. It identifies the decisions only the user can make; discoverable facts are filled in by the agent from the available material.","很多场景下，skill 不必从空白文件手写，可以先用 `skill-creator` 这类 creator skill 生成结构化草稿。注意：AI 生成只解决“起草成本”，不证明 skill 准确、可用或符合要求；人的工作重点是提供真实输入、审核逻辑、控制边界并验证效果。":"In many scenarios, the skill does not need to be handwritten from a blank file. You can first use a creator skill such as `skill-creator` to generate a structured draft. Note: AI generation only solves the \"drafting cost\" and does not prove that the skill is accurate, usable or meets the requirements; the focus of human work is to provide real input, review logic, control boundaries and verify effects.","必要分支收窄，但避免过拟合":"Narrow necessary branches but avoid overfitting","必须遵守的流程和安全边界。":"Processes and security boundaries that must be adhered to.","怎么生成？":"How to generate?","怎么验证？":"How to verify?","所以正文不负责“提醒触发”。":"The body does not trigger itself.","打开 GitHub 仓库 dongshuyan/compass-skills":"Open the GitHub repository dongshuyan/compass-skills","执行中":"During execution","把个人经验校准成可教学规则":"Calibrate personal experience into teachable rules","把共性写成原则、决策树或脚本，不写狭窄特判。":"Write commonalities into principles, decision trees, or scripts instead of narrow and specific judgments.","把共性提炼成触发边界、决策树、验证步骤或脚本。":"Distill commonalities into trigger boundaries, decision trees, validation steps, or scripts.","把当前 session 分解成任务森林 / DAG，并记录每个任务的目标、进度、偏差、依赖、待办和决策。确认 proposal 后生成树视图、DAG 视图、任务详情卡和推荐队列。":"It decomposes the current session into a task forest / DAG and records each task’s goal, progress, deviations, dependencies, todos, and decisions. After proposal confirmation, it generates tree views, DAG views, task detail cards, and a recommended queue.","把某个文件名、某个临时路径、某个异常状态写死。":"Write down a certain file name, a certain temporary path, and a certain abnormal status.","把流程整理成 `SKILL.md` 的可执行步骤。":"Organize the process into executable steps in `SKILL.md`.","把长资料拆到 `references/`，把重复操作建议脚本化。":"Split long data into `references/` and script repeated operation suggestions.","抽象边界清楚，避免微型拆分":"Keep abstract boundaries clear and avoid micro-splits","按任务临时使用":"Temporary use according to tasks","按优先级检查":"Check by priority","按场景读取":"Load by branch","按需读取和执行":"Load and run","排序":"sort","推荐提炼顺序":"Recommended extraction order","推荐请求方式":"Recommendation request method","提供可调用能力":"Callable capability","提供独立执行上下文":"Isolated execution context","提供真实任务记录、示例输入、输出样例、失败案例、已有脚本或模板。":"Provide real task records, sample inputs, output samples, failure cases, existing scripts or templates.","提炼":"Distill","搜索 / 引用 / 证据":"Search / Quote / Evidence","改":"change","改 SKILL.md":"Edit SKILL.md","改 description":"Edit description","教程后续会把“经验”写成经过来源校准的推荐流程：能被官方或一手实践支持的强化，缺少标准依据的加限定。":"Later in the tutorial, \"experience\" will be written as a recommended process calibrated by the source: it can be strengthened by official or first-hand practical support, and it can be limited if it lacks standard basis.","教程核心事实优先来自官方文档、Agent Skills 规范和一手仓库。社区文章只作为表达参考，不作为规范依据。":"The tutorial’s core facts come first from official documentation, the Agent Skills specification, and first-hand repositories. Community articles are used only as expression references, not as normative evidence.","文/A":"文/A","文件类":"File class","方向错误会更早暴露。反馈越近，后续执行建立在错误目标上的概率越低。":"Wrong direction surfaces earlier. Shorter feedback loops lower the chance of building on the wrong goal.","方法":"method","无论是复用别人的 skill，还是让 AI 生成自己的 skill，都要看懂它的文件结构。把所有信息塞进一个 `SKILL.md` 会污染上下文；好的 skill 会把“每次都要看”和“特定分支才要看”的内容分层。":"Whether you are reusing someone else's skill or letting AI generate your own skill, you must understand its file structure. Cramming all the information into one SKILL.md pollutes the context; a good skill will layer in content that needs to be seen every time and content that needs to be seen only in specific branches.","日报 / PPT / 长文":"Daily / PPT / long article","早期至少保留 2-3 个不同输入；准备复用或分享时扩展到 10-20 个 prompt。":"Keep at least 2-3 different inputs early on; expand to 10-20 prompts when you're ready to reuse or share.","明确停止条件、输出契约和基础结构验证。":"Explicit stopping conditions, output contracts, and infrastructure verification.","明确哪些请求不应该触发，避免 skill 过宽。":"Make it clear which requests should not be triggered to avoid the skill being too wide.","是":"yes","是否先审核可读 workflow？":"Do you want to review the readable workflow first?","是否先找过高质量已有 skill？":"Have you looked for high-quality existing skills first?","是否先跑通过真实链路？":"Should it run through the real link first?","是否区分 AI 读取语言和用户输出语言？":"Is there a distinction between AI reading language and user output language?","是否只保留必要判断和路由？":"Are only necessary judgments and routing retained?","是否可复用":"Is it reusable?","是否携带文件":"Whether to carry documents","是否有固定验收标准？":"Are there fixed acceptance criteria?","是否有真实 prompt 和负例？":"Are there real prompts and negative examples?","是否比普通 prompt 更稳定？":"Is it more stable than normal prompt?","是否比较 with / without？":"Compare with / without?","是否测试应该触发和不该触发的请求？":"Are you testing what requests should and shouldn't fire?","是否避免只为单例失败加规则？":"Should we avoid adding rules only for singleton failures?","最小 Skill 文件结构":"Minimal skill file structure","最小 skill 只有一个文件夹和一个 `SKILL.md`。`name` 是身份，`description` 是触发入口，正文是触发后才会读取的操作说明。":"The minimal skill has only one folder and a `SKILL.md`. `name` is the identity, `description` is the trigger entry, and the text is the operation description that will be read after the trigger.","最小模型":"Minimum model","最小版只需要 SKILL.md。":"Minimum: SKILL.md only.","最小示例":"Minimal example","最符合要求的 skill 是：从真实反复任务中提炼出来，`description` 触发边界准确，`SKILL.md` 保留连续可读的核心流程和少量强路由，长资料放 `references/`，重复易错动作放 `scripts/`，并且用正例、反例、工具验证和 with/without 测试证明它确实让任务更稳定的 skill。":"The skills that best meet the requirements are: extracted from real repeated tasks, `description` trigger boundaries are accurate, `SKILL.md` retains continuously readable core processes and a small number of strong routes, long data is placed in `references/`, repeated error-prone actions are placed in `scripts/`, and it is proved by positive examples, counterexamples, tool verification and with/without testing that it indeed makes the task more stable.","最终输出要复用的模板和素材。":"Finally output the templates and materials to be reused.","最适合做 skill 的对象是会反复出现、容易出错、带固定验收标准的工作流。":"The most suitable objects for skills are workflows that are recurring, error-prone, and have fixed acceptance criteria.","有安全停止条件":"There are safe stopping conditions","有明确不触发条件和反例":"There are clear non-triggering conditions and counterexamples","有私有上下文的任务":"Tasks with private context","有稳定输出格式和验收标准":"Have stable output format and acceptance criteria","机器能判的交给工具":"What the machine can judge is left to the tools","机器能判的交给机器":"Whatever the machine can judge, leave it to the machine","条件":"condition","构成":"Anatomy","核心执行路径要连续可读；只有内容有独立职责边界、独立读取条件、稳定复用价值、机器验证价值，或会显著拖长主流程时，才拆到 `references/`、`scripts/`、`evals/` 或 companion skill。":"The core execution path must be continuously readable; only when the content has independent responsibility boundaries, independent reading conditions, stable reuse value, machine verification value, or will significantly lengthen the main process, it should be split into `references/`, `scripts/`, `evals/` or companion skill.","核心流程、决策树、输出模板":"Core flow, decisions, templates","核心流程放 `SKILL.md`；API、schema、长规范放 `references/`；确定性重复动作放 `scripts/`；模板素材放 `assets/`。":"Put the core process in `SKILL.md`; put API, schema, and long specifications in `references/`; put deterministic repetitive actions in `scripts/`; put template materials in `assets/`.","核心规则要短、明确、可触发。英文化是可选实践。":"Core rules should be short, clear, and triggerable. English literacy is an optional practice.","核心路径连续可读，资源按职责边界和读取条件拆分。":"The core path is continuously readable, and resources are split according to responsibility boundaries and read conditions.","根据审核和验证结果持续重写，保留可审查的迭代过程。":"Continuously rewrite based on review and validation results, maintaining an auditable iterative process.","根本原因":"root cause","格式、schema、语法、测试结果属于可验证事实。工具检查比模型主观判断稳定。":"Format, schema, syntax, and test results are verifiable facts. Tool checks are more stable than subjective judgment.","检查一条新分支是否值得写进 skill：它能否被快速验证，是否有明确反例，是否能被用户、脚本或外部证据纠偏，是否解决一类稳定问题。":"Check whether a new branch is worth adding to the skill: whether it can be quickly verified, whether there are clear counterexamples, whether it can be corrected by users, scripts, or external evidence, and whether it solves a type of stability problem.","检查是否有硬编码密钥、私有路径、上传日志、外部回传等隐私风险。":"Check for privacy risks such as hardcoded keys, private paths, upload logs, external postbacks, etc.","检查脚本是否会删除文件、改全局配置、联网、读取凭据或自动执行危险命令。":"Check whether the script deletes files, changes global configurations, connects to the Internet, reads credentials, or automates dangerous commands.","概念":"concept","概念对比表":"Concept comparison table","模板、图片、字体、样例":"Templates, media, samples","正文只写触发后才需要知道的执行方法。":"The main text only writes the execution methods that need to be known after triggering.","正文适合放什么":"What is suitable for the main text?","每个 skill 只暴露一点索引。":"Expose a small index only.","每个 subject 不超过 72 个字符。":"Each subject cannot exceed 72 characters.","每个模型判断都会增加误判概率。只有触发边界、权限风险、证据来源、工具选择、输出格式、停止条件这类分支值得进入热路径。":"Each model judgment increases the probability of misjudgment. Only branches such as trigger boundaries, permission risks, evidence sources, tool selection, output formats, and stopping conditions are worth entering the hot path.","每次触发都会读正文；正文越臃肿，越容易稀释关键规则并占用上下文。":"The text is read on every trigger; the more bloated the text, the easier it is to dilute key rules and take up context.","每次触发都要读":"Always loaded","每次都要提醒 agent：先读文件、再跑验证、最后输出固定格式。":"The agent must be reminded every time: read the file first, then run verification, and finally output a fixed format.","每次都要纠正：触发条件、边界、常见错误和验收标准。":"Correct Every Time: Triggers, Boundaries, Common Mistakes, and Acceptance Criteria.","每次都要重复写：哪些工具可以用，哪些资料必须先看。":"You have to write repeatedly every time: which tools can be used and which materials must be read first.","比较有 skill 和没 skill 时输出稳定性是否真的提高。":"Comparing whether the output stability is really improved with skill and without skill.","沉淀为一个可复用能力包":"Precipitated into a reusable capability package","流程、边界、关键示例":"Flow, boundaries, examples","流程漏步":"Missing step","测试与迭代":"Test and iterate","测试迭代":"Test and iterate","独立上下文执行者":"independent context executor","现代写法：让 AI 生成 Skill 草稿":"Modern writing: let AI generate skill drafts","生成":"generate","生成草稿":"Draft skill","生成触发描述、不触发条件、停止条件和输出模板。":"Generate trigger descriptions, non-trigger conditions, stop conditions, and output templates.","用 `$skill-creator` 或同类 creator skill 生成目录、`SKILL.md`、references、scripts 建议。":"Use `$skill-creator` or similar creator skill to generate directory, `SKILL.md`, references and scripts suggestions.","用 `skill-creator` 时，人和 AI 分别负责什么？":"What are the responsibilities of humans and AI when using `skill-creator`?","用 progressive disclosure 组织资源":"Organize resources with progressive disclosure","用于最终产物":"For final outputs","用户任务":"User task","用户偏好没有公共真值。让用户确认，比模型根据上下文猜测更可靠。":"User preferences have no public ground truth. Confirmation is more reliable than inference from context.","用户只是问 Conventional Commit 规范时，不一定要触发这个 skill。":"This skill does not necessarily need to be triggered when the user simply asks for Conventional Commit specifications.","用户拥有的判断交给用户":"Judgment owned by the user is left to the user","用户画像与需求对齐的协作方式。":"How the user profile and requirement alignment work together.","用户能确认 agent 的理解没有偏离。":"The user can confirm that the agent’s understanding has not drifted.","用户能说清自己的目标和约束。":"The user can state their goal and constraints clearly.","用执行替换路由":"Replace route with execute","用真实 prompt 和负例验证触发":"Verify triggering with real prompt and negative examples","用真实 prompt、对照和 holdout 防止纸面改进。":"Prevent paper improvements with real prompts, controls, and holdouts.","由任务决定":"Determined by task","直接减少不必要分支":"Directly reduce unnecessary branches","直接移除“上下文是否足够”这个弱验证分支。牺牲少量灵活性，换来更稳定的主流程。":"Remove the weak \"context is enough\" branch. The flow becomes less flexible but more stable.","真实 prompt":"Real prompts","真实 trace 能暴露工具顺序、失败恢复、验证命令和停止条件；凭空设计容易写成抽象口号。":"Real traces can expose tool sequences, failure recovery, verification commands and stop conditions; it is easy to write abstract slogans out of thin air.","真实任务":"Real task","真实任务比抽象“最佳实践”更能暴露 skill 需要处理的边界。":"Real tasks better expose the boundaries that a skill needs to address than abstract \"best practices\".","真实文件":"Real files","真实环境":"Real environment","真实素材：任务记录、输入样例、失败案例、已有脚本。":"Real materials: task records, input samples, failure cases, existing scripts.","真实轨迹 → 可审核框架 → Skill 草稿":"Real track → Auditable framework → skill draft","真实链路提炼":"Real link extraction","真实链路进入 skill 前要先压缩。完整执行里可能有很多步骤，正文只保留会改变执行路径的判断。":"Real links must be compressed before entering the skill. There may be many steps in the complete execution, and the text only retains the judgments that will change the execution path.","真实验证":"Real checks","知事":"Track","知人":"Profile","知向":"Align","短模板、短示例、关键 gotchas。":"Short templates, short examples, key gotchas.","短而明确":"Short and clear","研究类":"Research","确定性、重复、易错流程":"Deterministic repeat actions","确认触发条件、停止条件、示例和验证方式没有明显错误或 bug。":"Confirm that there are no obvious errors or bugs in trigger conditions, stop conditions, examples, and verification methods.","稳定 Skill 的质量门槛":"Quality Gates for Stable Skills","稳定 skill 依赖少数关键规则：触发准确、核心路径连续、结果可验证、反例能约束边界。下一节继续展开路由设计：把弱判断从热路径移出，把必要判断接到用户、脚本、测试、schema、diff 或外部证据上。形式底线：`name` 用小写连字符，短且可识别；`description` 准确、具体、不过长；`SKILL.md` 有 YAML frontmatter 和正文；资源目录只放有独立职责边界、读取条件、执行用途或产物用途的内容；`agents/openai.yaml` 承载 UI 元数据、默认 prompt 和工具依赖；skill 的触发设计放在 `description` 和 `SKILL.md`。":"Stable skills rely on a few key rules: accurate triggering, continuous core paths, verifiable results, and counterexamples to constrain boundaries. The next section continues to expand routing design: move weak judgments away from hot paths and connect necessary judgments to users, scripts, tests, schema, diff, or external evidence. Bottom line of form: `name` uses lowercase hyphens, is short and recognizable; `description` is accurate, specific, and not too long; `SKILL.md` has YAML frontmatter and body; the resource directory only contains content with independent responsibility boundaries, read conditions, execution purposes or product purposes; `agents/openai.yaml` carries UI metadata, default prompts and tool dependencies; skill trigger design is placed in `description` and `SKILL.md`.","第三方或脚本型 skill 要审查依赖、网络、凭据和写入边界。":"Third-party or scripted skills review dependencies, networking, credentials, and write boundaries.","练习":"Practice","练习：用 AI 起草第一个最小 Skill":"Exercise: Drafting your first minimal skill with AI","经验可用，但必须标注证据级别":"Experience is available but must be marked with level of evidence","结构":"structure","结构与资源":"structure and resources","结构好但边界不同，删除风险内容后定制自己的版本。":"Well structured but with different boundaries, customize your own version after removing risky content.","结果：一类任务整体更稳定":"Result: One type of tasks is more stable overall","结果：这个案例好了，其他任务更容易坏":"Result: This case is good, other tasks are easier to break","给 skill-creator":"for skill-creator","给模型读的流程、触发条件、停止条件可以英文，也可以用团队更容易审核的语言。":"The process, trigger conditions, and stop conditions read to the model can be in English or in a language that is easier for the team to review.","缩短反馈距离":"Shorten feedback distance","能复用也要先审计。自己写或改 skill 的价值，不只是复用结构，更是把隐私、安全、触发边界和验收标准控制在自己能负责的范围内。":"Before it can be reused, it must be audited first. The value of writing or modifying skills yourself is not only to reuse the structure, but also to control privacy, security, trigger boundaries, and acceptance criteria within the scope of your own responsibility.","能靠上下文自然判断的细节，放进示例、reference 或脚本；不要把它们堆成连续路由。":"Put details that can be determined naturally from context into examples, references, or scripts; don't pile them into continuous routes.","脚本可执行，不必全文塞上下文。":"Run scripts; keep context small.","脚本比每次重写代码更稳定，也能被测试和复用。":"Scripts are more stable than rewriting code each time and can be tested and reused.","自己撰写 skill 时，更可靠的素材来自已经跑通过的真实链路：工作过的线程、runbook、测试命令、评审规则、失败修复记录。任务跑通后，再从真实过程里提炼 skill。":"When writing your own skills, the more reliable materials come from real links that have been run: working threads, runbooks, test commands, review rules, and failure repair records. After the task is completed, skills can be refined from the real process.","至少跑 `quick_validate.py`，确保 `SKILL.md`、frontmatter、命名、description 基本合法。":"At least run `quick_validate.py` to ensure that `SKILL.md`, frontmatter, naming, and description are basically legal.","装":"Pack","规则越加越多，但触发范围越来越混乱。":"There are more and more rules, but the triggering scope is getting more and more confusing.","规范化":"Normalize","触发不准":"Wrong trigger","触发模糊、脚本不可审、隐私或安全边界不清。":"Triggers are ambiguous, scripts are not auditable, and privacy or security boundaries are unclear.","触发边界":"trigger boundary","让 AI 先提炼可审核的 workflow 框架，再写最终 skill。":"Let AI refine the auditable workflow framework first, and then write the final skill.","让 AI 在真实文件、真实环境、真实目标下完整完成一次任务。":"Let AI complete a complete task under real files, real environment, and real goals.","让 skill 准确触发，并用反例约束误触发。":"Let the skill fire accurately and use counterexamples to constrain false firings.","记录失败类型":"Logging failure type","记录输入假设、工具顺序、失败恢复、验证命令和输出格式。":"Document input assumptions, tool sequences, failure recovery, verification commands, and output formats.","设计 / 截图 / 响应式":"Design / Screenshot / Responsive","设计目标":"design goals","语言策略":"language strategy","语言策略可选":"Language optional","说明这个 skill 要解决哪类重复任务，什么时候应该触发，什么时候不应该触发。":"Explain what type of repetitive tasks this skill is intended to solve, when it should be triggered, and when it should not be triggered.","读这个示例时看三件事":"Three things to look for when reading this example","课程信息":"Course information","质量":"Quality","资料来源和取舍":"Sources and Tradeoffs","资源拆分":"Split resources","资源目录适合放什么":"What is suitable for the resource directory?","路由":"Routing","路由与判断":"routing and judgment","路由少，只保留关键分支":"Few routes, only key branches are kept","路由就是让 agent 选择分支。分支本身是正常工程结构，真正的风险来自弱验证和延迟反馈。写 skill 时要减少弱验证分支，把必要分支接到用户确认、脚本、测试、schema、diff 或外部证据。":"Routing is to let the agent choose a branch. Branches themselves are normal engineering constructs, the real risk comes from weak validation and delayed feedback. When writing skills, reduce weak verification branches and connect necessary branches to user confirmation, scripts, tests, schema, diff or external evidence.","路由强，可被验证":"The route is strong and can be verified","路由的主要风险来自“弱验证 + 延迟反馈”；直接执行更稳，是因为路径已定、动作更局部、结果更容易被外部证据验证。":"The main risk of routing comes from \"weak verification + delayed feedback\"; direct execution is more stable because the path is determined, the actions are more local, and the results are easier to be verified by external evidence.","路由要少、强、可验证":"Routes Should Be Few, Strong, and Verifiable","路由风险根因":"Routing Risk Root Causes","输入来源必须是当前仓库的 staged git diff。":"The input source must be the staged git diff of the current repository.","输出 3 个 Conventional Commit 候选。":"Output 3 Conventional Commit candidates.","输出模板、字段、长度、文件路径、测试命令让结果可检查，减少“看起来完成了”的假完成。":"Outputting templates, fields, lengths, file paths, and test commands makes results checkable, reducing false “looks done” completions.","边界、gotchas、验收":"Boundaries, gotchas, checks","边界和停止条件":"Boundary and stopping conditions","过拟合式修改":"Overfitting formula modification","运行 YAML parser、schema check、":"Run a YAML parser, schema check,","这三个 skills 互相配合：`$user-profile-keeper` 让 agent 知道“你是谁、怎么协作”，`$task-forest` 让 agent 知道“任务在哪里、做到哪里、为什么做”，`$task-clarifier` 让 agent 在行动前确认“用户的需求到底是什么”。它们都围绕本地文件工作，不上传用户数据，也不读取 credential、浏览器 cookie 或远程会话。":"The three skills work together: `$user-profile-keeper` tells the agent who you are and how to collaborate; `$task-forest` tells the agent where the task fits, how far it has progressed, and why it exists; `$task-clarifier` confirms what the user actually needs before action. They work on local files, do not upload user data, and do not read credentials, browser cookies, or remote sessions.","这个练习的目标是学会把“功能要求、触发边界、输出格式、停止条件和 description”说清楚，再让 `$skill-creator` 起草。":"The goal of this exercise is to learn to clearly state the \"functional requirements, trigger boundaries, output format, stop conditions and description\" and then let `$skill-creator` draft it.","这些概念经常被混在一起。最简单的判断：skill 是“如何完成一类任务”的可复用知识和流程，tool/MCP 是“能调用什么”，subagent 是“谁来做”。":"These concepts are often conflated. The simplest judgment: skill is the reusable knowledge and process of \"how to complete a type of task\", tool/MCP is \"what can be called\", and subagent is \"who does it\".","这张图强调职责分工：人给真实边界和验收，AI 做结构化生成，最后仍由人审核和测试逻辑是否成立。":"This picture emphasizes the division of responsibilities: humans give real boundaries and acceptance, AI does structured generation, and finally humans review and test whether the logic is established.","这张图把“从经验到 skill”的中间层画出来：先审核 workflow，再进入完整 skill 生成；中文框架和英文化只是可选语言策略。":"This picture draws the middle layer of \"from experience to skill\": first review the workflow, and then enter the complete skill generation; Chinese framework and English culture are only optional language strategies.","这张图把“找高质量 skill”拆成来源、安装前审计和处理结果：没有读完和审完，不要安装。":"This picture breaks down \"finding high-quality skills\" into sources, pre-installation audits, and processing results: Do not install until you have finished reading and reviewing them.","这张图把“迭代优化”和“过拟合修补”区分开：只有能改善一类任务，并经真实 prompt 或 trace 验证的规则，才适合写进 skill。":"This diagram distinguishes \"iterative optimization\" and \"over-fitting repair\": only rules that can improve a type of task and have been verified by real prompts or traces are suitable for writing into skills.","这张清单把“发现、真实链路、AI 生成、description 审核、触发测试、迭代”串成一个完整闭环。":"This list strings \"discovery, real links, AI generation, description review, triggered testing, and iteration\" into a complete closed loop.","这时才加载完整操作说明。":"Full instructions load here.","这次反馈是什么？":"What changed?","迭代":"Iterate","迭代 skill 时，什么是过拟合？什么是通用改进？":"What is overfitting when iterating over a skill? What are universal improvements?","迭代但不过拟合":"Iterate but not fit","迭代时提炼共性，避免单例特判":"Extract common features during iteration to avoid single-case special judgments","迭代时要改对位置：触发问题改 description，稳定操作脚本化，长资料放 reference。":"When iterating, you need to change the correct position: change the description of the triggering problem, script the stable operation, and put long data in the reference.","适合写":"suitable for writing","适合封装 UI 标准、浏览器验证、截图检查和常见布局风险。":"Perfect for encapsulating UI standards, browser validation, screenshot checking, and common layout risks.","适合封装团队偏好、输出格式、角色分工和历史教训。":"Suitable for encapsulating team preferences, output formats, role divisions, and historical lessons.","适合封装工具选择、格式坑、渲染检查和模板复用。":"Suitable for encapsulation tool selection, format pit, rendering inspection and template reuse.","适合封装日志读取顺序、审批边界、验证命令和停止条件。":"Suitable for encapsulating log reading order, approval boundaries, verification commands and stop conditions.","适合封装来源优先级、过滤标准、引用格式和不确定性标注。":"Suitable for encapsulating source prioritization, filtering criteria, citation formats and uncertainty annotations.","适合封装选题、素材整理、风格统一、发布前检查。":"It is suitable for encapsulating topic selection, material organization, style unification, and pre-release inspection.","选择路径的决策树。":"Decision tree for selecting paths.","选题与素材":"Topic selection and materials","选题原则：高频、易错、有固定资源、有验收标准，四个条件满足得越多，越值得做成 skill。":"Principles for topic selection: high frequency, error-prone, fixed resources, and acceptance criteria. The more these four conditions are met, the more worthy it is of becoming a skill.","通常否":"Usually no","通用改进式修改":"General improvement modification","通过基础结构验证":"Verified by infrastructure","避免过拟合的判断：如果一条规则只能解释一次失败，而且会让其他任务更难做，先不要写进 skill；先把它放进待观察记录。":"Avoid over-fitting judgment: If a rule can only explain one failure and will make other tasks more difficult to do, don't write it into the skill first; put it into the observation record first.","重复且易错的操作脚本化":"Scripting of repetitive and error-prone operations","重复写错的脚本和验证器。":"Repeatedly writing wrong scripts and validators.","重复出现的工作流":"recurring workflow","重复找资料":"Repeat lookup","重复提示":"Repeat prompt","重复易错":"Repeated error","重复纠错":"Repeat correction","重点看触发边界、执行顺序、安全停止条件、是否过度宽泛，并用真实 prompt 跑一次。":"Focus on the trigger boundary, execution sequence, safe stop conditions, whether it is too broad, and run it with a real prompt.","长 pipeline 会把每个判断点都变成新的失败点；一次误判进入错误分支，后面的步骤会继续放大偏差。":"A long pipeline will turn each judgment point into a new failure point; once a misjudgment enters the wrong branch, subsequent steps will continue to amplify the deviation.","长文档、API 细节、schema、参考表。":"Long documentation, API details, schema, reference tables.","长资料缺失":"Missing long docs","问用户优先级：耐用、轻便、颜值、价格、保修；给一个推荐答案，等待确认。":"Ask for priorities: durability, weight, appearance, price, warranty; provide one recommended answer and wait for confirmation.","需求对齐验收标准":"Requirement-alignment acceptance criteria","需要哪个分支，就读哪个文件。":"Load only the needed branch.","面向用户的交互、输出格式、报告语言要单独明确，例如“默认中文输出”。":"User-oriented interaction, output format, and report language must be clearly specified separately, such as \"default Chinese output\".","页面目录":"Page contents","顶部章节导航":"Top section navigation","项目/全局工作契约":"Project/Global Work Contract","题目要求":"Question requirements","风险与验收":"Risk and Acceptance","风险边界：哪些动作必须先问，哪些不能做。":"Risk boundaries: Which actions must be asked first and which cannot be done.","验收标准：成功输出长什么样，必须验证什么。":"Acceptance criteria: what successful output looks like and what must be verified.","高 star 仓库：说明有人关注，但仍需审查。":"High-star repositories: they show attention, but still need review.","高，但偏长期规则":"High, but biased toward long-term rules","高，偏操作能力":"High, partial operational ability","高，可触发、可迭代":"High, triggerable, iterable","仓库安装":"Repo install","一手仓库":"first-hand repositories","高 star 仓库":"High-star repos"}</script>
   <script>
     (() => {
       const enText = JSON.parse(document.getElementById('i18n-en').textContent);
@@ -3561,11 +3571,20 @@ Trigger tests:
       document.querySelectorAll('a[href^="#"]').forEach((link) => {
         link.addEventListener('click', (event) => {
           const hash = link.getAttribute('href');
-          if (!hash || !scrollToHash(hash)) return;
+          if (!hash || hash === '#') return;
+          const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+          if (!target) return;
           event.preventDefault();
           history.pushState(null, '', hash);
-          if (link.closest('.side') && window.matchMedia('(max-width: 1100px)').matches) {
+          const shouldCollapseSide = link.closest('.side') && window.matchMedia('(max-width: 1100px)').matches;
+          if (shouldCollapseSide) {
             setNavCollapsed(true, currentLanguage);
+            window.requestAnimationFrame(() => {
+              scrollToHash(hash);
+              window.setTimeout(() => scrollToHash(hash), 220);
+            });
+          } else {
+            scrollToHash(hash);
           }
         });
       });
