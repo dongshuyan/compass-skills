@@ -2022,13 +2022,13 @@ requested number of sides.</code></pre>
             <div class="section-head">
               <span class="section-number">2</span>
               <h2>先发现和复用高质量 Skills</h2>
-              <p>不必默认从空白文件开始写。更稳的路径是先看官方 skill、一手仓库和维护良好的社区案例；但安装前必须完整审计，确认没有错误、隐私泄露风险或安全风险，再决定安装、改造或放弃。</p>
+              <p data-i18n-en="You do not have to start from a blank file. A more stable path is to study official skills, first-hand repositories, and well-maintained community examples first. Open-source repositories may contain many skills, so decide which ones you actually need before installing, audit the relevant files, and then choose targeted install, adaptation, or rejection.">不必默认从空白文件开始写。更稳的路径是先看官方 skill、一手仓库和维护良好的社区案例；开源仓库可能包含多个 skills，安装前先确认自己真正需要哪几个，再完整审计相关文件，决定按需安装、定制改造或放弃。</p>
             </div>
 
             <figure class="info-figure" aria-labelledby="fig-discover-info-title">
               <div class="info-canvas">
                 <div class="info-heading">
-                  <strong id="fig-discover-info-title">如何判断一个已有 skill 值不值得安装？</strong>
+                  <strong id="fig-discover-info-title" data-i18n-en="How do you decide whether an existing skill or skill collection is worth installing?">如何判断一个已有 skill 或 skill 集合值不值得安装？</strong>
                   <span class="info-badge">Star 只作线索</span>
                 </div>
                 <div class="info-flow">
@@ -2042,26 +2042,26 @@ requested number of sides.</code></pre>
                   </div>
                   <div class="info-arrow" aria-hidden="true">→</div>
                   <div class="info-panel">
-                    <h3>安装前完整审计</h3>
+                    <h3 data-i18n-en="Choose scope, then audit">选定范围再审计</h3>
                     <div class="criteria-list">
-                      <div class="criterion"><b>A</b><span>完整阅读 `SKILL.md`、references、scripts、assets 和依赖说明。</span></div>
-                      <div class="criterion"><b>B</b><span>检查是否有硬编码密钥、私有路径、上传日志、外部回传等隐私风险。</span></div>
-                      <div class="criterion"><b>C</b><span>检查脚本是否会删除文件、改全局配置、联网、读取凭据或自动执行危险命令。</span></div>
-                      <div class="criterion"><b>D</b><span>确认触发条件、停止条件、示例和验证方式没有明显错误或 bug。</span></div>
+                      <div class="criterion"><b>A</b><span data-i18n-en="Select only the skills your real task needs from the descriptions and directory layout; do not treat `*` as the default for multi-skill repos.">按真实任务、description 和目录只选需要的 skills；多 skill 仓库不要把 `*` 当默认选项。</span></div>
+                      <div class="criterion"><b>B</b><span data-i18n-en="Read the target skill's `SKILL.md`, relevant references, scripts, assets, and dependency notes.">完整阅读目标 skill 的 `SKILL.md`、相关 references、scripts、assets 和依赖说明。</span></div>
+                      <div class="criterion"><b>C</b><span data-i18n-en="Check for hardcoded keys, private paths, log uploads, external callbacks, file deletion, global config changes, network access, credential reads, or dangerous automation.">检查硬编码密钥、私有路径、上传日志、外部回传，以及删除文件、改全局配置、联网、读凭据等风险。</span></div>
+                      <div class="criterion"><b>D</b><span data-i18n-en="Verify trigger conditions, stop conditions, examples, and checks; if the boundaries do not fit, adapt before installing.">确认触发条件、停止条件、示例和验证方式没有明显错误；边界不合适就先改再装。</span></div>
                     </div>
                   </div>
                   <div class="info-arrow" aria-hidden="true">→</div>
                   <div class="info-panel">
                     <h3>处理结果</h3>
                     <div class="criteria-list">
-                      <div class="criterion"><b>装</b><span>审计通过，任务匹配，先在低风险环境试用。</span></div>
-                      <div class="criterion"><b>改</b><span>结构好但边界不同，删除风险内容后定制自己的版本。</span></div>
-                      <div class="criterion"><b>弃</b><span>触发模糊、脚本不可审、隐私或安全边界不清。</span></div>
+                      <div class="criterion"><b>装</b><span data-i18n-en="Audit passed, task matches, install only the needed skill, then try it in a low-risk environment.">审计通过，任务匹配，只安装需要的 skill，先在低风险环境试用。</span></div>
+                      <div class="criterion"><b>改</b><span data-i18n-en="The structure is useful but the boundaries differ, so remove risky content, narrow the trigger, or replace local rules before installing your own version.">结构好但边界不同，先删除风险内容、收窄触发范围或替换本地规则，再安装自己的版本。</span></div>
+                      <div class="criterion"><b>弃</b><span data-i18n-en="The function does not match, triggers are vague, scripts cannot be audited, or privacy and safety boundaries are unclear.">功能不匹配、触发模糊、脚本不可审、隐私或安全边界不清。</span></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <figcaption>这张图把“找高质量 skill”拆成来源、安装前审计和处理结果：没有读完和审完，不要安装。</figcaption>
+              <figcaption data-i18n-en="This diagram breaks discovery into sources, scope selection, pre-install audit, and outcomes: do not install until the scope is clear and the relevant files have been read and audited.">这张图把“找高质量 skill”拆成来源、按需筛选、安装前审计和处理结果：没有选清、读完和审完，不要安装。</figcaption>
             </figure>
 
             <div class="grid-four">
@@ -2072,8 +2072,8 @@ requested number of sides.</code></pre>
               </div>
               <div class="mini-card">
                 <span class="tag">先审</span>
-                <h3>完整阅读和安全检查</h3>
-                <p>安装前自己读完，或让 AI 辅助审计所有说明、脚本、依赖、网络访问和隐私风险。</p>
+                <h3 data-i18n-en="Choose scope before auditing">先选范围再审计</h3>
+                <p data-i18n-en="For multi-skill repositories, read descriptions and directories first, keep only the functions needed for the current work, then audit the relevant instructions, scripts, dependencies, network access, and privacy risks.">多 skill 仓库先看 description 和目录，只保留当前工作需要的功能；安装前审计相关说明、脚本、依赖、网络访问和隐私风险。</p>
               </div>
               <div class="mini-card">
                 <span class="tag">再试</span>
@@ -2083,11 +2083,11 @@ requested number of sides.</code></pre>
               <div class="mini-card">
                 <span class="tag">再改</span>
                 <h3>基于成熟模式定制</h3>
-                <p>保留好结构，替换业务规则、私有资源、验收标准和语言偏好，避免无意义重写。</p>
+                <p data-i18n-en="Keep the useful structure, replace business rules, private resources, acceptance criteria, and language preferences, and avoid needless rewrites. Installing the original version unchanged is not required.">保留好结构，替换业务规则、私有资源、验收标准和语言偏好，避免无意义重写；没有必要原封不动安装。</p>
               </div>
             </div>
 
-            <p class="takeaway">能复用也要先审计。自己写或改 skill 的价值，不只是复用结构，更是把隐私、安全、触发边界和验收标准控制在自己能负责的范围内。</p>
+            <p class="takeaway" data-i18n-en="Even reusable skills need scope selection and auditing first. The value of writing or adapting a skill is not only structural reuse; it is also keeping context load, privacy, safety, trigger boundaries, and acceptance criteria inside boundaries you can own.">能复用也要先选清和审计。自己写或改 skill 的价值，不只是复用结构，更是把上下文负担、隐私、安全、触发边界和验收标准控制在自己能负责的范围内。</p>
 
             <figure class="info-figure" aria-labelledby="fig-experience-calibration-title">
               <div class="info-canvas">
@@ -2228,6 +2228,8 @@ requested number of sides.</code></pre>
               </svg>
               <figcaption>OpenAI 文档说明 Codex 初始 skills 列表有上下文预算，skill 多时会优先缩短 description。</figcaption>
             </figure>
+
+            <p class="takeaway" data-i18n-en="This also applies to installation scope: every unrelated skill adds another initial index entry and another trigger candidate. For multi-skill repositories, install only the functions that match your actual workflow.">这个原则也适用于安装范围：每多装一个无关 skill，就多一份初始索引和触发候选。多 skill 仓库应只安装和真实工作流匹配的功能。</p>
           </div>
         </section>
 
@@ -3044,6 +3046,8 @@ Trigger tests:
                 <div class="code-title"><span>一键安装</span><span>Codex + Claude Code</span></div>
                 <pre><code>npx skills add dongshuyan/compass-skills --skill '*' -a codex -a claude-code</code></pre>
               </div>
+
+              <p class="repo-source" data-i18n-en="This command installs the three core COMPASS skills. For other multi-skill repositories, list the available skills first, install only the needed ones with `--skill <name>`, and adapt a local copy first when your boundaries differ.">这条命令安装 COMPASS 的三个核心 skills。安装其他多 skill 仓库时，先查看可选 skills，再用 `--skill <name>` 只安装需要的功能；边界不同时，可以先改成本地版本再安装。</p>
 
               <div class="repo-skill-grid" aria-label="COMPASS 三个核心 skills">
                 <article class="repo-skill-card">
