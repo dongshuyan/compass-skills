@@ -99,6 +99,79 @@ session-handoff-prompt -> what should the next AI conversation know to continue 
 task-clarifier         -> what should the agent do now?
 ```
 
+## Task Clarifier Example
+
+A vague request is turned into a checked requirement before the agent recommends anything.
+
+<details>
+<summary>Example: choosing a suitcase</summary>
+
+Formatted from a live terminal run. Terminal status lines are omitted.
+
+**User:** I want to buy a suitcase, can you tell me which one is the best?
+
+**task-clarifier:** I'm activating `task-clarifier` to help you fully understand what you're looking for in a suitcase. Let me ask a few key questions:
+
+**Q1. What will you use the suitcase for most? This determines size, weight, and feature priorities.**
+
+A) Business travel (frequent short trips)　B) Leisure vacations (occasional, varied lengths)　C) Extended travel or backpacking　D) Tell me your situation
+
+→ My recommendation: Specify your primary use case. This changes everything: business travelers prioritize lightweight luggage and TSA locks; vacationers care about capacity and durability.
+
+**Q2. What's your budget? This directly determines which brands and quality tiers are realistic options.**
+
+A) Under $100　B) $100-300　C) $300-600　D) $600+　E) Tell me your budget
+
+→ My recommendation: $100-300 typically offers the best durability-to-cost ratio for most travelers.
+
+**Q3. What does "best" mean to you? Different suitcases excel at different things.**
+
+A) Most durable and long-lasting　B) Lightest weight　C) Most affordable　D) Best warranty + customer service　E) Best organizational features　F) Tell me your priority
+
+→ My recommendation: Durability is the most universal priority. A suitcase that lasts 10 years beats any single feature.
+
+**User:** 1A 2C 3A
+
+**task-clarifier:** Got it. Your answers are business travel, $300-600 budget, and maximum durability. I need two more clarifications before recommending:
+
+**Q1. Carry-on or checked bag? This is the biggest factor for business travel.**
+
+A) Carry-on only　B) Checked bag　C) One of each　D) Tell me your preference
+
+→ My recommendation: Carry-on meets most business trip needs, gives a faster airport experience, and reduces damage risk.
+
+**Q2. Hard shell or soft-sided? Both have durability strengths.**
+
+A) Hard shell　B) Soft-sided　C) No preference; what does durability favor?　D) Tell me your preference
+
+→ My recommendation: Hard shell excels at durability and professional appearance, worth the slight weight tradeoff for business use.
+
+**User:** Checked bag, hard shell.
+
+**task-clarifier:** Perfect. One final clarification:
+
+**Q1. What size checked bag? For business travel, this varies significantly.**
+
+A) Compact (22-24 inches; 3-5 day trips)　B) Medium (26-27 inches; 1-2 week trips)　C) Full-size (28+ inches; extended travel)　D) Tell me your typical trip length
+
+→ My recommendation: 26-27 inches handles most business trips without being oversized.
+
+**User:** 28 inches.
+
+**task-clarifier:** Here's my complete understanding:
+
+You need a checked suitcase for frequent business travel. The bag should be hard-shell for maximum durability and professional appearance, 28 inches for extended trips, and within a $300-600 budget. Durability is your top priority over lighter weight or organizational gimmicks.
+
+My inferences:
+
+- Durability means repeated airport handling and 5+ years without major failure.
+- You do not have strong preferences on brand, color, wheels, TSA lock, or warranty length.
+- You want specific model recommendations rather than only an evaluation framework.
+
+Once confirmed, the agent can recommend 2-3 specific hard-shell 28-inch suitcase models or walk through a durability-first evaluation framework.
+
+</details>
+
 ## Screenshots
 
 Task forest HTML export:
