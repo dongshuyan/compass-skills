@@ -52,9 +52,11 @@ CLI 使用 repo-local 锁文件：
 
 - 每个命令进入 canonical graph 读写区前获取锁。
 - 默认等待 30 秒，可用 `--lock-timeout` 或 `TASK_FOREST_LOCK_TIMEOUT` 调整。
-- 如果持锁进程已经不存在，CLI 会在短暂宽限后清理陈旧锁。
-- 如果无法判断进程状态，只在锁超过 `TASK_FOREST_STALE_LOCK_SECONDS` 后清理，默认 6 小时。
-- 释放锁时只删除自己 token 对应的锁，避免误删其他进程新建的锁。
+- 锁龄优先由 `started_at` 计算；如果锁文件半写入、内容损坏、不是 dict JSON，或 `started_at` 缺失/不可解析，则退化为文件系统 `mtime`，避免坏锁永久残留。
+- POSIX 用 `os.kill(pid, 0)` 探活；Windows 用 `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE) + WaitForSingleObject(handle, 0)` 探活，避免 `GenerateConsoleCtrlEvent` 的语义偏差。
+- 如果能明确确认持锁进程已死，且锁龄超过 `DEAD_PID_GRACE_SECONDS`，CLI 会快速清理陈旧锁。
+- 如果锁龄超过 `TASK_FOREST_STALE_LOCK_SECONDS`，CLI 会按租约过期处理，即使 PID 无法解析、无法可靠探活，或持锁进程长时间挂起，默认阈值为 6 小时。
+- 释放锁时只删除自己 token 对应的锁；如果锁文件已消失或被文件系统暂时占用，清理按 best-effort 处理，后续命令会继续尝试恢复。
 
 ## 原子写入
 
@@ -108,7 +110,7 @@ JSON、JSONL 和 HTML 写入策略：
 如果命令异常退出：
 
 - 首先运行 `validate` 检查当前图；
-- 如果提示锁被占用，查看锁文件里的 pid；
-- 如果 pid 已不存在，重新运行命令，CLI 会清理陈旧锁；
+- 如果提示锁被占用，查看锁文件里的 pid 和 `started_at`；
+- 如果锁文件内容异常或 pid 无法可靠判断，不要手动改 canonical 文件；重新运行命令，CLI 会先按 `started_at`，再按文件 `mtime` 判断是否应回收；
 - 不要手动编辑 `nodes.json`、`edges.json` 或 `config.json`；
 - 需要修正错误时，生成新的 proposal 或使用 CLI 的更新命令。

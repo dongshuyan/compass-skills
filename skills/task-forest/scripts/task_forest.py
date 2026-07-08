@@ -21,6 +21,10 @@ DEFAULT_LOCK_TIMEOUT_SECONDS = 30.0
 DEFAULT_STALE_LOCK_SECONDS = 6 * 60 * 60
 DEAD_PID_GRACE_SECONDS = 2.0
 DEFAULT_AGENT_WORKBENCH_DB = Path.home() / ".agent-workbench" / "agent-workbench.sqlite3"
+WINDOWS_ERROR_ACCESS_DENIED = 5
+WINDOWS_ERROR_INVALID_PARAMETER = 87
+WAIT_OBJECT_0 = 0x00000000
+WAIT_TIMEOUT = 0x00000102
 
 NODE_KINDS = {
     "global_task",
@@ -300,6 +304,32 @@ def stable_event_id() -> str:
     return f"tfevt_{uuid.uuid4().hex[:20]}"
 
 
+def _classify_posix_kill_outcome(exc: BaseException | None) -> bool | None:
+    if exc is None:
+        return True
+    if isinstance(exc, ProcessLookupError):
+        return False
+    if isinstance(exc, PermissionError):
+        return True
+    if isinstance(exc, OSError):
+        return None
+    raise TypeError(f"Unsupported kill outcome: {exc!r}")
+
+
+def _classify_windows_probe(open_error: int | None, wait_result: int | None) -> bool | None:
+    if open_error is not None:
+        if open_error == WINDOWS_ERROR_INVALID_PARAMETER:
+            return False
+        if open_error == WINDOWS_ERROR_ACCESS_DENIED:
+            return True
+        return None
+    if wait_result == WAIT_OBJECT_0:
+        return False
+    if wait_result == WAIT_TIMEOUT:
+        return True
+    return None
+
+
 def canonical_json(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -429,52 +459,84 @@ class FileLock:
 
     def _lock_age(self, metadata: dict[str, Any]) -> float | None:
         raw = metadata.get("started_at")
-        if not isinstance(raw, str) or not raw:
-            return None
+        if isinstance(raw, str) and raw:
+            try:
+                started = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            except ValueError:
+                started = None
+            if started is not None:
+                return max(0.0, (datetime.now(timezone.utc) - started).total_seconds())
         try:
-            started = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-        except ValueError:
+            return max(0.0, time.time() - self.path.stat().st_mtime)
+        except OSError:
             return None
-        return max(0.0, (datetime.now(timezone.utc) - started).total_seconds())
 
     def _pid_alive(self, pid: Any) -> bool | None:
         if not isinstance(pid, int) or pid <= 0:
             return None
+        if os.name == "nt":
+            return self._pid_alive_windows(pid)
+        return self._pid_alive_posix(pid)
+
+    def _pid_alive_posix(self, pid: int) -> bool | None:
         try:
             os.kill(pid, 0)
+            exc: BaseException | None = None
+        except OSError as err:
+            exc = err
+        return _classify_posix_kill_outcome(exc)
+
+    def _pid_alive_windows(self, pid: int) -> bool | None:
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        open_process = kernel32.OpenProcess
+        open_process.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        open_process.restype = wintypes.HANDLE
+        wait_for_single_object = kernel32.WaitForSingleObject
+        wait_for_single_object.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        wait_for_single_object.restype = wintypes.DWORD
+        close_handle = kernel32.CloseHandle
+        close_handle.argtypes = [wintypes.HANDLE]
+        close_handle.restype = wintypes.BOOL
+
+        process_access = 0x1000 | 0x00100000
+        handle = open_process(process_access, False, pid)
+        if not handle:
+            return _classify_windows_probe(ctypes.get_last_error(), None)
+        try:
+            wait_result = wait_for_single_object(handle, 0)
+            return _classify_windows_probe(None, int(wait_result))
+        finally:
+            close_handle(handle)
+
+    def _best_effort_unlink(self) -> bool:
+        try:
+            self.path.unlink()
             return True
-        except ProcessLookupError:
-            return False
-        except PermissionError:
+        except FileNotFoundError:
             return True
         except OSError:
-            return None
+            return False
 
     def _break_stale_lock_if_safe(self) -> None:
         metadata = self._read_metadata()
-        if not metadata:
+        age = self._lock_age(metadata or {})
+        if age is None:
             return
-        age = self._lock_age(metadata)
-        pid_alive = self._pid_alive(metadata.get("pid"))
-        if pid_alive is True:
+        pid_alive = self._pid_alive(metadata.get("pid")) if metadata else None
+        dead_pid_stale = pid_alive is False and age >= DEAD_PID_GRACE_SECONDS
+        lease_expired = age >= self.stale_seconds
+        if not dead_pid_stale and not lease_expired:
             return
-        dead_pid_stale = pid_alive is False and age is not None and age >= DEAD_PID_GRACE_SECONDS
-        unknown_stale = pid_alive is None and age is not None and age >= self.stale_seconds
-        if not dead_pid_stale and not unknown_stale:
-            return
-        try:
-            self.path.unlink()
-        except FileNotFoundError:
-            pass
+        self._best_effort_unlink()
 
     def _unlink_if_owned(self) -> None:
         metadata = self._read_metadata()
-        if metadata and metadata.get("token") != self.token:
+        if not metadata or metadata.get("token") != self.token:
             return
-        try:
-            self.path.unlink()
-        except FileNotFoundError:
-            pass
+        self._best_effort_unlink()
 
 
 class Store:
