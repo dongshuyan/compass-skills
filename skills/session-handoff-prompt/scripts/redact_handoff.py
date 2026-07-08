@@ -8,6 +8,12 @@ import re
 import sys
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from local_paths import redact_local_paths
+
 
 COMMON_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"sk-[A-Za-z0-9_-]{16,}"), "sk-<REDACTED>"),
@@ -22,19 +28,12 @@ COMMON_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"(?i)(cookie:\s*)[^\n\r]+"), r"\1<REDACTED>"),
 ]
 
-PATH_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"(?<!\w)/(Users|home)/[^\s`'\"\)\]]+"),
-    re.compile(r"[A-Za-z]:\\Users\\[^\s`'\"\)\]]+"),
-]
-
-
 def redact(text: str, privacy: str) -> str:
     out = text
     for pattern, replacement in COMMON_PATTERNS:
         out = pattern.sub(replacement, out)
     if privacy == "shareable":
-        for pattern in PATH_PATTERNS:
-            out = pattern.sub("<LOCAL_PATH>", out)
+        out = redact_local_paths(out)
     return out
 
 

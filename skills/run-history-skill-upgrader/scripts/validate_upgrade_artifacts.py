@@ -12,11 +12,14 @@ from pathlib import Path
 
 ALLOWED_TOP_LEVEL = {"SKILL.md", "agents", "assets", "evals", "references", "scripts"}
 PRIVATE_PATTERNS = [
-    re.compile(r"/Users/[^/\s]+"),
-    re.compile(r"/home/[^/\s]+"),
-    re.compile(r"[A-Za-z]:\\\\Users\\\\[^\\\s]+"),
-    re.compile(r"~/.codex/skills"),
-    re.compile(r"~/.claude"),
+    re.compile(r"(?<!\w)/(Users|home|Volumes)/[^\s`'\"\)\]]+"),
+    re.compile(r"(?<!\w)/private/var/[^\s`'\"\)\]]+"),
+    re.compile(r"(?<!\w)/var/folders/[^\s`'\"\)\]]+"),
+    re.compile(r"(?<!\w)/mnt/[A-Za-z]/[^\s`'\"\)\]]+"),
+    re.compile(r"\\\\\?\\[A-Za-z]:\\[^\s`'\"\)\]]+"),
+    re.compile(r"[A-Za-z]:\\[^\s`'\"\)\]]+"),
+    re.compile(r"\\\\[^\\/\s`'\"\)\]]+(?:\\[^\\/\s`'\"\)\]]+){1,}"),
+    re.compile(r"(?<!\w)~/(?:\.codex|\.claude)(?:/[^\s`'\"\)\]]+)?"),
 ]
 FRONTMATTER_KEY_RE = re.compile(r"^([A-Za-z0-9_-]+):")
 KebabName = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -51,7 +54,8 @@ def find_relative_refs(text: str) -> set[str]:
 def scan_privacy(path: Path, text: str, warnings: list[str]) -> None:
     for pattern in PRIVATE_PATTERNS:
         for match in pattern.finditer(text):
-            prefix = text[max(0, match.start() - 24):match.start()]
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            prefix = text[line_start:match.start()]
             if "re.compile(" in prefix:
                 continue
             warnings.append(f"{path}: contains a machine-specific path pattern matching {pattern.pattern!r}")

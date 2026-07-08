@@ -9,6 +9,12 @@ import re
 import sys
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from local_paths import contains_local_path
+
 
 REQUIRED_GROUPS = {
     "workspace": ["Workspace:", "【工作目录】"],
@@ -25,10 +31,6 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("private_key_block", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
     ("bearer_header", re.compile(r"(?i)authorization:\s*bearer\s+[A-Za-z0-9._~+/=-]+")),
     ("cookie_header", re.compile(r"(?i)cookie:\s*[^\n\r]+")),
-]
-LOCAL_PATH_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"(?<!\w)/(Users|home)/[^\s`'\"\)\]]+"),
-    re.compile(r"[A-Za-z]:\\Users\\[^\s`'\"\)\]]+"),
 ]
 MODE_LIMITS = {
     "minimal": (120, 1400),
@@ -71,15 +73,11 @@ def validate(text: str, mode: str, privacy: str) -> dict[str, object]:
             hard.append(f"sensitive_pattern:{name}")
 
     if privacy == "shareable":
-        for pattern in LOCAL_PATH_PATTERNS:
-            if pattern.search(text):
-                hard.append("local_path_in_shareable_prompt")
-                break
+        if contains_local_path(text):
+            hard.append("local_path_in_shareable_prompt")
     else:
-        for pattern in LOCAL_PATH_PATTERNS:
-            if pattern.search(text):
-                warnings.append("local_path_present")
-                break
+        if contains_local_path(text):
+            warnings.append("local_path_present")
 
     low, high = MODE_LIMITS.get(mode, MODE_LIMITS["balanced"])
     length = len(text)

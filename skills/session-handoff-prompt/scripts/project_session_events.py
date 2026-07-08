@@ -10,6 +10,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from local_paths import redact_local_paths
+
 
 SECRET_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"sk-[A-Za-z0-9_-]{16,}"), "sk-<REDACTED>"),
@@ -20,18 +26,11 @@ SECRET_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"(?i)(cookie:\s*)[^\n\r]+"), r"\1<REDACTED>"),
 ]
 
-LOCAL_PATH_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"(?<!\w)/(Users|home)/[^\s`'\"\)\]]+"),
-    re.compile(r"[A-Za-z]:\\Users\\[^\s`'\"\)\]]+"),
-]
-
-
 def redact(text: str, redact_paths: bool) -> str:
     for pattern, replacement in SECRET_PATTERNS:
         text = pattern.sub(replacement, text)
     if redact_paths:
-        for pattern in LOCAL_PATH_PATTERNS:
-            text = pattern.sub("<LOCAL_PATH>", text)
+        text = redact_local_paths(text)
     return text
 
 

@@ -67,11 +67,11 @@ def import_module(path: Path, name: str) -> Any:
 
 def write_sample_codex_jsonl(path: Path) -> None:
     rows = [
-        {"type": "session_meta", "payload": {"id": "sample-session", "cwd": "/home/example/project"}},
+        {"type": "session_meta", "payload": {"id": "sample-session", "cwd": "/mnt/c/Users/example/project"}},
         {"type": "response_item", "payload": {"type": "message", "role": "user", "content": "Context is too long. Create a handoff prompt."}},
         {"type": "compacted", "payload": {"message": "Important compacted summary with prior decisions."}},
         {"type": "response_item", "payload": {"type": "function_call", "name": "shell", "arguments": "{\"cmd\":\"pytest\"}"}},
-        {"type": "response_item", "payload": {"type": "function_call_output", "call_id": "call_1", "output": "tests passed"}},
+        {"type": "response_item", "payload": {"type": "function_call_output", "call_id": "call_1", "output": "tests passed in D:\\\\Data\\\\repo\\\\artifact.txt"}},
     ]
     path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n", encoding="utf-8")
 
@@ -112,7 +112,8 @@ def main() -> int:
         write_sample_codex_jsonl(jsonl)
         events = project.parse_codex_jsonl(jsonl, max_chars=400, redact_paths=True)
         assert any(event.get("kind") == "compacted" for event in events), "compacted event not projected"
-        assert any(event.get("kind") == "tool_output" and "tests passed" in event.get("output", "") for event in events), "tool output missing"
+        assert any(event.get("kind") == "session_meta" and event.get("cwd") == "<LOCAL_PATH>" for event in events), "session cwd was not redacted"
+        assert any(event.get("kind") == "tool_output" and event.get("output") == "tests passed in <LOCAL_PATH>" for event in events), "tool output missing or not redacted"
 
         workspace = root / "workspace"
         workspace.mkdir()
@@ -123,10 +124,25 @@ def main() -> int:
 
         local_result = validate.validate(SAMPLE_PROMPT, mode="balanced", privacy="local")
         assert local_result["ok"], local_result
-        redacted = redact.redact(SAMPLE_PROMPT + "\nsk-abcdefghijklmnopqrstuvwxyz\n/home/example/private\n", privacy="shareable")
+        shareable_fail = validate.validate(SAMPLE_PROMPT + "\n/Volumes/work/demo\n", mode="balanced", privacy="shareable")
+        assert not shareable_fail["ok"] and "local_path_in_shareable_prompt" in shareable_fail["hard"], shareable_fail
+        path_blob = "\n".join(
+            [
+                "/home/example/private",
+                "/Volumes/work/demo",
+                "/var/folders/ab/cd/T/demo",
+                "/tmp/agent-output",
+                "/mnt/c/Users/example/project",
+                r"D:\Data\repo\file.txt",
+                r"\\server\share\repo\file.txt",
+                r"\\?\C:\Users\alice\repo\file.txt",
+                "~/.codex/skills/private",
+            ]
+        )
+        redacted = redact.redact(SAMPLE_PROMPT + "\nsk-abcdefghijklmnopqrstuvwxyz\n" + path_blob + "\n", privacy="shareable")
         shareable_result = validate.validate(redacted, mode="balanced", privacy="shareable")
         assert shareable_result["ok"], shareable_result
-        assert "<LOCAL_PATH>" in redacted, "shareable path redaction missing"
+        assert redacted.count("<LOCAL_PATH>") >= 8, "shareable path redaction missing extended path families"
         assert "sk-<REDACTED>" in redacted, "secret redaction missing"
 
     print("ok=session-handoff-prompt smoke test passed")
