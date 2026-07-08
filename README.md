@@ -35,7 +35,7 @@ The project currently ships six `SKILL.md` skills:
 | [`session-handoff-prompt`](skills/session-handoff-prompt/) | Compresses the current AI conversation's goal, progress, constraints, and next steps into a paste-ready prompt for a new AI conversation. |
 | [`user-profile-keeper`](skills/user-profile-keeper/) | Maintains a local, auditable, correctable collaboration profile for communication preferences, risk style, and recurring working context. |
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | Turns completed or repeatedly refined run history into a new reusable skill package or a reviewed skill-design plan. |
-| [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | Uses real run evidence to plan and, only after explicit approval, apply structural upgrades to an existing skill. |
+| [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | Automatically turns session evidence from real execution, encountered and resolved difficulties, validation results, and user feedback into an upgrade plan for an existing skill, forming the simplest controlled self-evolution loop; it applies changes only after explicit approval. |
 
 For multi-skill repositories, install only the functions you actually need. The `run-history` pair is mainly for people creating or maintaining other skills.
 
@@ -100,7 +100,7 @@ COMPASS organizes that state into four local workflows:
 
 `run-history-skill-builder` turns a completed or repeatedly refined workflow into a new skill package or a plan-only design. If the request is really about changing an existing skill, it hands the job off instead of editing that skill directly.
 
-`run-history-skill-upgrader` takes the next step for existing skills: it reads run evidence, produces a concrete plan, stops, and only edits files after explicit approval of that plan.
+`run-history-skill-upgrader` takes the next step for existing skills: it automatically reads session evidence from real execution, encountered and resolved difficulties, validation results, and user feedback, then produces a concrete upgrade plan and stops. Only after explicit approval of that plan does it edit files. In practice, this is the simplest controlled self-evolution loop for skills: periodically run a target skill, accumulate real session evidence, then let the upgrader turn that evidence into a reviewed upgrade plan and, after approval, an applied change.
 
 ```text
 user-profile-keeper    -> who is the user and how should we collaborate?
@@ -108,7 +108,7 @@ task-forest            -> where does this task fit and is it still aligned?
 session-handoff-prompt -> what should the next AI conversation know to continue now?
 task-clarifier         -> what should the agent do now?
 run-history-skill-builder  -> how do we package this proven workflow as a new skill?
-run-history-skill-upgrader -> how do we safely improve an existing skill from real run evidence?
+run-history-skill-upgrader -> how does a skill self-evolve safely from real session evidence?
 ```
 
 ## Task Clarifier Example
@@ -232,7 +232,7 @@ COMPASS keeps runtime data local:
 - `session-handoff-prompt` is read-only by default. It can validate local handoffs with real workspace paths or redact them for shareable handoffs.
 - `user-profile-keeper` stores local profile data under `.compass-skills/user-profiles/v1` by default, or a user-selected `COMPASS_USER_PROFILE_HOME`.
 - `run-history-skill-builder` reads only user-authorized workflow history and writes new skill files only to a user-approved local directory.
-- `run-history-skill-upgrader` is plan-only by default and edits existing skills only after explicit approval of a concrete plan.
+- `run-history-skill-upgrader` is plan-only by default. It can synthesize real session evidence into an upgrade plan automatically, but it enables a controlled self-evolution loop only after explicit approval of a concrete plan.
 - High-risk actions such as deletion, overwrite, publishing, remote writes, credential use, and global configuration changes require explicit confirmation.
 
 Important: `user-profile-keeper` uses local plaintext storage without encryption. Do not store passwords, tokens, private keys, verification codes, or highly sensitive personal data in the profile.
