@@ -20,9 +20,9 @@
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```
 
-COMPASS Skills gives AI coding agents four local skills: task clarification, repo-local task memory, AI conversation handoff prompts, and a local collaboration profile.
+COMPASS Skills gives AI coding agents six local skills: four runtime collaboration skills plus two run-history skill-engineering skills.
 
-The project currently ships four `SKILL.md` skills:
+The project currently ships six `SKILL.md` skills:
 
 | Skill | Purpose |
 | --- | --- |
@@ -30,6 +30,10 @@ The project currently ships four `SKILL.md` skills:
 | [`task-forest`](skills/task-forest/) | Maintains a repo-local task forest / DAG with goals, subtasks, dependencies, progress, deviations, todos, decisions, and conversation history. |
 | [`session-handoff-prompt`](skills/session-handoff-prompt/) | Compresses the current AI conversation's goal, progress, constraints, and next steps into a paste-ready prompt for a new AI conversation. |
 | [`user-profile-keeper`](skills/user-profile-keeper/) | Maintains a local, auditable, correctable collaboration profile for communication preferences, risk style, and recurring working context. |
+| [`run-history-skill-builder`](skills/run-history-skill-builder/) | Turns completed or repeatedly refined run history into a new reusable skill package or a reviewed skill-design plan. |
+| [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | Uses real run evidence to plan and, only after explicit approval, apply structural upgrades to an existing skill. |
+
+For multi-skill repositories, install only the functions you actually need. The `run-history` pair is mainly for people creating or maintaining other skills.
 
 ## Quick Start
 
@@ -58,9 +62,11 @@ $task-clarifier
 $task-forest
 $session-handoff-prompt
 $user-profile-keeper
+$run-history-skill-builder
+$run-history-skill-upgrader
 ```
 
-For manual installation, copy the four folders under [`skills/`](skills/) into the agent's local skills directory and keep their `references/`, `scripts/`, and `agents/` subdirectories intact.
+For manual installation, copy the six folders under [`skills/`](skills/) into the agent's local skills directory and keep their `references/`, `scripts/`, `evals/`, and `agents/` subdirectories intact.
 
 ## Why COMPASS Exists
 
@@ -78,7 +84,7 @@ COMPASS organizes that state into four local workflows:
 3. A paste-ready continuation prompt for a new AI conversation.
 4. A clarification gate before ambiguous or risky execution.
 
-## How The Four Skills Work Together
+## How The Core And Meta Skills Work Together
 
 `task-clarifier` is the entry point for ambiguous, high-cost, high-risk, evidence-sensitive, or externally visible work. It first identifies the user-owned decisions that must be made, asks 1-3 focused questions with recommended answers, confirms shared understanding, and only then searches or executes.
 
@@ -88,11 +94,17 @@ COMPASS organizes that state into four local workflows:
 
 `user-profile-keeper` stores collaboration preferences locally. Future AI conversations use the profile to ask relevant questions and apply the right risk boundary. Current files, logs, and user-provided context remain the authority; secrets stay out of the profile.
 
+`run-history-skill-builder` turns a completed or repeatedly refined workflow into a new skill package or a plan-only design. If the request is really about changing an existing skill, it hands the job off instead of editing that skill directly.
+
+`run-history-skill-upgrader` takes the next step for existing skills: it reads run evidence, produces a concrete plan, stops, and only edits files after explicit approval of that plan.
+
 ```text
 user-profile-keeper    -> who is the user and how should we collaborate?
 task-forest            -> where does this task fit and is it still aligned?
 session-handoff-prompt -> what should the next AI conversation know to continue now?
 task-clarifier         -> what should the agent do now?
+run-history-skill-builder  -> how do we package this proven workflow as a new skill?
+run-history-skill-upgrader -> how do we safely improve an existing skill from real run evidence?
 ```
 
 ## Task Clarifier Example
@@ -215,6 +227,8 @@ COMPASS keeps runtime data local:
 - `task-forest` stores task data under the current workspace, usually `.agent-workbench/task-forest/`.
 - `session-handoff-prompt` is read-only by default. It can validate local handoffs with real workspace paths or redact them for shareable handoffs.
 - `user-profile-keeper` stores local profile data under `.compass-skills/user-profiles/v1` by default, or a user-selected `COMPASS_USER_PROFILE_HOME`.
+- `run-history-skill-builder` reads only user-authorized workflow history and writes new skill files only to a user-approved local directory.
+- `run-history-skill-upgrader` is plan-only by default and edits existing skills only after explicit approval of a concrete plan.
 - High-risk actions such as deletion, overwrite, publishing, remote writes, credential use, and global configuration changes require explicit confirmation.
 
 Important: `user-profile-keeper` uses local plaintext storage without encryption. Do not store passwords, tokens, private keys, verification codes, or highly sensitive personal data in the profile.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run History Skill Upgrader"
+  short_description: "Plan-first structural upgrades for existing skills"
+  default_prompt: "Use $run-history-skill-upgrader to produce a concrete upgrade plan from recent run evidence and stop; edit files only after I explicitly approve that plan."

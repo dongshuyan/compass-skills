@@ -1,0 +1,81 @@
+{
+  "skill_name": "run-history-skill-builder",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Turn the browser-based upload workflow we just stabilized into a new skill under this repository's skills directory.",
+      "expected_output": "A new skill package with trigger wording, a state machine, submission gates, failure-recovery examples, privacy boundaries, and validation results.",
+      "files": [],
+      "expectations": [
+        "The skill package captures reusable state gates instead of a prose summary only.",
+        "The package separates public metadata from account-private data and credentials.",
+        "The response reports actual validation commands and results."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Give me a reviewed design plan for a new skill based on this document-conversion workflow, but do not write files yet.",
+      "expected_output": "A plan-only response that names candidate files, structure owners, validation gates, and remaining assumptions without writing files.",
+      "files": [],
+      "expectations": [
+        "The response clearly says that no files were created or modified.",
+        "The plan identifies which resources are necessary and which are intentionally omitted.",
+        "The plan includes validation and acceptance checks."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We finally stabilized a local DOCX to PDF pipeline. Extract it into a reusable skill.",
+      "expected_output": "A new skill that reconstructs the workflow, captures deterministic checks, and packages the recurring failure recovery.",
+      "files": [],
+      "expectations": [
+        "Evidence collection happens before package writing.",
+        "The resulting skill includes deterministic validation or script hooks.",
+        "The final response distinguishes verified facts from remaining assumptions."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Search similar public skills in a temporary directory, study their structure, then create a new skill from our run history.",
+      "expected_output": "A new skill package plus a source log that records which public references were actually read and which patterns were adopted or rejected.",
+      "files": [],
+      "expectations": [
+        "The response records real sources instead of citing uninspected repositories.",
+        "The package adopts patterns, not undocumented claims or marketing text.",
+        "The temporary research directory is not shipped as part of the final skill."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Execute the browser upload flow again for me.",
+      "expected_output": "This request should not use run-history-skill-builder because it asks to execute a business workflow, not to create a skill.",
+      "files": [],
+      "expectations": [
+        "The response recognizes the request as a non-trigger.",
+        "The response redirects to the relevant business workflow or asks whether the user wants a skill package."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Based on this failure, improve the existing release-publisher skill.",
+      "expected_output": "An upgrade handoff for run-history-skill-upgrader, not a new skill package and not direct edits to the existing skill.",
+      "files": [],
+      "expectations": [
+        "The response recognizes that the request targets an existing skill.",
+        "The response produces a clean handoff with evidence scope, structure owners, and validation advice.",
+        "The response does not create a new skill package."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Create a skill that skips questions when context seems sufficient and executes directly when risk looks low.",
+      "expected_output": "A rewritten design that removes weak subjective routes and replaces them with user confirmation or machine-verifiable gates.",
+      "files": [],
+      "expectations": [
+        "Weak branches such as 'seems sufficient' or 'looks low risk' are removed or hardened.",
+        "User-owned decisions remain with the user.",
+        "Machine-verifiable checks move to scripts, tests, schema checks, diffs, or validators."
+      ]
+    }
+  ]
+}

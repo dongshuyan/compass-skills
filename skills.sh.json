@@ -4,12 +4,20 @@
   "groupings": [
     {
       "title": "Core Skills",
-      "description": "Local-first skills for task alignment, task memory, and user-aware agent collaboration.",
+      "description": "Local-first skills for task alignment, task memory, handoff continuity, and user-aware agent collaboration.",
       "skills": [
         "task-clarifier",
         "task-forest",
         "session-handoff-prompt",
         "user-profile-keeper"
+      ]
+    },
+    {
+      "title": "Skill Engineering",
+      "description": "Plan, package, and safely upgrade reusable skills from real run history.",
+      "skills": [
+        "run-history-skill-builder",
+        "run-history-skill-upgrader"
       ]
     }
   ]

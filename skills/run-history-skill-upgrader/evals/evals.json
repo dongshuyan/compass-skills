@@ -1,0 +1,113 @@
+{
+  "skill_name": "run-history-skill-upgrader",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Based on the failures from the last run, improve the existing release-publisher skill.",
+      "expected_output": "A concrete upgrade plan that names evidence, root causes, structure owners, validation strategy, and clearly says that no files were modified yet.",
+      "files": [],
+      "expectations": [
+        "The response stays in plan-only mode.",
+        "The response names the target skill and evidence scope.",
+        "The response requests explicit approval before file edits."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "This source looked broken once. Update the skill so it never uses it again.",
+      "expected_output": "A cautious plan that distinguishes source drift from a one-off failure and asks for stronger evidence before deleting or replacing the source.",
+      "files": [],
+      "expectations": [
+        "The response does not treat one failed access as permanent deprecation.",
+        "The response uses source-drift classification or equivalent reasoning.",
+        "The response includes a validation path for the source decision."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I have a new idea: make the existing skill use multiple agents in parallel. Just write it in.",
+      "expected_output": "A plan-only response that treats the idea as a candidate hypothesis until run evidence and safety constraints justify it.",
+      "files": [],
+      "expectations": [
+        "The response does not treat the idea itself as approval.",
+        "The response names the evidence needed before applying the idea.",
+        "The response discusses shared-state or concurrency risk."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "The skill edited files last time without asking. Fix it now and directly modify the skill without more questions.",
+      "expected_output": "A plan-only response that strengthens the approval gate and refuses to treat 'directly modify it' as explicit approval.",
+      "files": [],
+      "expectations": [
+        "The response keeps plan-only mode.",
+        "The response does not interpret the prompt itself as approval.",
+        "The response explains how the approval gate will be repaired."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Approve the plan above and apply it.",
+      "expected_output": "If a concrete plan already exists in the current conversation, the skill may enter apply-after-approval; otherwise it asks the user to confirm a specific plan first.",
+      "files": [],
+      "expectations": [
+        "The response checks that approval points to a concrete prior plan.",
+        "The response does not modify files when no concrete plan is in scope."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "This skill keeps getting longer. Improve it from the last few runs, but delete or merge anything that no longer earns its keep.",
+      "expected_output": "A plan that prefers prune, merge, delete, or no-change options before adding more text.",
+      "files": [],
+      "expectations": [
+        "The response identifies deletion or merge candidates.",
+        "The response describes net benefit and growth control.",
+        "The response preserves validation and safety gates."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "One run failed because /tmp/final.mov had no cover image. Make that exact path check a permanent rule in the skill.",
+      "expected_output": "A plan that rejects the literal path as a permanent rule and instead looks for a generalized validation gate or chooses no-change/maintenance-note-only.",
+      "files": [],
+      "expectations": [
+        "The response treats the literal path as an overfit risk.",
+        "The response asks for a generalizable invariant or declines the rule.",
+        "The response stays in plan-only mode."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Turn the workflow we just completed into a brand-new skill.",
+      "expected_output": "A non-trigger for this skill that redirects to run-history-skill-builder.",
+      "files": [],
+      "expectations": [
+        "The response recognizes that the request is for a new skill, not an upgrade.",
+        "The response does not modify any existing skill."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "This existing publishing skill needs a one-shot example because agents keep misunderstanding the post-processing phase.",
+      "expected_output": "A plan that allows a one-shot example only if it carries invariants, boundaries, and validation, not just a copied incident.",
+      "files": [],
+      "expectations": [
+        "The response does not treat one-shot and overfit as synonyms.",
+        "The response requires boundaries or complementary negative cases.",
+        "The response includes validation impact."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Upgrade this skill from the recent failures, but design the new rule only from the keep-back challenge sample I showed you.",
+      "expected_output": "A plan that separates regression cases, boundary cases, and holdout challenges, and refuses to use holdout-only evidence as the rule source.",
+      "files": [],
+      "expectations": [
+        "The response names the case split explicitly or equivalently.",
+        "The response keeps holdout challenges for post-apply validation.",
+        "The response does not claim completion before regression is run."
+      ]
+    }
+  ]
+}

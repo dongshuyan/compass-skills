@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run History Skill Builder"
+  short_description: "Turn real run history into a new reusable skill"
+  default_prompt: "Use $run-history-skill-builder to turn the completed workflow into a new skill or a reviewed plan; lock the evidence scope and output directory first, and hand existing-skill upgrades to the upgrader."
