@@ -20,7 +20,7 @@
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```
 
-COMPASS Skills gives AI agents seven local skills: four runtime collaboration skills, two run-history skill-engineering skills, and one fact-preserving academic writing skill.
+COMPASS Skills gives AI agents seven local skills: four runtime collaboration skills, two run-history skill-engineering skills, and one academic humanization skill for avoiding and removing AI-sounding prose.
 
 The project currently ships seven `SKILL.md` skills:
 
@@ -32,9 +32,9 @@ The project currently ships seven `SKILL.md` skills:
 | [`user-profile-keeper`](skills/user-profile-keeper/) | Maintains a local, auditable, correctable collaboration profile for communication preferences, risk style, and recurring working context. |
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | Turns completed or repeatedly refined run history into a new reusable skill package or a reviewed skill-design plan. |
 | [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | Automatically turns session evidence from real execution, encountered and resolved difficulties, validation results, and user feedback into an upgrade plan for an existing skill, forming the simplest controlled self-evolution loop; it applies changes only after explicit approval. |
-| [`academic-humanizer`](skills/academic-humanizer/) | Drafts, audits, or minimally revises English and Chinese academic prose while preserving claims, evidence strength, logical relations, and scholarly register. |
+| [`academic-humanizer`](skills/academic-humanizer/) | Helps write or revise English and Chinese academic prose by removing formulaic AI-like patterns and restoring a natural scholarly voice while preserving claims, evidence strength, and logical relations. |
 
-For multi-skill repositories, install only the functions you actually need. The `run-history` pair supports skill engineering; `academic-humanizer` supports fact-preserving academic writing and editing.
+For multi-skill repositories, install only the functions you actually need. The `run-history` pair supports skill engineering; `academic-humanizer` helps authors avoid AI-sounding language while drafting and remove it from existing academic prose.
 
 ## Quick Start
 
@@ -100,7 +100,7 @@ COMPASS organizes that state into four local workflows:
 
 `run-history-skill-upgrader` takes the next step for existing skills: it automatically reads session evidence from real execution, encountered and resolved difficulties, validation results, and user feedback, then produces a concrete upgrade plan and stops. Only after explicit approval of that plan does it edit files. In practice, this is the simplest controlled self-evolution loop for skills: periodically run a target skill, accumulate real session evidence, then let the upgrader turn that evidence into a reviewed upgrade plan and, after approval, an applied change.
 
-`academic-humanizer` repairs formulaic, vacuous, mechanically repetitive, or process-leaking academic prose without adding facts or weakening the source argument. It supports English and Chinese, protects quotations, formulas, citations, technical names, modality, and scope, and treats zero edits as a valid result when the prose is already sound.
+`academic-humanizer` helps authors avoid AI-sounding language while drafting and remove it from existing academic prose. It targets formulaic, vacuous, mechanically repetitive, and process-leaking patterns while protecting claims, evidence strength, quotations, formulas, citations, technical names, modality, logic, and scope. The result aims to read as natural, credible scholarly writing and to reduce the likelihood that readers perceive it as AI-generated; it does not promise a universal authorship judgment.
 
 ```text
 user-profile-keeper    -> who is the user and how should we collaborate?
@@ -109,7 +109,7 @@ session-handoff-prompt -> what should the next AI conversation know to continue 
 task-clarifier         -> what should the agent do now?
 run-history-skill-builder  -> how do we package this proven workflow as a new skill?
 run-history-skill-upgrader -> how does a skill self-evolve safely from real session evidence?
-academic-humanizer         -> how do we improve academic prose without changing its claims?
+academic-humanizer         -> how do we remove AI-sounding prose without changing its claims?
 ```
 
 ## Task Clarifier Example
@@ -315,10 +315,10 @@ Boundaries:
 4. Report what was saved, proposed, skipped, or redacted.
 ```
 
-Revise academic prose without changing its claims:
+Remove AI-sounding language from academic prose without changing its claims:
 
 ```text
-Use $academic-humanizer to minimally revise the academic passage below.
+Use $academic-humanizer to remove AI-sounding language from the academic passage below.
 
 Preserve every claim, number, citation, comparison, hedge, causal relation, and scope boundary. Keep quotations, formulas, code, references, statistical notation, proper nouns, and requested verbatim text unchanged. Remove only unsupported, vacuous, mechanically repetitive, or process-leaking wording. Return the clean revised passage without an editor preface.
 
