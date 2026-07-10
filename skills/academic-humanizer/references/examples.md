@@ -11,6 +11,7 @@ boundaries. Expected rewrites use only information present in the displayed inpu
 4. Zero-edit academic control
 5. False-opposition triage
 6. Generation without invented contrast
+7. Manuscript-wide terminology control
 
 ## 1. English fact-safe rewrite
 
@@ -179,3 +180,52 @@ addition is also possible, but any rewrite must preserve both values and claims.
 
 Do not generate `This is not merely a speed improvement but a new efficiency
 paradigm`. That sentence invents a downgraded X and an unsupported Y.
+
+## 7. Manuscript-wide terminology control
+
+### 7.1 Coined-name drift: normalize
+
+**Definition in Methods**
+
+> We call this component the Adaptive Evidence Router.
+
+**Later caption**
+
+> The adaptive evidence routing module selects two passages.
+
+The definition establishes `Adaptive Evidence Router` as the canonical coined
+name. If no abbreviation was declared, revise the caption to:
+
+> The Adaptive Evidence Router selects two passages.
+
+The replacement changes no claim. Capitalization and wording remain stable
+across Methods, Results, and captions.
+
+### 7.2 Declared abbreviation: keep
+
+> We introduce the Adaptive Evidence Router (AER). AER selects two passages.
+
+Keep both forms and record `AER` as allowed. The full name introduces the mapping;
+later use of the abbreviation is controlled variation, not drift.
+
+### 7.3 Distinct concepts: keep separate
+
+> The evidence encoder embeds passages, whereas the Adaptive Evidence Router selects them.
+
+Do not normalize `evidence encoder` to `Adaptive Evidence Router`. Their reported
+functions differ, so the terminology ledger records an intentional distinction.
+
+### 7.4 Uncertain identity: flag
+
+> 该框架生成候选证据。随后，该方法对候选证据进行排序。
+
+The excerpt does not establish whether `该框架` and `该方法` denote the same
+technical object. Preserve the text and ask the author; frequency or proximity
+cannot resolve identity.
+
+### 7.5 Protected prior-work term: keep
+
+> Prior work calls this component the "confidence layer" [12]. We define our component as the calibration layer.
+
+The quoted historical term belongs to prior work and remains unchanged. The
+manuscript-owned component uses `calibration layer` elsewhere.

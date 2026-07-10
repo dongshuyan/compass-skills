@@ -3,6 +3,18 @@
 `scripts/metrics.py` provides reproducible descriptive diagnostics. It does not
 identify an author, assign an AI probability, or decide whether prose passes.
 
+Terminology identity is outside this script's scope. Use the explicit-ledger
+candidate helper documented in `terminology-contract.md` when a deterministic
+residual scan is useful; semantic coreference still requires manuscript context.
+
+## Contents
+
+1. Routing
+2. Descriptive fields
+3. Protected-span masking
+4. Prohibited interpretations
+5. Optional runtime commands
+
 ## Routing
 
 Routing is based on editable prose after removing fenced/inline code, formulas,
@@ -62,15 +74,13 @@ Do not:
 
 ## Optional runtime commands
 
-The skill remains fully usable without Python. When Python 3 is available, let
-`<python>` be the host's launcher, `<skill-dir>` the directory containing
-`SKILL.md`, and `<input-file>` a user-authorized text file. Quote paths containing
-spaces and use the path separator accepted by the host shell.
+These commands do not modify the input file:
 
 ```bash
 <python> "<skill-dir>/scripts/metrics.py" "<input-file>" --json
 <python> "<skill-dir>/scripts/metrics.py" "<input-file>" --route
+<python> "<skill-dir>/scripts/terminology_audit.py" "<input-file>" --ledger "<terms-file>" --json
 ```
 
-The first command returns all descriptive fields. The second returns only the
-language route. These commands do not modify the input file.
+The terminology audit consumes an author-supplied ledger and reports candidates;
+it does not infer concept identity or rewrite the manuscript.

@@ -120,13 +120,17 @@ only when repeated triads or list scaffolds package interchangeable abstractions
 without adding structure. Rewrite as direct prose; do not change the number of
 substantive items.
 
-### E12. False range and synonym cycling
+### E12. False range and local lexical cycling
 
 - Repair `from X to Y` when X and Y do not define a scale or span.
-- Use one stable term for one referent unless a distinction is intentional.
+- Remove stylistic synonym cycling in ordinary prose when it obscures a stable
+  referent.
 
 Preserve established taxonomy, true ranges, and terminology required by the
-field. Never merge genuinely different participant groups or variables.
+field. Manuscript-wide scientific term identity, declared abbreviations, coined
+names, and intentional distinctions are governed by
+`terminology-contract.md`. Never merge genuinely different participant groups,
+variables, models, modules, objectives, or measurements.
 
 ### E13. Mechanical rhythm and punctuation
 
@@ -171,5 +175,5 @@ When drafting:
 - No concrete negation or contrast was erased without grounding analysis.
 - Functional hedging, passive voice, discourse relations, and domain terms remain.
 - Promotional language and empty ceremony were removed without casualizing prose.
-- Terminology and referents are stable.
+- Terminology has passed the manuscript-wide contract; ordinary referents are stable.
 - Process commentary and tool residue are absent from the clean artifact.

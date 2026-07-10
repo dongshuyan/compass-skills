@@ -65,6 +65,11 @@ Field-standard terminology is precision, not jargon. Preserve terms such as
 heteroskedasticity, calibration error, weighted interval score, ablation study,
 鲁棒性、显著性、异质性、消融实验、倾向得分匹配.
 
+Apply [the terminology contract](terminology-contract.md) to manuscript-owned
+terms. Preserve declared full-name/abbreviation pairs, coined names, bilingual
+mappings, and intentional distinctions. Do not create synonyms for variety, and
+do not collapse separate concepts merely because their names overlap.
+
 Moderate nominalization and anaphoric compression (`this reduction`, `the
 observation that`) are normal. Repair only empty abstraction chains.
 
@@ -79,6 +84,8 @@ Protect:
 - English abbreviations, model names, variables, and formulas in Chinese prose.
 
 In English prose, preserve occasional Chinese names, cited titles, and terms.
+Cross-language equivalents count as the same allowed form only when the source
+or user declares the mapping.
 
 ## 7. Legitimate contrast
 

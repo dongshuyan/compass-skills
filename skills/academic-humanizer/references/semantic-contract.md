@@ -21,6 +21,7 @@ The source bundle contains:
 - the editable text;
 - facts, data, citations, outline points, and sources supplied by the user;
 - explicit user decisions about intended meaning;
+- user-supplied glossaries, nomenclature, abbreviations, and terminology decisions;
 - clearly marked hypothetical premises.
 
 Style requests, checklists, word limits, editor instructions, and conversation
@@ -33,7 +34,8 @@ Do not rewrite:
 - direct quotations and translated passages marked as quotations;
 - formulas, equations, code, variable names, units, and statistical notation;
 - reference-list entries, citation keys, and citation markers;
-- proper nouns, dataset/model/instrument names, and verbatim policy text;
+- proper nouns, dataset/model/instrument names, formally established canonical
+  coined names, and verbatim policy text;
 - text the user explicitly requires verbatim.
 
 You may flag a suspected error outside the clean artifact. Do not silently repair
@@ -58,6 +60,11 @@ is needed to verify the rewrite:
 After editing, map every output claim back to a source ID and verify that every
 material source ID remains represented.
 
+Concept identity is recorded separately in the terminology ledger defined by
+`terminology-contract.md`. The claim ledger establishes what each concept does;
+the terminology ledger establishes which names may refer to it. Neither ledger
+may override the other.
+
 ## 4. Allowed transformations
 
 - delete process-layer leakage while preserving content in the same sentence;
@@ -66,7 +73,8 @@ material source ID remains represented.
 - combine or split sentences when all claims and relations survive;
 - change a connective or sentence order when contrast, addition, cause,
   concession, chronology, and scope remain unchanged;
-- normalize repetition, terminology, and punctuation without changing content;
+- normalize confirmed terminology drift under `terminology-contract.md` and
+  normalize repetition or punctuation without changing content;
 - turn a supported additive contrast into a neutral additive sentence while
   preserving both X and Y.
 
@@ -80,6 +88,10 @@ Do not add or infer:
 - causal force, certainty, novelty, significance, or scope beyond the source;
 - a negative premise introduced only so it can be rejected;
 - an actor such as `we observed` when the source does not identify that actor.
+
+Do not infer that two labels denote the same concept merely because their words,
+locations, or functions appear similar. Uncertain identity must remain unchanged
+until the author resolves it.
 
 Do not delete a concrete negation, comparison, limitation, or attribution merely
 because its surface form resembles an AI pattern.
@@ -119,5 +131,8 @@ The artifact passes only when:
 - polarity, modality, causal force, comparison direction, baseline, and scope match;
 - process text and tool residue are absent;
 - uncertainty remains uncertainty.
+
+Run the whole-manuscript terminology gate in `terminology-contract.md` alongside
+this semantic gate. Passing one gate does not compensate for failing the other.
 
 Keep the ledger internal unless the user asks for it.
