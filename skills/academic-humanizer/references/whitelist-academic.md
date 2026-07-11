@@ -14,6 +14,7 @@ When evidence is insufficient, keep the text or flag uncertainty.
 7. Legitimate contrast
 8. Register conventions
 9. Mention-versus-use escape
+10. Functional recurrence and certainty
 
 ## 1. Locked content
 
@@ -39,6 +40,9 @@ Keep a discourse marker when it makes a real relation explicit:
 Surface wording may change if addition, contrast, concession, cause, chronology,
 or conclusion remains clear. Repetition alone justifies a local restructure, not
 deletion of the relation.
+
+For multi-sentence text, use `global-pattern-contract.md`: distribution can open
+an audit, but each retained or removed marker still depends on its logical load.
 
 ## 3. Evidence-calibrated hedging
 
@@ -120,3 +124,18 @@ A phrase is not a defect when quoted, cited, or analyzed as language. Do not fla
 survey items such as `"To avoid sounding like AI"`, a paper discussing
 AI-sounding prose, or a quoted `not X but Y` construction as process leakage or
 false opposition in the surrounding paper.
+
+## 10. Functional recurrence and certainty
+
+Protect repeated form when the content is genuinely parallel: method steps,
+experimental conditions, metrics, error categories, theorem cases, structured
+abstract labels, and reviewer-by-reviewer replies. A three-part list is normal
+when the source contains exactly three substantive items.
+
+Protect purposeful dashes, sentence-initial markers, and paragraph conclusions
+that carry a real boundary or relation. Protect categorical language grounded by
+a definition, proof, invariant, or source-supported certainty. Do not preserve
+unsupported ceremony merely because its grammar is conventional.
+
+Run the local-to-document classification in `global-pattern-contract.md`; never
+use recurrence alone as a reason to delete functional academic structure.

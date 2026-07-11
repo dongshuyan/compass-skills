@@ -7,7 +7,7 @@ valid only inside these boundaries.
 
 1. Source bundle
 2. Locked spans
-3. Internal claim ledger
+3. Internal claim and evidence ledger
 4. Allowed transformations
 5. Prohibited transformations
 6. Deletion safety test
@@ -23,6 +23,12 @@ The source bundle contains:
 - explicit user decisions about intended meaning;
 - user-supplied glossaries, nomenclature, abbreviations, and terminology decisions;
 - clearly marked hypothetical premises.
+
+The editable draft is authoritative for the claim the author currently intends
+to express. It is not independent proof that a cited work, quotation, reported
+result, or external fact exists. Supplied data, reference entries, source files,
+and explicit user assertions provide provenance at different strengths; record
+the distinction instead of treating all manuscript sentences as verified facts.
 
 Style requests, checklists, word limits, editor instructions, and conversation
 about how to write belong to the process layer. They are not manuscript claims.
@@ -41,7 +47,7 @@ Do not rewrite:
 You may flag a suspected error outside the clean artifact. Do not silently repair
 a locked span.
 
-## 3. Internal claim ledger
+## 3. Internal claim and evidence ledger
 
 Before editing, map each material source claim to an internal ID. Record only what
 is needed to verify the rewrite:
@@ -56,9 +62,16 @@ is needed to verify the rewrite:
 | strength | may, suggests, supports, shows, demonstrates, proves |
 | boundaries | limitation, condition, population, venue, intended use |
 | provenance | citation, quotation, user statement, supplied source |
+| evidence status | supplied source, user-asserted, draft-only, hypothetical, verified |
 
 After editing, map every output claim back to a source ID and verify that every
 material source ID remains represented.
+
+`draft-only` means the proposition exists in the draft but the evidence it cites
+or implies was not supplied or verified. In rewrite/edit mode, preserve the claim
+and flag the evidence gap outside the clean artifact. Do not silently validate,
+delete, or extend it. In generation mode, do not use a draft-only premise to
+create a new result, mechanism, citation, or downstream conclusion.
 
 Concept identity is recorded separately in the terminology ledger defined by
 `terminology-contract.md`. The claim ledger establishes what each concept does;
@@ -75,6 +88,8 @@ may override the other.
   concession, chronology, and scope remain unchanged;
 - normalize confirmed terminology drift under `terminology-contract.md` and
   normalize repetition or punctuation without changing content;
+- reduce unsupported certainty or elevation when the supplied evidence already
+  establishes a weaker relation;
 - turn a supported additive contrast into a neutral additive sentence while
   preserving both X and Y.
 
@@ -88,6 +103,10 @@ Do not add or infer:
 - causal force, certainty, novelty, significance, or scope beyond the source;
 - a negative premise introduced only so it can be rejected;
 - an actor such as `we observed` when the source does not identify that actor.
+
+Do not treat a citation-shaped string, plausible author/year pair, polished
+quotation, or confident sentence as verified evidence. Do not fabricate missing
+bibliographic details or replace an unverified claim with a plausible alternative.
 
 Do not infer that two labels denote the same concept merely because their words,
 locations, or functions appear similar. Uncertain identity must remain unchanged
@@ -131,8 +150,12 @@ The artifact passes only when:
 - polarity, modality, causal force, comparison direction, baseline, and scope match;
 - process text and tool residue are absent;
 - uncertainty remains uncertainty.
+- every evidence-bearing claim is either grounded in supplied/verified material
+  or retained with a `draft-only` diagnostic outside the artifact;
 
 Run the whole-manuscript terminology gate in `terminology-contract.md` alongside
-this semantic gate. Passing one gate does not compensate for failing the other.
+this semantic gate, and the whole-document pattern gate in
+`global-pattern-contract.md`. Passing one gate does not compensate for failing
+another.
 
 Keep the ledger internal unless the user asks for it.

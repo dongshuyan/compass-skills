@@ -1,7 +1,8 @@
 # English academic rules
 
-Load this file only for English-majority editable prose. The semantic contract,
-whitelist, contrast logic, and SKILL arbitration order remain controlling.
+Load this file only for English-majority editable prose. The semantic,
+terminology, global-pattern, whitelist, contrast, and SKILL arbitration contracts
+remain controlling.
 
 ## Contents
 
@@ -12,9 +13,10 @@ whitelist, contrast logic, and SKILL arbitration order remain controlling.
 
 ## 1. Activation standard
 
-Edit only when wording is vacuous, unsupported, mechanically repeated, or part
-of a reinforcing pattern cluster. A word or construction is not defective merely
-because language models often use it.
+Edit locally when wording is vacuous, unsupported, or misleading. Edit globally
+when recurrence and redundant function jointly create a dominant document
+pattern. A word or construction is not defective merely because language models
+often use it.
 
 Before activating a rule, ask:
 
@@ -120,6 +122,10 @@ only when repeated triads or list scaffolds package interchangeable abstractions
 without adding structure. Rewrite as direct prose; do not change the number of
 substantive items.
 
+For multi-paragraph recurrence, apply `global-pattern-contract.md`. Preserve a
+single or repeated three-part list when the source genuinely contains three
+metrics, contributions, stages, conditions, or outcomes.
+
 ### E12. False range and local lexical cycling
 
 - Repair `from X to Y` when X and Y do not define a scale or span.
@@ -132,15 +138,17 @@ names, and intentional distinctions are governed by
 `terminology-contract.md`. Never merge genuinely different participant groups,
 variables, models, modules, objectives, or measurements.
 
-### E13. Mechanical rhythm and punctuation
+### E13. Mechanical rhythm and document patterning
 
 Look for repeated sentence templates, repeated openings, decorative dash asides,
 or paragraphs that all perform the same rhetorical sequence. Repair only the
 repetition that impairs reading. A short Methods paragraph, parallel result list,
 or single purposeful dash does not require variation.
 
-Do not impose sentence-length quotas or a universal dash budget. Sentence form
-follows content and section function.
+Apply `global-pattern-contract.md` to sentence-initial connectives, ordered
+sentence lengths, paragraph closures, triads, certainty, and rhetorical-peak
+saturation. Do not impose sentence-length quotas or a universal dash budget.
+Sentence form follows content and section function.
 
 ### E14. Tool, format, and placeholder residue
 
@@ -168,6 +176,8 @@ When drafting:
 6. End on a supplied finding, boundary, or open question, or simply stop when the
    content is complete.
 7. Mark hypotheticals and missing information honestly.
+8. Treat a citation-shaped statement in the draft as a claim, not as proof that
+   the cited evidence exists; preserve and flag missing provenance.
 
 ## 4. Final language check
 
@@ -176,4 +186,5 @@ When drafting:
 - Functional hedging, passive voice, discourse relations, and domain terms remain.
 - Promotional language and empty ceremony were removed without casualizing prose.
 - Terminology has passed the manuscript-wide contract; ordinary referents are stable.
+- The global pattern gate passed without suppressing functional recurrence.
 - Process commentary and tool residue are absent from the clean artifact.

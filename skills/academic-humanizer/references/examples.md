@@ -12,6 +12,7 @@ boundaries. Expected rewrites use only information present in the displayed inpu
 5. False-opposition triage
 6. Generation without invented contrast
 7. Manuscript-wide terminology control
+8. Local-to-document pattern analysis
 
 ## 1. English fact-safe rewrite
 
@@ -229,3 +230,70 @@ cannot resolve identity.
 
 The quoted historical term belongs to prior work and remains unchanged. The
 manuscript-owned component uses `calibration layer` elsewhere.
+
+## 8. Local-to-document pattern analysis
+
+### 8.1 A local form can be valid
+
+> 误差在区间内保持稳定——这一限定仅适用于测试集。
+
+Keep the dash. It introduces a material scope restriction. Neither punctuation
+type nor a single occurrence establishes a style defect.
+
+> 由定理2可知，在条件A下，误差必然为零。
+
+Keep `必然`. The supplied theorem and condition support a deductive consequence.
+
+### 8.2 Distribution and redundant function create the defect
+
+**Input**
+
+> 模型在测试集上达到82%——这一结果十分亮眼。
+>
+> 延迟下降9 ms——这体现了方法优势。
+>
+> 显存减少12%——这彰显了框架潜力。
+
+Each first clause reports a result. Each dash tail repeats unsupported evaluation
+in the same paragraph position. The document-level repair is:
+
+> 模型在测试集上达到82%。
+>
+> 延迟下降9 ms。
+>
+> 显存减少12%。
+
+The decision uses recurrence, position, and redundant function together. It does
+not enforce a dash quota or add a new interpretation of the three results.
+
+### 8.3 Repeated sentence-initial markers: preserve relations
+
+**Input**
+
+> 此外，模型降低了延迟。此外，模型减少了显存。此外，模型保持了准确率。
+
+The three findings are additive, but announcing every sentence with the same
+marker is redundant. A coherent repair is:
+
+> 模型降低了延迟、减少了显存，并保持了准确率。
+
+All findings and their additive relation remain. If the sentences occurred in
+different sections or `此外` marked genuinely separate additions, they could
+remain.
+
+### 8.4 Draft-shaped evidence is not self-verifying
+
+> Smith等（2025）证明该方法在所有任务上均优于人类，因此本研究采用该结论作为理论依据。
+
+If no reference entry or source is supplied, preserve this sentence in rewrite
+mode and flag its evidence status as `draft-only` outside the clean artifact. Do
+not invent a DOI, silently endorse the universal claim, or derive additional
+claims from it. If the source is later supplied, verify the author, year, scope,
+and strength before revising.
+
+### 8.5 Whole-document scope must be earned
+
+One paragraph permits local and within-paragraph findings. It cannot establish
+that the complete manuscript has uniform rhythm, repeated paragraph templates,
+or saturated rhetorical peaks. Report the inspected scope and request the
+remaining manuscript before claiming a whole-manuscript pass.

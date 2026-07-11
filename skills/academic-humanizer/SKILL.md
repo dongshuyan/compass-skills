@@ -4,8 +4,8 @@ description: >-
   Draft, audit, or minimally revise English- or Chinese-language academic prose
   to reduce formulaic, vacuous, mechanically repetitive, or process-leaking
   language while preserving claims, evidence strength, logical relations,
-  manuscript-wide terminology identity, and scholarly register. Use for papers,
-  abstracts, grants, cover letters, and
+  manuscript-wide terminology identity, document-level pattern variation, and
+  scholarly register. Use for papers, abstracts, grants, cover letters, and
   reviewer responses when the user asks to de-AI, humanize, audit AI-like
   phrasing, or rewrite text without changing meaning. English is primary;
   Chinese is supported. Not for detector evasion, policy circumvention, pure
@@ -46,11 +46,14 @@ Read these before drafting or editing:
 2. [Terminology contract](references/terminology-contract.md) for canonical terms,
    declared aliases, coined names, intentional distinctions, and the internal
    terminology ledger. Always load it for multi-span or manuscript-level work.
-3. [Academic whitelist](references/whitelist-academic.md) for protected scholarly
+3. [Global pattern contract](references/global-pattern-contract.md) for the
+   local-to-document audit, distribution map, scope limits, and whole-document
+   repair. Always load it for multi-sentence work.
+4. [Academic whitelist](references/whitelist-academic.md) for protected scholarly
    forms in both languages.
-4. [Contrast logic](references/contrast-logic.md) for false-opposition triage in
+5. [Contrast logic](references/contrast-logic.md) for false-opposition triage in
    English and Chinese. Always load it; this is a cross-language semantic rule.
-5. Route once by the majority language of editable prose, then read exactly one:
+6. Route once by the majority language of editable prose, then read exactly one:
    [English rules](references/rules-en.md) or
    [Chinese rules](references/rules-zh.md).
 
@@ -104,7 +107,8 @@ second priority order.
 | **C3** | Terminology identity | One scientific concept uses one canonical term across the editable manuscript. Preserve declared full-name/abbreviation pairs, necessary grammatical forms, and intentional distinctions; never infer identity from similarity alone. |
 | **C4** | Academic register | Preserve functional hedging, passive voice, nominalization, discourse markers, and Chinese scholarly morphology. |
 | **C5** | Argument structure | Preserve causal strength, contrast, concession, addition, chronology, scope, and paragraph-level reasoning. Surface connectives may change when the relation survives. |
-| **C6** | Style repair | Apply language-specific rules only to supported, vacuous, mechanical, or stacked defects. |
+| **C6** | Document patterning | Audit recurrence, clustering, dispersion, positional regularity, sentence rhythm, and rhetorical-function saturation across the complete editable scope. A count is evidence, never a verdict. |
+| **C7** | Local style repair | Apply language-specific rules only to locally unsupported, vacuous, mechanical, or stacked defects. |
 
 Examples of conflict resolution:
 
@@ -117,6 +121,9 @@ Examples of conflict resolution:
 - A passive sentence is conventional in Methods: C4 blocks stylistic activation.
 - A contrast pattern is present but its two concrete claims lack surrounding
   evidence: C1 blocks automatic deletion; mark it uncertain in diagnostic output.
+- One dash, triad, connective, or emphatic sentence has a clear function: C4-C6
+  protect it. Repeated functionless instances may activate C6 after a distribution
+  audit, while C1-C5 still constrain every repair.
 
 ## Workflow
 
@@ -128,15 +135,20 @@ editable and which are evidence or protected context. Separate content
 requirements from style/process instructions. For generation, treat only
 supplied claims, data, citations, and explicitly marked hypotheticals as content.
 
-### 2. Lock spans and build both ledgers
+### 2. Lock spans and build the evidence and terminology ledgers
 
-Apply the semantic and terminology contracts. Build the claim ledger with
-source-to-output mappings for:
+Apply the semantic and terminology contracts. Build the claim/evidence ledger
+with source-to-output mappings and provenance status for:
 
 - numbers, units, entities, citations, datasets, methods, and study design;
 - negation, comparison direction and baseline;
 - association, causation, prediction, and attribution;
 - modality, uncertainty, limitations, population, time, and scope.
+
+The editable draft establishes what the author currently says; it does not by
+itself prove that a cited paper, result, quotation, or factual premise exists.
+Mark unsupported evidence assertions as `draft-only` and preserve or flag them
+instead of silently treating them as verified or extending the argument from them.
 
 Build a separate terminology ledger for scientific concepts, especially newly
 coined methods, modules, losses, metrics, datasets, and task names. Record:
@@ -151,7 +163,7 @@ Use explicit user terminology first, then formal definitions, then the first
 unambiguous formal naming. Frequency alone never selects the canonical term.
 Keep both ledgers internal unless the user asks for an audit trail.
 
-### 3. Audit in priority order
+### 3. Run the local candidate pass
 
 1. Find process leakage and tool residue.
 2. Audit terminology across the complete editable scope. Classify each apparent
@@ -159,16 +171,42 @@ Keep both ledgers internal unless the user asks for an audit trail.
    distinction**, **protected mention**, or **uncertain identity**.
 3. Triage contrast candidates as **protected**, **unsupported rhetorical**, or
    **uncertain** using `contrast-logic.md`.
-4. Apply the routed language rules with three questions:
+4. Apply the routed language rules to identify candidates with three questions:
    - **Load**: does the wording carry a claim or logical relation?
    - **Support**: can each claim be traced to the source bundle?
    - **Patterning**: is the defect mechanical, vacuous, or reinforced by other
      signals in the same span?
 
-A lone word or sentence form is not enough. Multiple weak signals in one span
-form one finding, not several duplicate findings.
+A lone word or sentence form is not enough to infer authorship or poor quality.
+It can still be a local defect when it adds an unsupported claim, false relation,
+or empty evaluation. Multiple weak signals in one span form one finding, not
+several duplicate findings.
 
-### 4. Make the smallest sufficient edit
+### 4. Build the distribution map and run the global pass
+
+For multi-sentence input, map candidates by section, paragraph, sentence,
+position, and rhetorical function using `global-pattern-contract.md`. Inspect:
+
+- sentence-initial discourse markers and punctuation such as dashes;
+- contrast scaffolds, parallel triads, flat enumeration, and exhaustive listing;
+- repeated sentence/paragraph templates and recurring paragraph closures;
+- sentence-length sequence and rhythm within each functional section;
+- unsupported certainty, elevation, and aphoristic peak saturation.
+
+Use within-document evidence and section function; never apply a universal count
+or ratio. A distribution map supports findings only about the supplied editable
+scope; an excerpt cannot support a whole-manuscript judgment. Optional metrics
+produce a distribution map, not an authorship or quality judgment.
+
+### 5. Classify before editing
+
+Classify each finding as **local defect**, **distributional defect**,
+**functional/protected**, or **uncertain**. A distributional defect requires both
+repetition or positional regularity and redundant rhetorical function. Several
+valid ablation contrasts, method steps, reported metrics, or theorem consequences
+remain protected even when their surface forms repeat.
+
+### 6. Make the smallest coherent edit
 
 - Remove process-layer text while retaining any content in the same sentence.
 - Normalize confirmed same-concept drift to the ledger's canonical term across
@@ -182,9 +220,17 @@ form one finding, not several duplicate findings.
   and Y are supported; removing the construction must not remove either claim.
 - Preserve or flag concrete negative claims when evidence is insufficient to
   decide whether the contrast is real. Do not silently erase them.
+- Repair the document as a system: remove redundant scaffolding, retain each
+  supported proposition and relation, and vary syntax only when argument function
+  warrants it. Do not randomize sentence length or replace one repeated template
+  with another repeated template.
+- Reorganize flat enumeration only when the source already supplies a hierarchy.
+  Never invent categories merely to make a list appear elegant.
+- Preserve an unverified citation or evidence claim in rewrite/edit mode and flag
+  it outside the artifact; do not strengthen it or use it to generate new claims.
 - Leave already competent prose unchanged.
 
-### 5. Run the whole-manuscript terminology gate
+### 7. Run the whole-manuscript terminology gate
 
 Scan all editable sections together after revision. Every scientific concept
 must use its canonical term or a declared allowed form. Verify that coined names
@@ -192,7 +238,15 @@ are unchanged after their formal introduction, captions and tables match the
 body, bilingual mappings are declared, and distinct concepts remain distinct.
 Any unresolved identity is a stop/flag result, not an automatic normalization.
 
-### 6. Run the second-pass semantic and style gate
+### 8. Run the whole-document pattern gate
+
+Rebuild the distribution map after editing. Check that redundant clusters,
+mechanical paragraph templates, uniform rhetorical peaks, and unsupported
+certainty were resolved without erasing functional repetition or creating a new
+dominant pattern. If the supplied scope is shorter than the claimed scope, report
+the limitation and do not claim a whole-manuscript pass.
+
+### 9. Run the second-pass semantic and style gate
 
 Re-read source and output side by side. The output fails if any answer is no:
 
@@ -203,10 +257,13 @@ Re-read source and output side by side. The output fails if any answer is no:
 4. Are locked spans byte-for-byte unchanged?
 5. Does the terminology ledger show one canonical term per concept, with only
    declared forms and intentional distinctions remaining?
-6. Did the edit preserve academic register and logical relations?
-7. Is the artifact free of process labels, editor narration, placeholders filled
+6. Are cited evidence, quotations, and factual premises supported by supplied or
+   verified sources, or explicitly marked `draft-only` outside the artifact?
+7. Did the edit preserve academic register and logical relations?
+8. Did the whole-document pattern gate pass without threshold chasing?
+9. Is the artifact free of process labels, editor narration, placeholders filled
    by guesswork, and tool residue?
-8. Would a zero-edit result have been more accurate? If yes, restore the source.
+10. Would a zero-edit result have been more accurate? If yes, restore the source.
 
 Run metrics only as an optional residual scan. A metric never overrides this gate.
 
@@ -214,8 +271,10 @@ Run metrics only as an optional residual scan. A metric never overrides this gat
 
 - **generate / rewrite**: return the clean artifact by default, with no routing
   line, score, checklist, leak line, or editor preface.
-- **detect**: return findings grouped by severity. Each finding includes an exact
-  source quote, rule ID, reason, and one of `change`, `keep`, or `uncertain`.
+- **detect**: return findings grouped by severity and scope (`local` or
+  `distributional`). Each finding includes an exact source quote, rule ID,
+  location/distribution evidence, reason, and one of `change`, `keep`, or
+  `uncertain`.
 - **edit**: edit only the requested file, then summarize changes outside it.
 - Provide diagnostics after the artifact only when the user explicitly asks for
   them. Clearly separate diagnostics from text intended for the manuscript.
@@ -227,9 +286,13 @@ Stop and ask instead of guessing when:
 
 - the requested rewrite requires a missing fact, citation, comparison, or source;
 - a concrete contrast cannot be validated from the available context;
+- the requested generation, verification, or downstream conclusion depends on a
+  citation, result, quotation, or factual premise whose existence or provenance
+  cannot be established from the source bundle;
 - two labels may refer to the same scientific concept but the manuscript does
   not establish their identity, or no canonical term can be grounded;
 - the input is mostly a protected quotation, formula, or reference list;
+- the user requests a whole-document judgment but supplies only an excerpt;
 - the requested language is neither English nor Chinese;
 - the request seeks detector evasion or circumvention of a disclosure policy.
 

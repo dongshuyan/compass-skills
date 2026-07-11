@@ -217,6 +217,7 @@ ZH_TRANSITIONS = (
     "具体而言",
     "基于上述结果",
     "综上",
+    "值得注意的是",
 )
 
 
@@ -298,6 +299,221 @@ def dash_counts(text):
         "fullwidth_double": fullwidth_double,
         "double_hyphen": len(re.findall(r"(?<!-)--(?!-)", text)),
         "en_dash_spaced": len(re.findall(r"\s–\s", text)),
+    }
+
+
+ZH_CERTAINTY_RE = re.compile(r"毫无疑问|毋庸置疑|不容置疑|无疑|必然|一定|显然")
+EN_CERTAINTY_RE = re.compile(
+    r"\b(?:without (?:a )?doubt|undoubtedly|certainly|inevitably|necessarily|clearly)\b",
+    re.I,
+)
+ZH_ENDING_ELEVATION_RE = re.compile(
+    r"(?:彰显|体现|反映|标志|凸显|印证)(?:了|着)?[^。！？；]{0,24}[。！？；]?$"
+)
+EN_ENDING_ELEVATION_RE = re.compile(
+    r"\b(?:underscores?|highlights?|marks?|showcases?|is a testament to)\b"
+    r"[^.!?]{0,30}[.!?]?$",
+    re.I,
+)
+ZH_PARALLEL_ENUMERATION_RE = re.compile(
+    r"[^，。！？；\n]{1,24}、[^，。！？；\n]{1,24}"
+    r"(?:、|以及|和|及|与)[^，。！？；\n]{1,24}"
+)
+EN_PARALLEL_ENUMERATION_RE = re.compile(
+    r"\b[A-Za-z][A-Za-z -]{0,24},\s+[A-Za-z][A-Za-z -]{0,24},\s+"
+    r"(?:and|or)\s+[A-Za-z][A-Za-z -]{0,24}\b",
+    re.I,
+)
+ZH_REPEATED_OPENING_PATTERNS = (
+    ("从…角度看", re.compile(r"^从[^，。！？；]{1,12}角度(?:看|而言)[，,:：]?")),
+    ("更重要的是", re.compile(r"^更重要的是[，,:：]?")),
+    ("值得注意的是", re.compile(r"^值得注意的是[，,:：]?")),
+    ("此外", re.compile(r"^此外[，,:：]?")),
+    ("然而", re.compile(r"^然而[，,:：]?")),
+)
+EN_REPEATED_OPENING_PATTERNS = (
+    ("from … perspective", re.compile(r"^from (?:an?|the) [^,]{1,30} perspective,?", re.I)),
+    ("more importantly", re.compile(r"^more importantly,?", re.I)),
+    ("it is worth noting", re.compile(r"^it is worth noting that\b", re.I)),
+    ("moreover", re.compile(r"^moreover,?", re.I)),
+    ("however", re.compile(r"^however,?", re.I)),
+)
+
+
+def _profile_paragraphs(text):
+    """Return protected-span-masked prose paragraphs for descriptive profiling."""
+    masked = mask_scan_protected(text)
+    blocks = re.split(r"\n\s*\n+", masked)
+    return [block.strip() for block in blocks if CJK_RE.search(block) or LATIN_WORD_RE.search(block)]
+
+
+def _sentence_records(text, branch):
+    records = []
+    global_index = 0
+    for paragraph_index, paragraph in enumerate(_profile_paragraphs(text), start=1):
+        for sentence_index, sentence in enumerate(sentences(paragraph, branch), start=1):
+            length = sentence_length(sentence, branch)
+            if length == 0:
+                continue
+            global_index += 1
+            records.append(
+                {
+                    "paragraph": paragraph_index,
+                    "sentence": global_index,
+                    "sentence_in_paragraph": sentence_index,
+                    "length": length,
+                    "text": sentence,
+                }
+            )
+    return records
+
+
+def _candidate_record(record, match):
+    return {
+        "paragraph": record["paragraph"],
+        "sentence": record["sentence"],
+        "match": match,
+        "status": "candidate_only",
+    }
+
+
+def _regex_candidates(records, regex):
+    hits = []
+    for record in records:
+        match = regex.search(record["text"])
+        if match:
+            hits.append(_candidate_record(record, match.group(0)))
+    return hits
+
+
+def _initial_marker_profile(records, branch):
+    vocabulary = ZH_TRANSITIONS if branch == "zh" else EN_TRANSITIONS
+    hits = []
+    counts = {}
+    for record in records:
+        head = (
+            record["text"].lstrip('“"（(')
+            if branch == "zh"
+            else record["text"].lstrip('\"\'([').lower()
+        )
+        for marker in vocabulary:
+            if head.startswith(marker):
+                counts[marker] = counts.get(marker, 0) + 1
+                hit = _candidate_record(record, marker)
+                hit["marker"] = marker
+                hits.append(hit)
+                break
+    return {
+        "count": len(hits),
+        "by_marker": counts,
+        "paragraphs": sorted({hit["paragraph"] for hit in hits}),
+        "occurrences": hits,
+        "status": "candidate_only",
+    }
+
+
+def _dash_distribution(records):
+    occurrences = []
+    for record in records:
+        counts = dash_counts(record["text"])
+        count = sum(counts.values())
+        if count:
+            hit = _candidate_record(record, record["text"])
+            hit["count"] = count
+            hit["by_glyph"] = counts
+            occurrences.append(hit)
+    return {
+        "count": sum(hit["count"] for hit in occurrences),
+        "paragraphs": sorted({hit["paragraph"] for hit in occurrences}),
+        "occurrences": occurrences,
+        "status": "candidate_only",
+    }
+
+
+def _repeated_opening_candidates(records, branch):
+    patterns = ZH_REPEATED_OPENING_PATTERNS if branch == "zh" else EN_REPEATED_OPENING_PATTERNS
+    grouped = {}
+    for record in records:
+        head = record["text"].lstrip('“"（(').strip()
+        for key, regex in patterns:
+            if regex.search(head):
+                grouped.setdefault(key, []).append(record)
+                break
+    return [
+        {
+            "pattern": key,
+            "count": len(group),
+            "paragraphs": sorted({record["paragraph"] for record in group}),
+            "sentences": [record["sentence"] for record in group],
+            "status": "candidate_only",
+        }
+        for key, group in grouped.items()
+        if len(group) > 1
+    ]
+
+
+def _contrast_distribution(records, branch):
+    occurrences = []
+    for record in records:
+        for candidate in contrast_candidates(record["text"], branch):
+            occurrences.append(
+                {
+                    "paragraph": record["paragraph"],
+                    "sentence": record["sentence"],
+                    "rule": candidate["rule"],
+                    "match": candidate["match"],
+                    "status": "candidate_only",
+                }
+            )
+    return {
+        "count": len(occurrences),
+        "paragraphs": sorted({item["paragraph"] for item in occurrences}),
+        "occurrences": occurrences,
+        "status": "candidate_only",
+    }
+
+
+def global_pattern_profile(text, branch):
+    """Return a location-aware profile; semantic decisions remain model work."""
+    if branch not in {"en", "zh"}:
+        return {
+            "scope": {"paragraphs": 0, "sentences": 0},
+            "sentence_length_sequence": [],
+            "sentence_initial_markers": {"count": 0, "by_marker": {}, "paragraphs": [], "occurrences": [], "status": "candidate_only"},
+            "dash_distribution": {"count": 0, "paragraphs": [], "occurrences": [], "status": "candidate_only"},
+            "contrast_distribution": {"count": 0, "paragraphs": [], "occurrences": [], "status": "candidate_only"},
+            "parallel_enumeration_candidates": [],
+            "certainty_candidates": [],
+            "ending_elevation_candidates": [],
+            "repeated_opening_candidates": [],
+            "interpretation": "candidate_only_no_authorship_or_quality_verdict",
+        }
+
+    records = _sentence_records(text, branch)
+    certainty_re = ZH_CERTAINTY_RE if branch == "zh" else EN_CERTAINTY_RE
+    elevation_re = ZH_ENDING_ELEVATION_RE if branch == "zh" else EN_ENDING_ELEVATION_RE
+    enumeration_re = ZH_PARALLEL_ENUMERATION_RE if branch == "zh" else EN_PARALLEL_ENUMERATION_RE
+    return {
+        "scope": {
+            "paragraphs": len({record["paragraph"] for record in records}),
+            "sentences": len(records),
+        },
+        "sentence_length_sequence": [
+            {
+                "paragraph": record["paragraph"],
+                "sentence": record["sentence"],
+                "length": record["length"],
+            }
+            for record in records
+        ],
+        "sentence_initial_markers": _initial_marker_profile(records, branch),
+        "dash_distribution": _dash_distribution(records),
+        "contrast_distribution": _contrast_distribution(records, branch),
+        "parallel_enumeration_candidates": _regex_candidates(records, enumeration_re),
+        "certainty_candidates": _regex_candidates(records, certainty_re),
+        "ending_elevation_candidates": _regex_candidates(records, elevation_re),
+        "repeated_opening_candidates": _repeated_opening_candidates(records, branch),
+        "interpretation": "candidate_only_no_authorship_or_quality_verdict",
     }
 
 
@@ -540,6 +756,7 @@ def analyze(text):
         "dashes": dash_counts(text),
         "leaks": leak_scan(text),
         "contrast_candidates": contrast_candidates(text, branch),
+        "global_patterns": global_pattern_profile(text, branch),
         "interpretation": "descriptive_candidates_not_authorship_or_quality_verdict",
     }
 
@@ -598,6 +815,13 @@ def main():
     print(f"[dashes] {report['dashes']}")
     print(f"[leak candidates] {len(report['leaks'])}")
     print(f"[contrast candidates] {len(report['contrast_candidates'])}")
+    global_patterns = report["global_patterns"]
+    print(
+        f"[global patterns] paragraphs={global_patterns['scope']['paragraphs']} "
+        f"sentences={global_patterns['scope']['sentences']} "
+        f"initial_markers={global_patterns['sentence_initial_markers']['count']} "
+        f"dashes={global_patterns['dash_distribution']['count']}"
+    )
 
 
 if __name__ == "__main__":
