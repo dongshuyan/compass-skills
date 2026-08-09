@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="task-forest-view" content="communication">
+  <title>__TITLE__</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f3f7f9;
+      --surface: #ffffff;
+      --surface-muted: #f7fafb;
+      --ink: #173143;
+      --muted: #65798a;
+      --line: #d5e0e6;
+      --line-strong: #aebfca;
+      --brand: #087d98;
+      --brand-dark: #055d73;
+      --brand-soft: #e7f6f8;
+      --done: #2e7d5b;
+      --done-soft: #e7f5ed;
+      --active: #126fa1;
+      --active-soft: #e8f3fa;
+      --context: #758696;
+      --shadow: 0 10px 28px rgba(28, 55, 73, 0.08);
+      --radius: 15px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--page);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+      line-height: 1.55;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 3px solid rgba(8, 125, 152, 0.28);
+      outline-offset: 2px;
+    }
+    button:disabled, input:disabled, select:disabled { cursor: not-allowed; opacity: 0.52; }
+    .skip-link {
+      position: absolute;
+      z-index: 40;
+      top: -52px;
+      left: 18px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--ink);
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 18px; }
+    .page-shell { max-width: 1720px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 46px) 54px; }
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 2px 2px 22px;
+    }
+    .eyebrow { margin: 0 0 6px; color: var(--brand-dark); font-size: 13px; font-weight: 780; letter-spacing: 0.06em; }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 36px); line-height: 1.2; letter-spacing: -0.03em; }
+    .header-copy { max-width: 820px; margin: 10px 0 0; color: var(--muted); font-size: 15px; }
+    .view-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 8px 13px;
+      border: 1px solid #a8d5df;
+      border-radius: 999px;
+      color: var(--brand-dark);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 760;
+    }
+    .summary-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) repeat(3, minmax(132px, auto));
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--line);
+      box-shadow: 0 2px 10px rgba(28, 55, 73, 0.04);
+    }
+    .summary-main, .metric { padding: 16px 18px; background: var(--surface); }
+    .summary-main strong { display: block; font-size: 16px; }
+    .summary-main span, .metric span { display: block; margin-top: 3px; color: var(--muted); font-size: 13px; }
+    .metric strong { display: block; color: var(--brand-dark); font-size: 23px; line-height: 1.1; }
+    .history-panel {
+      margin-top: 18px;
+      padding: 16px 18px 15px;
+      border: 1px solid #b8dce4;
+      border-radius: var(--radius);
+      background: linear-gradient(115deg, #f3fbfc 0%, #fff 48%);
+      box-shadow: 0 2px 10px rgba(28, 55, 73, 0.04);
+    }
+    .history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .history-heading h2 { margin: 0; font-size: 16px; }
+    .history-heading p { max-width: 820px; margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .history-state {
+      flex: 0 0 auto;
+      min-height: 25px;
+      padding: 3px 9px;
+      border: 1px solid #9cced9;
+      border-radius: 999px;
+      color: var(--brand-dark);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .history-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 13px; }
+    .history-controls button, .history-controls select {
+      min-height: 36px;
+      padding: 6px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 720;
+    }
+    .history-controls button:hover:not(:disabled), .history-controls select:hover:not(:disabled) {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+    }
+    .history-controls button.is-playing, .history-controls button[aria-pressed="true"] {
+      border-color: var(--brand);
+      color: #fff;
+      background: var(--brand);
+    }
+    .history-speed { display: inline-flex; align-items: center; gap: 7px; color: #42596a; font-size: 13px; font-weight: 700; }
+    .history-slider-row {
+      display: grid;
+      grid-template-columns: max-content minmax(120px, 1fr) max-content;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .history-slider-row span { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .history-slider { width: 100%; accent-color: var(--brand); }
+    .history-detail { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-top: 11px; }
+    .history-detail strong { font-size: 14px; }
+    .history-detail span { color: var(--muted); font-size: 13px; }
+    .history-hint { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 22px 0 12px; }
+    .toolbar-group { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .toolbar button, .toolbar select, .toolbar input {
+      min-height: 38px;
+      padding: 7px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      color: var(--ink);
+      background: var(--surface);
+      font-size: 14px;
+    }
+    .toolbar button { font-weight: 720; }
+    .toolbar button:hover:not(:disabled) { border-color: var(--brand); color: var(--brand-dark); background: var(--brand-soft); }
+    .toolbar input { flex: 1 1 280px; min-width: min(100%, 280px); }
+    .view-note { margin-left: auto; color: var(--muted); font-size: 13px; }
+    .tree-panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .tree-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-muted);
+    }
+    .tree-caption strong { font-size: 15px; }
+    .tree-caption span { color: var(--muted); font-size: 13px; }
+    .tree-scroll { overflow-x: auto; padding: 24px; }
+    .forest { display: grid; gap: 30px; min-width: 760px; }
+    .root-tree {
+      display: grid;
+      grid-template-columns: clamp(225px, 19vw, 285px) minmax(520px, 1fr);
+      align-items: start;
+    }
+    .root-slot { position: sticky; top: 18px; z-index: 2; align-self: start; padding: 20px 34px 0 0; }
+    .root-slot::after {
+      content: "";
+      position: absolute;
+      top: 62px;
+      right: 0;
+      width: 34px;
+      border-top: 2px solid var(--line-strong);
+    }
+    .stage-stack { position: relative; display: grid; gap: 4px; padding: 0 0 8px 34px; }
+    .stage-stack::before {
+      content: "";
+      position: absolute;
+      top: 62px;
+      bottom: 58px;
+      left: 0;
+      border-left: 2px solid var(--line-strong);
+    }
+    .stage-branch {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(245px, 310px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+      padding: 20px 0;
+    }
+    .stage-branch::before {
+      content: "";
+      position: absolute;
+      top: 62px;
+      left: -34px;
+      width: 34px;
+      border-top: 2px solid var(--line-strong);
+    }
+    .root-tree.is-hidden, .stage-branch.is-hidden, .nested-node.is-hidden { display: none; }
+    .stage-node-slot { position: relative; }
+    .toggle {
+      position: absolute;
+      z-index: 2;
+      top: 48px;
+      right: -34px;
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 2px solid var(--line-strong);
+      border-radius: 50%;
+      color: var(--brand-dark);
+      background: #fff;
+      font-size: 17px;
+      font-weight: 850;
+    }
+    .toggle:hover { border-color: var(--brand); background: var(--brand-soft); }
+    .stage-descendants { position: relative; min-width: 0; padding: 2px 0 0 28px; }
+    .stage-descendants::before {
+      content: "";
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 28px;
+      border-top: 2px solid var(--line-strong);
+    }
+    .stage-descendants::after {
+      content: "";
+      position: absolute;
+      top: 60px;
+      bottom: 24px;
+      left: 27px;
+      border-left: 2px solid var(--line);
+    }
+    .children-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 9px 14px; }
+    .children-header strong { font-size: 13px; }
+    .children-header span { color: var(--muted); font-size: 12px; }
+    .children-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 11px; padding-left: 14px; }
+    .nested-node { position: relative; min-width: 0; }
+    .nested-node::before {
+      content: "";
+      position: absolute;
+      top: 34px;
+      left: -14px;
+      width: 14px;
+      border-top: 2px solid var(--line);
+    }
+    .nested-line { position: relative; }
+    .nested-line > .toggle { top: 24px; right: 7px; width: 24px; height: 24px; font-size: 14px; }
+    .nested-children {
+      display: grid;
+      gap: 9px;
+      margin: 8px 0 0 17px;
+      padding-left: 15px;
+      border-left: 2px solid var(--line);
+    }
+    .is-collapsed > .stage-descendants, .nested-node.is-collapsed > .nested-children { display: none; }
+    .node-card {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--line-strong);
+      border-radius: 11px;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 1px 3px rgba(28, 55, 73, 0.04);
+      text-align: left;
+    }
+    .node-card:hover { border-color: var(--brand); box-shadow: 0 7px 18px rgba(8, 94, 116, 0.12); }
+    .node-card.root { padding: 17px; border-left-color: var(--brand); }
+    .node-card.done { border-left-color: var(--done); }
+    .node-card.in_progress { border-left-color: var(--active); background: linear-gradient(90deg, var(--active-soft), #fff 62%); }
+    .node-card.context { border-left-color: var(--context); background: var(--surface-muted); }
+    .node-card.compact { min-height: 88px; padding: 12px; border-left-width: 4px; }
+    .node-kicker { display: block; margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 760; letter-spacing: 0.04em; }
+    .node-title { display: block; font-size: 14px; font-weight: 780; line-height: 1.38; overflow-wrap: anywhere; }
+    .node-card.root .node-title { font-size: 18px; }
+    .node-summary {
+      display: -webkit-box;
+      margin-top: 8px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+    .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+    .progress-track { flex: 1; height: 6px; overflow: hidden; border-radius: 999px; background: #e5edf1; }
+    .progress-track > span { display: block; height: 100%; border-radius: inherit; background: var(--brand); }
+    .progress-value { color: var(--brand-dark); font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 23px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: #42596a;
+      background: #edf2f5;
+      font-size: 11px;
+      font-weight: 720;
+    }
+    .chip.done { color: #1d6044; background: var(--done-soft); }
+    .chip.in_progress { color: #07577d; background: #def0f8; }
+    .empty-tree {
+      display: grid;
+      place-items: center;
+      min-height: 250px;
+      padding: 34px;
+      border: 1px dashed #a8cbd5;
+      border-radius: 12px;
+      color: var(--muted);
+      background: #f7fcfd;
+      text-align: center;
+    }
+    .empty-tree strong { display: block; margin-bottom: 6px; color: var(--brand-dark); font-size: 17px; }
+    .detail-drawer {
+      position: fixed;
+      z-index: 30;
+      top: 16px;
+      right: 16px;
+      bottom: 16px;
+      width: min(450px, calc(100vw - 32px));
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--surface);
+      box-shadow: 0 24px 70px rgba(23, 49, 67, 0.22);
+      transform: translateX(calc(100% + 34px));
+      transition: transform 180ms ease;
+    }
+    .detail-drawer.is-open { transform: translateX(0); }
+    .detail-header {
+      position: sticky;
+      z-index: 2;
+      top: 0;
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 17px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.98);
+    }
+    .detail-header strong { font-size: 15px; }
+    .detail-close { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 20px; }
+    .detail-body { padding: 18px; }
+    .detail-title { margin: 0; font-size: 21px; line-height: 1.32; }
+    .detail-summary { color: var(--muted); }
+    .detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 18px; }
+    .detail-section { padding: 14px 0; border-top: 1px solid var(--line); }
+    .detail-section h3 { margin: 0 0 7px; font-size: 14px; }
+    .detail-section p, .detail-section ul { margin: 0; color: #42596a; font-size: 13px; }
+    .detail-section ul { padding-left: 19px; }
+    .detail-section li + li { margin-top: 6px; }
+    .overlay { position: fixed; z-index: 29; inset: 0; display: none; background: rgba(14, 38, 54, 0.18); }
+    .overlay.is-open { display: block; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 14px 2px 0; color: var(--muted); font-size: 12px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 50%; vertical-align: -1px; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1120px) {
+      .summary-strip { grid-template-columns: minmax(0, 1fr) repeat(3, minmax(110px, auto)); }
+      .stage-branch { grid-template-columns: minmax(225px, 275px) minmax(0, 1fr); }
+      .children-grid { grid-template-columns: minmax(210px, 1fr); }
+    }
+    @media (max-width: 860px) {
+      .page-header, .history-heading { display: block; }
+      .view-badge, .history-state { margin-top: 10px; }
+      .summary-strip { grid-template-columns: repeat(3, 1fr); }
+      .summary-main { grid-column: 1 / -1; }
+      .view-note { width: 100%; margin-left: 0; }
+      .tree-scroll { overflow-x: visible; padding: 16px; }
+      .forest { min-width: 0; }
+      .root-tree { display: block; }
+      .root-slot { position: relative; top: auto; padding: 0 0 22px; }
+      .root-slot::after { top: auto; right: auto; bottom: 0; left: 28px; width: 0; height: 22px; border-top: 0; border-left: 2px solid var(--line-strong); }
+      .stage-stack { padding: 0 0 0 28px; }
+      .stage-stack::before { top: 0; bottom: 48px; }
+      .stage-branch { display: block; padding: 15px 0; }
+      .stage-branch::before { top: 58px; left: -28px; width: 28px; }
+      .stage-node-slot { padding-right: 0; }
+      .stage-node-slot > .toggle { top: 47px; right: 8px; }
+      .stage-descendants { margin-top: 10px; padding-left: 17px; }
+      .stage-descendants::before { display: none; }
+      .stage-descendants::after { top: 0; left: 0; bottom: 12px; }
+      .children-header { margin-left: 12px; }
+      .children-grid { padding-left: 12px; }
+    }
+    @media (max-width: 560px) {
+      .page-shell { padding: 18px 12px 34px; }
+      .summary-strip { grid-template-columns: 1fr; }
+      .summary-main { grid-column: auto; }
+      .history-panel { padding: 14px; }
+      .history-slider-row { grid-template-columns: 1fr; gap: 5px; }
+      .history-slider-row span:last-child { justify-self: end; }
+      .toolbar-group { width: 100%; }
+      .toolbar button, .toolbar select { flex: 1 1 auto; }
+      .tree-caption { display: block; }
+      .tree-caption span { display: block; margin-top: 4px; }
+      .stage-stack { padding-left: 20px; }
+      .stage-branch::before { left: -20px; width: 20px; }
+      .children-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body data-view="communication">
+  <a class="skip-link" href="#taskTree">跳到任务树</a>
+  <main class="page-shell">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">__WORKSPACE_NAME__ · 建设进度</p>
+        <h1>__ROOT_TITLE__</h1>
+        <p class="header-copy">__ROOT_SUMMARY__ 页面按目标、阶段和功能层级展示已经完成与正在推进的工作；点击任务可查看目的、成果、要求和验收标准。</p>
+      </div>
+      <span class="view-badge">项目建设进度</span>
+    </header>
+
+    <section class="summary-strip" id="summaryStrip" aria-label="建设进度摘要"></section>
+
+    <section class="history-panel" aria-label="建设演进播放">
+      <div class="history-heading">
+        <div>
+          <h2>建设演进</h2>
+          <p>按已保存的进度快照回看任务森林的变化。播放只改变当前浏览器中的展示，不会修改任务数据。</p>
+        </div>
+        <span class="history-state" id="historyState">正在载入历史</span>
+      </div>
+      <div class="history-controls" aria-label="建设演进播放控制">
+        <button type="button" id="historyPrevious" aria-label="查看上一个进度画面">上一步</button>
+        <button type="button" id="historyPlay" aria-label="播放建设演进">播放</button>
+        <button type="button" id="historyNext" aria-label="查看下一个进度画面">下一步</button>
+        <button type="button" id="historyLoop" aria-pressed="false">循环播放</button>
+        <label class="history-speed" for="historySpeed">速度
+          <select id="historySpeed" aria-label="播放速度">
+            <option value="0.65">慢速</option>
+            <option value="1" selected>正常</option>
+            <option value="1.6">快速</option>
+          </select>
+        </label>
+      </div>
+      <div class="history-slider-row">
+        <span id="historyStartLabel">最早记录</span>
+        <input id="historySlider" class="history-slider" type="range" min="0" max="0" value="0" step="1" aria-label="选择建设进度画面">
+        <span id="historyEndLabel">当前进度</span>
+      </div>
+      <div class="history-detail">
+        <strong id="historyLabel">正在载入进度画面</strong>
+        <span id="historyChange"></span>
+      </div>
+      <p class="history-hint" id="historyHint"></p>
+      <p class="sr-only" id="historyLive" aria-live="polite" aria-atomic="true"></p>
+    </section>
+
+    <nav class="toolbar" aria-label="任务树查看工具">
+      <div class="toolbar-group">
+        <button type="button" id="expandAll">全部展开</button>
+        <button type="button" id="collapseDone">收起已完成</button>
+        <button type="button" id="focusCurrent">定位正在推进</button>
+      </div>
+      <input id="search" type="search" placeholder="搜索任务名称或说明" aria-label="搜索任务">
+      <select id="statusFilter" aria-label="按状态筛选">
+        <option value="all">全部状态</option>
+        <option value="done">已完成</option>
+        <option value="in_progress">正在推进</option>
+      </select>
+      <span class="view-note">概览仅展示完成、进行中节点及其必要上级</span>
+    </nav>
+
+    <section class="tree-panel" id="taskTree" aria-label="端到端任务森林">
+      <header class="tree-caption">
+        <strong>目标与建设层级</strong>
+        <span id="treeState">正在载入任务树</span>
+      </header>
+      <div class="tree-scroll">
+        <div class="forest" id="treeCanvas"></div>
+      </div>
+    </section>
+    <div class="legend" aria-label="状态图例">
+      <span><i style="background:var(--done)"></i>已完成</span>
+      <span><i style="background:var(--active)"></i>正在推进</span>
+      <span><i style="background:var(--context)"></i>层级背景</span>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+  <aside class="detail-drawer" id="detailDrawer" aria-hidden="true" aria-label="任务详情">
+    <header class="detail-header">
+      <strong>任务详情</strong>
+      <button type="button" class="detail-close" id="closeDetail" aria-label="关闭任务详情">×</button>
+    </header>
+    <div class="detail-body" id="detailBody"></div>
+  </aside>
+
+  <script id="task-forest-overview-data" type="application/json">__OVERVIEW_DATA__</script>
+  <script id="task-forest-overview-history" type="application/json">__OVERVIEW_TIMELINE__</script>
+  <script>
+    const CURRENT_DATA = JSON.parse(document.getElementById("task-forest-overview-data").textContent);
+    const HISTORY = JSON.parse(document.getElementById("task-forest-overview-history").textContent);
+    const statusLabels = { done: "已完成", in_progress: "正在推进" };
+    let DATA = CURRENT_DATA;
+    let nodes = new Map();
+    let roots = [];
+    let collapsed = new Set();
+    let searchTerm = "";
+    let statusFilter = "all";
+    let historyIndex = Math.max(0, HISTORY.length - 1);
+    let historyTimer = null;
+    let historyIsPlaying = false;
+    let historyLoopEnabled = false;
+    let detailTrigger = null;
+
+    const escapeHtml = value => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+    const progressOf = node => {
+      const raw = node?.derived_progress ?? node?.progress ?? 0;
+      const value = Number(raw);
+      return Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0;
+    };
+    const nodeChildren = node => (node?.children || []).map(id => nodes.get(id)).filter(Boolean);
+    const formatDate = value => {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+    };
+    const listHtml = (title, values) => !Array.isArray(values) || !values.length
+      ? ""
+      : `<section class="detail-section"><h3>${escapeHtml(title)}</h3><ul>${values.map(value => `<li>${escapeHtml(value)}</li>`).join("")}</ul></section>`;
+    const setActiveData = data => {
+      DATA = data || CURRENT_DATA;
+      nodes = new Map((DATA.nodes || []).map(node => [node.id, node]));
+      roots = (DATA.roots || []).map(id => nodes.get(id)).filter(Boolean);
+      collapsed = new Set();
+    };
+    const matchesSelf = node => {
+      const haystack = [node.title, node.summary, node.purpose].join(" ").toLowerCase();
+      const matchesSearch = !searchTerm || haystack.includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || node.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    };
+    const subtreeMatches = node => matchesSelf(node) || nodeChildren(node).some(subtreeMatches);
+    const cardHtml = (node, role) => {
+      const status = node.contextOnly ? "context" : (node.status || "context");
+      const label = node.contextOnly ? "层级背景" : (statusLabels[node.status] || "建设任务");
+      const summary = node.summary || node.purpose || "";
+      const compact = role === "nested" ? " compact" : "";
+      return `<button type="button" class="node-card ${escapeHtml(status)} ${escapeHtml(role)}${compact}" data-node="${escapeHtml(node.id)}">
+        <span class="node-kicker">${escapeHtml(label)}</span>
+        <span class="node-title">${escapeHtml(node.title || "未命名任务")}</span>
+        ${summary ? `<span class="node-summary">${escapeHtml(summary)}</span>` : ""}
+        <span class="progress-row"><span class="progress-track"><span style="width:${progressOf(node)}%"></span></span><span class="progress-value">${progressOf(node)}%</span></span>
+      </button>`;
+    };
+    const nestedHtml = (node, depth = 2) => {
+      const children = nodeChildren(node);
+      const hasChildren = children.length > 0;
+      return `<article class="nested-node" data-wrapper="${escapeHtml(node.id)}" data-depth="${depth}">
+        <div class="nested-line">
+          ${cardHtml(node, "nested")}
+          ${hasChildren ? `<button type="button" class="toggle" data-toggle="${escapeHtml(node.id)}" aria-expanded="true" aria-label="收起 ${escapeHtml(node.title)} 的子任务">−</button>` : ""}
+        </div>
+        ${hasChildren ? `<div class="nested-children">${children.map(child => nestedHtml(child, depth + 1)).join("")}</div>` : ""}
+      </article>`;
+    };
+    const stageHtml = stage => {
+      const children = nodeChildren(stage);
+      const hasChildren = children.length > 0;
+      const doneCount = children.filter(child => child.status === "done").length;
+      const activeCount = children.filter(child => child.status === "in_progress").length;
+      return `<article class="stage-branch" data-wrapper="${escapeHtml(stage.id)}">
+        <div class="stage-node-slot">
+          ${cardHtml(stage, "stage")}
+          <div class="meta-row"><span class="chip ${escapeHtml(stage.status || "")}">${escapeHtml(stage.contextOnly ? "层级背景" : (statusLabels[stage.status] || "建设任务"))}</span>${hasChildren ? `<span class="chip">${children.length} 个直接子任务 · 完成 ${doneCount} · 推进 ${activeCount}</span>` : ""}</div>
+          ${hasChildren ? `<button type="button" class="toggle" data-toggle="${escapeHtml(stage.id)}" aria-expanded="true" aria-label="收起 ${escapeHtml(stage.title)} 的子任务">−</button>` : ""}
+        </div>
+        ${hasChildren ? `<section class="stage-descendants" aria-label="${escapeHtml(stage.title)} 的子任务"><div class="children-header"><strong>子任务</strong><span>按层级展开</span></div><div class="children-grid">${children.map(child => nestedHtml(child)).join("")}</div></section>` : ""}
+      </article>`;
+    };
+    const rootHtml = root => `<section class="root-tree" data-root="${escapeHtml(root.id)}">
+      <div class="root-slot">${cardHtml(root, "root")}</div>
+      <div class="stage-stack">${nodeChildren(root).map(stageHtml).join("")}</div>
+    </section>`;
+    const updateSummary = () => {
+      const summary = DATA.summary || {};
+      const primary = roots[0];
+      const title = primary?.title || (DATA.nodes?.length ? "建设进度" : "建设起点");
+      const description = primary?.summary || primary?.purpose || (DATA.nodes?.length ? "当前可见任务进展" : "尚未记录已开始的功能建设");
+      document.getElementById("summaryStrip").innerHTML = `
+        <div class="summary-main"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(description)}</span></div>
+        <div class="metric"><strong>${Number(summary.doneCount || 0)}</strong><span>已完成节点</span></div>
+        <div class="metric"><strong>${Number(summary.inProgressCount || 0)}</strong><span>正在推进节点</span></div>
+        <div class="metric"><strong>${Number(summary.visibleNodeCount || 0)}</strong><span>当前展示任务</span></div>`;
+    };
+    const updateVisibility = () => {
+      let visibleCount = 0;
+      document.querySelectorAll("[data-root]").forEach(wrapper => {
+        const node = nodes.get(wrapper.dataset.root);
+        const visible = Boolean(node && subtreeMatches(node));
+        wrapper.classList.toggle("is-hidden", !visible);
+        if (visible) visibleCount += 1;
+      });
+      document.querySelectorAll("[data-wrapper]").forEach(wrapper => {
+        const node = nodes.get(wrapper.dataset.wrapper);
+        const visible = Boolean(node && subtreeMatches(node));
+        wrapper.classList.toggle("is-hidden", !visible);
+        if (visible) visibleCount += 1;
+      });
+      document.querySelectorAll("[data-toggle]").forEach(toggle => {
+        const id = toggle.dataset.toggle;
+        const expanded = !collapsed.has(id);
+        toggle.textContent = expanded ? "−" : "+";
+        toggle.setAttribute("aria-expanded", String(expanded));
+        const node = nodes.get(id);
+        toggle.setAttribute("aria-label", `${expanded ? "收起" : "展开"} ${node?.title || "该任务"} 的子任务`);
+        toggle.closest(".stage-branch, .nested-node")?.classList.toggle("is-collapsed", !expanded);
+      });
+      const filtered = Boolean(searchTerm || statusFilter !== "all");
+      document.getElementById("treeState").textContent = DATA.nodes?.length
+        ? `${visibleCount} 个任务节点符合条件 · ${filtered ? "已应用筛选" : "可纵向滚动阅读"}`
+        : "建设起点 · 尚未记录已开始的功能建设";
+    };
+    const renderTree = () => {
+      const canvas = document.getElementById("treeCanvas");
+      if (!roots.length) {
+        canvas.innerHTML = `<section class="empty-tree"><div><strong>建设起点</strong><span>当前画面用于展示任务森林开始建立前的状态。</span></div></section>`;
+      } else {
+        canvas.innerHTML = roots.map(rootHtml).join("");
+      }
+      updateVisibility();
+    };
+    const detailHtml = node => {
+      const children = nodeChildren(node);
+      return `
+        <h2 class="detail-title">${escapeHtml(node.title || "未命名任务")}</h2>
+        <p class="detail-summary">${escapeHtml(node.summary || node.purpose || "暂无说明")}</p>
+        <div class="detail-tags"><span class="chip ${escapeHtml(node.status || "")}">${escapeHtml(node.contextOnly ? "层级背景" : (statusLabels[node.status] || "建设任务"))}</span><span class="chip">完成度 ${progressOf(node)}%</span></div>
+        <section class="detail-section"><h3>任务目标</h3><p>${escapeHtml(node.purpose || node.summary || "暂无说明")}</p></section>
+        ${listHtml("预期成果", node.desired_outcomes)}
+        ${listHtml("建设要求", node.requirements)}
+        ${listHtml("验收标准", node.acceptance_criteria)}
+        ${listHtml("完成指标", node.success_metrics)}
+        ${children.length ? `<section class="detail-section"><h3>直接子任务</h3><p>${children.length} 项，其中已完成 ${children.filter(child => child.status === "done").length} 项。</p></section>` : ""}`;
+    };
+    const openDetail = (id, trigger = document.activeElement) => {
+      const node = nodes.get(id);
+      if (!node) return;
+      detailTrigger = trigger instanceof HTMLElement && trigger.isConnected ? trigger : null;
+      document.getElementById("detailBody").innerHTML = detailHtml(node);
+      document.getElementById("detailDrawer").classList.add("is-open");
+      document.getElementById("detailDrawer").setAttribute("aria-hidden", "false");
+      document.getElementById("overlay").classList.add("is-open");
+      document.getElementById("overlay").setAttribute("aria-hidden", "false");
+      document.getElementById("closeDetail").focus();
+    };
+    const closeDetail = () => {
+      const drawer = document.getElementById("detailDrawer");
+      if (drawer.getAttribute("aria-hidden") === "true") return;
+      const trigger = detailTrigger;
+      if (trigger?.isConnected && !trigger.disabled) trigger.focus({ preventScroll: true });
+      if (drawer.contains(document.activeElement)) {
+        const fallback = document.getElementById("historyState");
+        fallback.setAttribute("tabindex", "-1");
+        fallback.focus({ preventScroll: true });
+      }
+      detailTrigger = null;
+      drawer.classList.remove("is-open");
+      drawer.setAttribute("aria-hidden", "true");
+      document.getElementById("overlay").classList.remove("is-open");
+      document.getElementById("overlay").setAttribute("aria-hidden", "true");
+    };
+    const frameName = (frame, index) => {
+      if (frame?.frameType === "synthetic_baseline") return "建设起点";
+      if (frame?.frameType === "current_unsaved") return "当前进度（尚未保存为快照）";
+      if (frame?.frameType === "current_snapshot") return frame.snapshotId ? `当前进度 · 快照 ${frame.snapshotId}` : "当前进度";
+      return frame?.snapshotId ? `历史快照 ${frame.snapshotId}` : `历史进度 ${index + 1}`;
+    };
+    const nodeMapFor = data => new Map((data?.nodes || []).map(node => [node.id, node]));
+    const childOfRelationsFor = data => new Set((data?.nodes || [])
+      .filter(node => node.primary_parent)
+      .map(node => `${node.id}\u0000${node.primary_parent}`));
+    const changeDescription = index => {
+      const frame = HISTORY[index];
+      if (!frame) return "";
+      if (frame.synthetic) return "从零状态开始，尚未记录已开始的功能建设。";
+      const previous = HISTORY[index - 1]?.data;
+      if (!previous) return "这是第一份可见的建设进度。";
+      const before = nodeMapFor(previous);
+      const after = nodeMapFor(frame.data);
+      const added = [...after.keys()].filter(id => !before.has(id)).length;
+      const removed = [...before.keys()].filter(id => !after.has(id)).length;
+      const statusChanged = [...after.entries()].filter(([id, node]) => before.has(id) && before.get(id).status !== node.status).length;
+      const progressChanged = [...after.entries()].filter(([id, node]) => before.has(id) && progressOf(before.get(id)) !== progressOf(node)).length;
+      const beforeChildOf = childOfRelationsFor(previous);
+      const afterChildOf = childOfRelationsFor(frame.data);
+      const addedChildOf = [...afterChildOf].filter(relation => !beforeChildOf.has(relation)).length;
+      const removedChildOf = [...beforeChildOf].filter(relation => !afterChildOf.has(relation)).length;
+      const parts = [];
+      if (added) parts.push(`新增 ${added} 个节点`);
+      if (removed) parts.push(`减少 ${removed} 个节点`);
+      if (statusChanged) parts.push(`${statusChanged} 个节点更新状态`);
+      if (progressChanged) parts.push(`${progressChanged} 个节点更新完成度`);
+      if (addedChildOf) parts.push(`新增 ${addedChildOf} 条子任务关系`);
+      if (removedChildOf) parts.push(`移除 ${removedChildOf} 条子任务关系`);
+      return parts.length ? `本次变化：${parts.join("；")}。` : "与上一画面相比，没有新的可见建设变化。";
+    };
+    const updateHistoryControls = () => {
+      const frame = HISTORY[historyIndex];
+      const playable = HISTORY.length > 1;
+      const play = document.getElementById("historyPlay");
+      const previous = document.getElementById("historyPrevious");
+      const next = document.getElementById("historyNext");
+      const loop = document.getElementById("historyLoop");
+      const speed = document.getElementById("historySpeed");
+      const slider = document.getElementById("historySlider");
+      slider.max = String(Math.max(0, HISTORY.length - 1));
+      slider.value = String(historyIndex);
+      slider.disabled = !playable;
+      slider.setAttribute("aria-valuetext", `${frameName(frame, historyIndex)}，第 ${historyIndex + 1} 个进度画面，共 ${HISTORY.length} 个`);
+      previous.disabled = !playable || historyIndex === 0;
+      next.disabled = !playable || historyIndex === HISTORY.length - 1;
+      play.disabled = !playable;
+      speed.disabled = !playable;
+      loop.disabled = !playable;
+      play.classList.toggle("is-playing", historyIsPlaying);
+      play.textContent = historyIsPlaying ? "暂停" : (historyIndex === HISTORY.length - 1 ? "从头播放" : "播放");
+      play.setAttribute("aria-label", historyIsPlaying ? "暂停建设演进播放" : "播放建设演进");
+      loop.setAttribute("aria-pressed", String(historyLoopEnabled));
+      document.getElementById("historyState").textContent = historyIndex === HISTORY.length - 1 ? "当前进度" : "回看历史";
+      const timestamp = formatDate(frame?.createdAt);
+      const reason = frame?.reason ? ` · 原因 ${frame.reason}` : "";
+      document.getElementById("historyLabel").textContent = `${frameName(frame, historyIndex)}${timestamp ? ` · ${timestamp}` : ""}${reason}`;
+      document.getElementById("historyChange").textContent = changeDescription(historyIndex);
+      document.getElementById("historyStartLabel").textContent = HISTORY[0]?.synthetic ? "建设起点" : "最早记录";
+      document.getElementById("historyEndLabel").textContent = "当前进度";
+      const savedCount = HISTORY.filter(item => item.saved).length;
+      const syntheticText = HISTORY.some(item => item.synthetic) ? "“建设起点”是用于播放的起始画面，不计入已保存快照。" : "";
+      const unsavedText = HISTORY.some(item => item.frameType === "current_unsaved") ? "当前画面尚未保存为历史快照。" : "";
+      document.getElementById("historyHint").textContent = savedCount === 0
+        ? "暂无历史快照；当前展示最新任务图。"
+        : `当前共有 ${savedCount} 份已保存快照。${syntheticText}${unsavedText}`;
+      ["expandAll", "collapseDone", "focusCurrent", "search", "statusFilter"].forEach(id => {
+        document.getElementById(id).disabled = !(DATA.nodes || []).length;
+      });
+    };
+    const stopPlayback = (refresh = true) => {
+      if (historyTimer) window.clearInterval(historyTimer);
+      historyTimer = null;
+      historyIsPlaying = false;
+      if (refresh) updateHistoryControls();
+    };
+    const playbackDelay = () => Math.round(1800 / Number(document.getElementById("historySpeed").value || 1));
+    const applyFrame = (nextIndex, announce = true) => {
+      historyIndex = Math.min(Math.max(Number(nextIndex) || 0, 0), HISTORY.length - 1);
+      setActiveData(HISTORY[historyIndex]?.data || CURRENT_DATA);
+      searchTerm = "";
+      statusFilter = "all";
+      document.getElementById("search").value = "";
+      document.getElementById("statusFilter").value = "all";
+      closeDetail();
+      updateSummary();
+      renderTree();
+      updateHistoryControls();
+      if (announce) document.getElementById("historyLive").textContent = `已切换到${frameName(HISTORY[historyIndex], historyIndex)}。${changeDescription(historyIndex)}`;
+    };
+    const startPlayback = () => {
+      if (HISTORY.length < 2) return;
+      if (historyIndex >= HISTORY.length - 1) applyFrame(0, false);
+      historyIsPlaying = true;
+      historyTimer = window.setInterval(() => {
+        const atLast = historyIndex >= HISTORY.length - 1;
+        if (atLast && !historyLoopEnabled) {
+          stopPlayback();
+          return;
+        }
+        applyFrame(atLast ? 0 : historyIndex + 1);
+      }, playbackDelay());
+      updateHistoryControls();
+    };
+
+    document.getElementById("treeCanvas").addEventListener("click", event => {
+      const toggle = event.target.closest("[data-toggle]");
+      if (toggle) {
+        const id = toggle.dataset.toggle;
+        if (collapsed.has(id)) collapsed.delete(id); else collapsed.add(id);
+        updateVisibility();
+        return;
+      }
+      const card = event.target.closest("[data-node]");
+      if (card) openDetail(card.dataset.node, card);
+    });
+    document.getElementById("expandAll").addEventListener("click", () => { collapsed.clear(); updateVisibility(); });
+    document.getElementById("collapseDone").addEventListener("click", () => {
+      for (const node of nodes.values()) if (node.status === "done" && nodeChildren(node).length) collapsed.add(node.id);
+      updateVisibility();
+    });
+    document.getElementById("focusCurrent").addEventListener("click", () => {
+      searchTerm = "";
+      statusFilter = "all";
+      document.getElementById("search").value = "";
+      document.getElementById("statusFilter").value = "all";
+      collapsed.clear();
+      updateVisibility();
+      document.querySelector(".node-card.in_progress")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    document.getElementById("search").addEventListener("input", event => { searchTerm = event.target.value.trim(); updateVisibility(); });
+    document.getElementById("statusFilter").addEventListener("change", event => { statusFilter = event.target.value; updateVisibility(); });
+    document.getElementById("historyPrevious").addEventListener("click", () => { stopPlayback(false); applyFrame(historyIndex - 1); });
+    document.getElementById("historyNext").addEventListener("click", () => { stopPlayback(false); applyFrame(historyIndex + 1); });
+    document.getElementById("historyPlay").addEventListener("click", () => { if (historyIsPlaying) stopPlayback(); else startPlayback(); });
+    document.getElementById("historyLoop").addEventListener("click", () => { historyLoopEnabled = !historyLoopEnabled; updateHistoryControls(); });
+    document.getElementById("historySpeed").addEventListener("change", () => { if (historyIsPlaying) { stopPlayback(false); startPlayback(); } });
+    document.getElementById("historySlider").addEventListener("input", event => { stopPlayback(false); applyFrame(event.target.value); });
+    document.getElementById("closeDetail").addEventListener("click", closeDetail);
+    document.getElementById("overlay").addEventListener("click", closeDetail);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) stopPlayback(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeDetail(); });
+    applyFrame(historyIndex, false);
+  </script>
+</body>
+</html>

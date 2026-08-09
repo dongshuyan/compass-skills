@@ -2,27 +2,27 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import copy
-import html
+import hashlib
 import json
 import os
 import sqlite3
 import sys
 import time
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from task_forest_html import render_overview_html
 
 SCHEMA_VERSION = 1
 DEFAULT_LOCK_TIMEOUT_SECONDS = 30.0
 DEFAULT_STALE_LOCK_SECONDS = 6 * 60 * 60
 DEAD_PID_GRACE_SECONDS = 2.0
-BROKEN_LOCK_GRACE_SECONDS = 2.0
-DEFAULT_AGENT_WORKBENCH_DB = Path.home() / ".agent-workbench" / "agent-workbench.sqlite3"
+DEFAULT_AGENT_WORKBENCH_DB = (
+    Path.home() / ".agent-workbench" / "agent-workbench.sqlite3"
+)
 WINDOWS_ERROR_ACCESS_DENIED = 5
 WINDOWS_ERROR_INVALID_PARAMETER = 87
 WAIT_OBJECT_0 = 0x00000000
@@ -69,7 +69,37 @@ DIFFICULTIES = {"low", "medium", "high", "very_high", "unknown"}
 
 
 def default_actor() -> str:
-    return (os.environ.get("COMPASS_AGENT_NAME") or os.environ.get("AGENT_NAME") or "agent").strip() or "agent"
+    return (
+        os.environ.get("COMPASS_AGENT_NAME") or os.environ.get("AGENT_NAME") or "agent"
+    ).strip() or "agent"
+
+
+def _classify_posix_kill_outcome(exc: BaseException | None) -> bool | None:
+    if exc is None:
+        return True
+    if isinstance(exc, ProcessLookupError):
+        return False
+    if isinstance(exc, PermissionError):
+        return True
+    if isinstance(exc, OSError):
+        return None
+    raise TypeError(f"Unsupported kill outcome: {exc!r}")
+
+
+def _classify_windows_probe(
+    open_error: int | None, wait_result: int | None
+) -> bool | None:
+    if open_error is not None:
+        if open_error == WINDOWS_ERROR_INVALID_PARAMETER:
+            return False
+        if open_error == WINDOWS_ERROR_ACCESS_DENIED:
+            return True
+        return None
+    if wait_result == WAIT_OBJECT_0:
+        return False
+    if wait_result == WAIT_TIMEOUT:
+        return True
+    return None
 
 
 def now_iso() -> str:
@@ -106,10 +136,14 @@ def sha256_path(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def update_global_registry(workspace: Path, command: str, error: str | None = None) -> None:
+def update_global_registry(
+    workspace: Path, command: str, error: str | None = None
+) -> None:
     if os.environ.get("TASK_FOREST_DISABLE_GLOBAL_REGISTRY") in {"1", "true", "yes"}:
         return
-    db_path = Path(os.environ.get("AGENT_WORKBENCH_DB") or DEFAULT_AGENT_WORKBENCH_DB).expanduser()
+    db_path = Path(
+        os.environ.get("AGENT_WORKBENCH_DB") or DEFAULT_AGENT_WORKBENCH_DB
+    ).expanduser()
     root = workspace / ".agent-workbench" / "task-forest"
     exports = root / "exports"
     graph_path = exports / "task-forest.graph.json"
@@ -117,7 +151,9 @@ def update_global_registry(workspace: Path, command: str, error: str | None = No
     timeline_path = exports / "task-forest.timeline.json"
     html_path = exports / "task-forest.html"
     graph_hash = sha256_path(graph_path)
-    status = "ok" if graph_path.exists() and todos_path.exists() and not error else "missing"
+    status = (
+        "ok" if graph_path.exists() and todos_path.exists() and not error else "missing"
+    )
     if error:
         status = "error"
     summary = {
@@ -211,9 +247,15 @@ def update_global_registry(workspace: Path, command: str, error: str | None = No
         forest_id = stable_registry_id("tf", str(workspace))
         timestamp = now_iso()
         last_export_at = None
-        existing = [path for path in [graph_path, todos_path, timeline_path, html_path] if path.exists()]
+        existing = [
+            path
+            for path in [graph_path, todos_path, timeline_path, html_path]
+            if path.exists()
+        ]
         if existing:
-            last_export_at = datetime.fromtimestamp(max(path.stat().st_mtime for path in existing), timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            last_export_at = datetime.fromtimestamp(
+                max(path.stat().st_mtime for path in existing), timezone.utc
+            ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         conn.execute(
             """
             INSERT INTO aw_workspaces(workspace_id, path, display_name, updated_at)
@@ -306,40 +348,6 @@ def stable_event_id() -> str:
     return f"tfevt_{uuid.uuid4().hex[:20]}"
 
 
-@dataclass(frozen=True)
-class LockSnapshot:
-    raw: str
-    metadata: dict[str, Any] | None
-    size: int
-    mtime_ns: int
-
-
-def _classify_posix_kill_outcome(exc: BaseException | None) -> bool | None:
-    if exc is None:
-        return True
-    if isinstance(exc, ProcessLookupError):
-        return False
-    if isinstance(exc, PermissionError):
-        return True
-    if isinstance(exc, OSError):
-        return None
-    raise TypeError(f"Unsupported kill outcome: {exc!r}")
-
-
-def _classify_windows_probe(open_error: int | None, wait_result: int | None) -> bool | None:
-    if open_error is not None:
-        if open_error == WINDOWS_ERROR_INVALID_PARAMETER:
-            return False
-        if open_error == WINDOWS_ERROR_ACCESS_DENIED:
-            return True
-        return None
-    if wait_result == WAIT_OBJECT_0:
-        return False
-    if wait_result == WAIT_TIMEOUT:
-        return True
-    return None
-
-
 def canonical_json(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -427,12 +435,7 @@ class FileLock:
                 os.write(self.fd, canonical_json(metadata).encode("utf-8"))
                 os.write(self.fd, b"\n")
                 os.fsync(self.fd)
-                # A stale-cleanup race may have removed and recreated the path while we were paused
-                # between open() and the metadata write; only proceed if the live path is still ours.
-                if self._path_token_matches_self():
-                    return self
-                os.close(self.fd)
-                self.fd = None
+                return self
             except FileExistsError:
                 self._break_stale_lock_if_safe()
                 if time.time() >= deadline:
@@ -452,7 +455,11 @@ class FileLock:
         except OSError:
             return "<无法读取锁文件>"
 
-    def _parse_metadata(self, raw: str) -> dict[str, Any] | None:
+    def _read_metadata(self) -> dict[str, Any] | None:
+        try:
+            raw = self.path.read_text(encoding="utf-8").strip()
+        except OSError:
+            return None
         if not raw:
             return None
         try:
@@ -466,41 +473,21 @@ class FileLock:
                 pid = int(parts[0])
             except ValueError:
                 pid = None
-            return {"pid": pid, "started_at": parts[1] if len(parts) > 1 else None, "legacy": True}
+            return {
+                "pid": pid,
+                "started_at": parts[1] if len(parts) > 1 else None,
+                "legacy": True,
+            }
 
-    def _read_snapshot(self) -> LockSnapshot | None:
-        try:
-            before = self.path.stat()
-        except OSError:
-            return None
-        try:
-            raw = self.path.read_text(encoding="utf-8").strip()
-        except OSError:
-            return None
-        try:
-            after = self.path.stat()
-        except OSError:
-            return None
-        if before.st_mtime_ns != after.st_mtime_ns or before.st_size != after.st_size:
-            return None
-        return LockSnapshot(
-            raw=raw,
-            metadata=self._parse_metadata(raw),
-            size=after.st_size,
-            mtime_ns=after.st_mtime_ns,
-        )
-
-    def _lock_age(self, snapshot: LockSnapshot) -> float | None:
-        metadata = snapshot.metadata or {}
+    def _lock_age(self, metadata: dict[str, Any]) -> float | None:
         raw = metadata.get("started_at")
-        if isinstance(raw, str) and raw:
-            try:
-                started = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-            except ValueError:
-                started = None
-            if started is not None:
-                return max(0.0, (datetime.now(timezone.utc) - started).total_seconds())
-        return max(0.0, time.time() - (snapshot.mtime_ns / 1_000_000_000))
+        if not isinstance(raw, str) or not raw:
+            return None
+        try:
+            started = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return max(0.0, (datetime.now(timezone.utc) - started).total_seconds())
 
     def _pid_alive(self, pid: Any) -> bool | None:
         if not isinstance(pid, int) or pid <= 0:
@@ -513,8 +500,8 @@ class FileLock:
         try:
             os.kill(pid, 0)
             exc: BaseException | None = None
-        except OSError as err:
-            exc = err
+        except OSError as error:
+            exc = error
         return _classify_posix_kill_outcome(exc)
 
     def _pid_alive_windows(self, pid: int) -> bool | None:
@@ -542,56 +529,35 @@ class FileLock:
         finally:
             close_handle(handle)
 
-    def _snapshot_matches_current(self, snapshot: LockSnapshot) -> bool:
-        current = self._read_snapshot()
-        if current is None:
-            return False
-        token = snapshot.metadata.get("token") if snapshot.metadata else None
-        if isinstance(token, str) and token:
-            return bool(current.metadata and current.metadata.get("token") == token)
-        return current.raw == snapshot.raw and current.size == snapshot.size and current.mtime_ns == snapshot.mtime_ns
-
-    def _best_effort_unlink_snapshot(self, snapshot: LockSnapshot) -> bool:
-        if not self._snapshot_matches_current(snapshot):
-            return False
+    def _break_stale_lock_if_safe(self) -> None:
+        metadata = self._read_metadata()
+        if not metadata:
+            return
+        age = self._lock_age(metadata)
+        pid_alive = self._pid_alive(metadata.get("pid"))
+        if pid_alive is True:
+            return
+        dead_pid_stale = (
+            pid_alive is False and age is not None and age >= DEAD_PID_GRACE_SECONDS
+        )
+        unknown_stale = (
+            pid_alive is None and age is not None and age >= self.stale_seconds
+        )
+        if not dead_pid_stale and not unknown_stale:
+            return
         try:
             self.path.unlink()
-            return True
         except FileNotFoundError:
-            return True
-        except OSError:
-            return False
-
-    def _path_token_matches_self(self) -> bool:
-        snapshot = self._read_snapshot()
-        return bool(snapshot and snapshot.metadata and snapshot.metadata.get("token") == self.token)
-
-    def _stale_cleanup_reason(self, snapshot: LockSnapshot) -> str | None:
-        age = self._lock_age(snapshot)
-        if age is None:
-            return None
-        if snapshot.metadata is None:
-            return "broken_lock" if age >= BROKEN_LOCK_GRACE_SECONDS else None
-        pid_alive = self._pid_alive(snapshot.metadata.get("pid"))
-        if pid_alive is False and age >= DEAD_PID_GRACE_SECONDS:
-            return "dead_pid"
-        if age >= self.stale_seconds:
-            return "lease_expired"
-        return None
-
-    def _break_stale_lock_if_safe(self) -> None:
-        snapshot = self._read_snapshot()
-        if snapshot is None:
-            return
-        if self._stale_cleanup_reason(snapshot) is None:
-            return
-        self._best_effort_unlink_snapshot(snapshot)
+            pass
 
     def _unlink_if_owned(self) -> None:
-        snapshot = self._read_snapshot()
-        if not snapshot or not snapshot.metadata or snapshot.metadata.get("token") != self.token:
+        metadata = self._read_metadata()
+        if metadata and metadata.get("token") != self.token:
             return
-        self._best_effort_unlink_snapshot(snapshot)
+        try:
+            self.path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 class Store:
@@ -612,11 +578,19 @@ class Store:
         return FileLock(
             self.lock_path,
             timeout=timeout if timeout is not None else DEFAULT_LOCK_TIMEOUT_SECONDS,
-            stale_seconds=float(os.environ.get("TASK_FOREST_STALE_LOCK_SECONDS", DEFAULT_STALE_LOCK_SECONDS)),
+            stale_seconds=float(
+                os.environ.get(
+                    "TASK_FOREST_STALE_LOCK_SECONDS", DEFAULT_STALE_LOCK_SECONDS
+                )
+            ),
         )
 
     def is_initialized(self) -> bool:
-        return self.config_path.exists() and self.nodes_path.exists() and self.edges_path.exists()
+        return (
+            self.config_path.exists()
+            and self.nodes_path.exists()
+            and self.edges_path.exists()
+        )
 
     def ensure_dirs(self) -> None:
         for rel in [
@@ -656,7 +630,9 @@ class Store:
         if created:
             self.rebuild_generated(write_snapshot=False)
 
-    def load(self, assume_locked: bool = False) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    def load(
+        self, assume_locked: bool = False
+    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         if not self.is_initialized():
             if assume_locked:
                 self.init()
@@ -668,7 +644,9 @@ class Store:
         edges = read_json(self.edges_path, {})
         return config, nodes, edges
 
-    def save(self, config: dict[str, Any], nodes: dict[str, Any], edges: dict[str, Any]) -> None:
+    def save(
+        self, config: dict[str, Any], nodes: dict[str, Any], edges: dict[str, Any]
+    ) -> None:
         config["updated_at"] = now_iso()
         config["graph_hash"] = graph_hash(nodes, edges)
         write_json_atomic(self.config_path, config)
@@ -726,18 +704,30 @@ class Store:
         write_json_atomic(self.root / "snapshots" / f"{snapshot_id}.json", snapshot)
 
     def rebuild_generated(self, write_snapshot: bool = False) -> None:
-        config, nodes, edges = read_json(self.config_path, {}), read_json(self.nodes_path, {}), read_json(self.edges_path, {})
+        config, nodes, edges = (
+            read_json(self.config_path, {}),
+            read_json(self.nodes_path, {}),
+            read_json(self.edges_path, {}),
+        )
         if not config:
             return
         export = build_export(config, nodes, edges, reason="rebuild", event_id=None)
         write_json_atomic(self.forest_path, export["graph"])
         write_json_atomic(self.todos_path, export["todos"])
-        write_json_atomic(self.root / "exports" / "task-forest.graph.json", export["graph"])
-        write_json_atomic(self.root / "exports" / "task-forest.todos.json", export["todos"])
-        write_json_atomic(self.root / "exports" / "task-forest.timeline.json", load_snapshots(self.root))
-        html_text = render_html(export["graph"], load_snapshots(self.root), export["todos"])
+        write_json_atomic(
+            self.root / "exports" / "task-forest.graph.json", export["graph"]
+        )
+        write_json_atomic(
+            self.root / "exports" / "task-forest.todos.json", export["todos"]
+        )
+        snapshots = load_snapshots(self.root)
+        write_json_atomic(
+            self.root / "exports" / "task-forest.timeline.json", snapshots
+        )
+        html_text = render_overview_html(export["graph"], snapshots)
         (self.root / "exports").mkdir(parents=True, exist_ok=True)
         write_text_atomic(self.root / "exports" / "task-forest.html", html_text)
+        (self.root / "exports" / "task-forest.audit.html").unlink(missing_ok=True)
         if write_snapshot:
             self.write_snapshot(config, nodes, edges, "rebuild", None)
             write_json_atomic(self.config_path, config)
@@ -786,7 +776,9 @@ def node_defaults(node_id: str, title: str) -> dict[str, Any]:
     }
 
 
-def normalize_node(raw: dict[str, Any], node_id: str, title: str | None = None) -> dict[str, Any]:
+def normalize_node(
+    raw: dict[str, Any], node_id: str, title: str | None = None
+) -> dict[str, Any]:
     base = node_defaults(node_id, title or str(raw.get("title", "")).strip())
     base.update(raw)
     base["id"] = node_id
@@ -801,9 +793,13 @@ def normalize_node(raw: dict[str, Any], node_id: str, title: str | None = None) 
     base["assumptions"] = normalize_list(base.get("assumptions"))
     if not isinstance(base.get("alignment"), dict):
         base["alignment"] = node_defaults(node_id, base["title"])["alignment"]
-    base["alignment"]["validation_plan"] = normalize_list(base["alignment"].get("validation_plan"))
+    base["alignment"]["validation_plan"] = normalize_list(
+        base["alignment"].get("validation_plan")
+    )
     try:
-        base["alignment"]["fit_confidence"] = float(base["alignment"].get("fit_confidence") or 0.0)
+        base["alignment"]["fit_confidence"] = float(
+            base["alignment"].get("fit_confidence") or 0.0
+        )
     except (TypeError, ValueError):
         base["alignment"]["fit_confidence"] = 0.0
     base["alignment_records"] = normalize_list(base.get("alignment_records"))
@@ -821,7 +817,9 @@ def normalize_node(raw: dict[str, Any], node_id: str, title: str | None = None) 
     return base
 
 
-def edge_defaults(edge_id: str, source: str, target: str, edge_type: str) -> dict[str, Any]:
+def edge_defaults(
+    edge_id: str, source: str, target: str, edge_type: str
+) -> dict[str, Any]:
     ts = now_iso()
     return {
         "id": edge_id,
@@ -837,7 +835,9 @@ def edge_defaults(edge_id: str, source: str, target: str, edge_type: str) -> dic
     }
 
 
-def normalize_edge(raw: dict[str, Any], edge_id: str, source: str, target: str, edge_type: str) -> dict[str, Any]:
+def normalize_edge(
+    raw: dict[str, Any], edge_id: str, source: str, target: str, edge_type: str
+) -> dict[str, Any]:
     base = edge_defaults(edge_id, source, target, edge_type)
     base.update(raw)
     base["id"] = edge_id
@@ -914,7 +914,9 @@ def detect_cycle(edges: dict[str, Any], edge_type: str) -> list[str] | None:
     return None
 
 
-def validate_state(nodes: dict[str, Any], edges: dict[str, Any]) -> tuple[list[str], list[str]]:
+def validate_state(
+    nodes: dict[str, Any], edges: dict[str, Any]
+) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     child_parent_count: dict[str, int] = {}
@@ -930,7 +932,9 @@ def validate_state(nodes: dict[str, Any], edges: dict[str, Any]) -> tuple[list[s
         if node.get("status") not in NODE_STATUSES:
             errors.append(f"节点 {node_id} 的 status 非法：{node.get('status')}")
         if node.get("difficulty") not in DIFFICULTIES:
-            warnings.append(f"节点 {node_id} 的 difficulty 未规范化：{node.get('difficulty')}")
+            warnings.append(
+                f"节点 {node_id} 的 difficulty 未规范化：{node.get('difficulty')}"
+            )
         if not (0 <= clamp_progress(node.get("progress")) <= 100):
             errors.append(f"节点 {node_id} 的 progress 非法")
 
@@ -957,7 +961,9 @@ def validate_state(nodes: dict[str, Any], edges: dict[str, Any]) -> tuple[list[s
 
     for node_id, count in child_parent_count.items():
         if count > 1:
-            errors.append(f"节点 {node_id} 有多个 child_of 父节点；请改用 contributes_to 表达多归属")
+            errors.append(
+                f"节点 {node_id} 有多个 child_of 父节点；请改用 contributes_to 表达多归属"
+            )
 
     for edge_type in ("child_of", "depends_on"):
         cycle = detect_cycle(edges, edge_type)
@@ -987,11 +993,21 @@ def build_parents(edges: dict[str, Any]) -> dict[str, str]:
 
 def criterion_done(item: Any) -> bool:
     if isinstance(item, dict):
-        return str(item.get("status", "")).lower() in {"done", "passed", "complete", "completed"}
+        return str(item.get("status", "")).lower() in {
+            "done",
+            "passed",
+            "complete",
+            "completed",
+        }
     return False
 
 
-def derived_progress(node_id: str, nodes: dict[str, Any], children: dict[str, list[str]], memo: dict[str, float]) -> float:
+def derived_progress(
+    node_id: str,
+    nodes: dict[str, Any],
+    children: dict[str, list[str]],
+    memo: dict[str, float],
+) -> float:
     if node_id in memo:
         return memo[node_id]
     node = nodes[node_id]
@@ -1005,16 +1021,24 @@ def derived_progress(node_id: str, nodes: dict[str, Any], children: dict[str, li
     child_ids = children.get(node_id, [])
     criteria = normalize_list(node.get("acceptance_criteria"))
     if child_ids and node.get("progress_source") != "manual":
-        value = sum(derived_progress(child, nodes, children, memo) for child in child_ids) / len(child_ids)
+        value = sum(
+            derived_progress(child, nodes, children, memo) for child in child_ids
+        ) / len(child_ids)
     elif criteria and all(isinstance(item, dict) for item in criteria):
-        value = 100.0 * sum(1 for item in criteria if criterion_done(item)) / max(1, len(criteria))
+        value = (
+            100.0
+            * sum(1 for item in criteria if criterion_done(item))
+            / max(1, len(criteria))
+        )
     else:
         value = clamp_progress(node.get("progress"))
     memo[node_id] = round(value, 1)
     return memo[node_id]
 
 
-def dependency_status(node_id: str, nodes: dict[str, Any], edges: dict[str, Any]) -> tuple[bool, list[str]]:
+def dependency_status(
+    node_id: str, nodes: dict[str, Any], edges: dict[str, Any]
+) -> tuple[bool, list[str]]:
     blockers: list[str] = []
     for edge in edges.values():
         if edge.get("type") == "depends_on" and edge.get("from") == node_id:
@@ -1024,7 +1048,9 @@ def dependency_status(node_id: str, nodes: dict[str, Any], edges: dict[str, Any]
     return len(blockers) == 0, blockers
 
 
-def estimate_remaining(node: dict[str, Any], progress: float) -> tuple[int | None, int | None]:
+def estimate_remaining(
+    node: dict[str, Any], progress: float
+) -> tuple[int | None, int | None]:
     low = node.get("remaining_minutes_min")
     high = node.get("remaining_minutes_max")
     if isinstance(low, int) and isinstance(high, int):
@@ -1063,7 +1089,9 @@ EDGE_TYPE_LEGEND = {
 def build_edge_view(edges: dict[str, Any]) -> dict[str, Any]:
     tree_edges: list[str] = []
     cross_edges: list[str] = []
-    edge_type_counts: dict[str, int] = {edge_type: 0 for edge_type in sorted(EDGE_TYPES)}
+    edge_type_counts: dict[str, int] = {
+        edge_type: 0 for edge_type in sorted(EDGE_TYPES)
+    }
     for edge_id, edge in edges.items():
         edge_type = str(edge.get("type"))
         edge_type_counts[edge_type] = edge_type_counts.get(edge_type, 0) + 1
@@ -1115,7 +1143,9 @@ def build_edge_index(nodes: dict[str, Any], edges: dict[str, Any]) -> dict[str, 
     return index
 
 
-def build_status_queues(nodes: dict[str, Any], todos: list[dict[str, Any]]) -> dict[str, Any]:
+def build_status_queues(
+    nodes: dict[str, Any], todos: list[dict[str, Any]]
+) -> dict[str, Any]:
     by_status: dict[str, list[str]] = {status: [] for status in sorted(NODE_STATUSES)}
     for node_id, node in nodes.items():
         by_status.setdefault(str(node.get("status")), []).append(node_id)
@@ -1124,7 +1154,11 @@ def build_status_queues(nodes: dict[str, Any], todos: list[dict[str, Any]]) -> d
     actionable = [
         item["id"]
         for item in todos
-        if not (item.get("kind") == "global_task" and item.get("status") == "in_progress" and item.get("remaining_minutes_min") is None)
+        if not (
+            item.get("kind") == "global_task"
+            and item.get("status") == "in_progress"
+            and item.get("remaining_minutes_min") is None
+        )
     ]
     evergreen = [
         node_id
@@ -1136,7 +1170,13 @@ def build_status_queues(nodes: dict[str, Any], todos: list[dict[str, Any]]) -> d
     ]
     return {
         "by_status": by_status,
-        "open": sorted([node_id for node_id, node in nodes.items() if node.get("status") in OPEN_STATUSES]),
+        "open": sorted(
+            [
+                node_id
+                for node_id, node in nodes.items()
+                if node.get("status") in OPEN_STATUSES
+            ]
+        ),
         "review_needed": by_status.get("review_needed", []),
         "blocked": by_status.get("blocked", []),
         "ready": by_status.get("ready", []),
@@ -1145,7 +1185,9 @@ def build_status_queues(nodes: dict[str, Any], todos: list[dict[str, Any]]) -> d
     }
 
 
-def build_todos(nodes: dict[str, Any], edges: dict[str, Any], progress_by_id: dict[str, float]) -> list[dict[str, Any]]:
+def build_todos(
+    nodes: dict[str, Any], edges: dict[str, Any], progress_by_id: dict[str, float]
+) -> list[dict[str, Any]]:
     todos: list[dict[str, Any]] = []
     for node_id, node in nodes.items():
         if node.get("status") not in OPEN_STATUSES:
@@ -1175,7 +1217,13 @@ def build_todos(nodes: dict[str, Any], edges: dict[str, Any], progress_by_id: di
                 "alignment": node.get("alignment", {}),
             }
         )
-    todos.sort(key=lambda item: (not item["ready"], -int(item.get("priority") or 0), item["id"]))
+    todos.sort(
+        key=lambda item: (
+            not item["ready"],
+            -int(item.get("priority") or 0),
+            item["id"],
+        )
+    )
     return todos
 
 
@@ -1208,7 +1256,10 @@ def build_export(
     children = build_children(edges)
     parents = build_parents(edges)
     progress_memo: dict[str, float] = {}
-    progress_by_id = {node_id: derived_progress(node_id, nodes, children, progress_memo) for node_id in nodes}
+    progress_by_id = {
+        node_id: derived_progress(node_id, nodes, children, progress_memo)
+        for node_id in nodes
+    }
     roots = [node_id for node_id in nodes if node_id not in parents]
     roots.sort(key=lambda nid: (nodes[nid].get("kind") != "global_task", nid))
     enriched_nodes = copy.deepcopy(nodes)
@@ -1238,10 +1289,18 @@ def build_export(
         "summary": {
             "node_count": len(nodes),
             "edge_count": len(edges),
-            "open_count": sum(1 for node in nodes.values() if node.get("status") in OPEN_STATUSES),
-            "done_count": sum(1 for node in nodes.values() if node.get("status") == "done"),
-            "blocked_count": sum(1 for node in nodes.values() if node.get("status") == "blocked"),
-            "review_needed_count": sum(1 for node in nodes.values() if node.get("status") == "review_needed"),
+            "open_count": sum(
+                1 for node in nodes.values() if node.get("status") in OPEN_STATUSES
+            ),
+            "done_count": sum(
+                1 for node in nodes.values() if node.get("status") == "done"
+            ),
+            "blocked_count": sum(
+                1 for node in nodes.values() if node.get("status") == "blocked"
+            ),
+            "review_needed_count": sum(
+                1 for node in nodes.values() if node.get("status") == "review_needed"
+            ),
         },
     }
     return {"graph": graph, "todos": todos}
@@ -1269,10 +1328,17 @@ def add_node(
     title = str(fields.get("title", "")).strip()
     if not title:
         raise ValueError("新增节点必须提供 title")
-    actual_id = node_id or fields.get("id") or f"TF-{int(config.get('next_node_number', 1)):04d}"
+    actual_id = (
+        node_id
+        or fields.get("id")
+        or f"TF-{int(config.get('next_node_number', 1)):04d}"
+    )
     if actual_id in nodes:
         raise ValueError(f"节点已存在：{actual_id}")
-    if actual_id.startswith("TF-") and actual_id == f"TF-{int(config.get('next_node_number', 1)):04d}":
+    if (
+        actual_id.startswith("TF-")
+        and actual_id == f"TF-{int(config.get('next_node_number', 1)):04d}"
+    ):
         config["next_node_number"] = int(config.get("next_node_number", 1)) + 1
     node = normalize_node(fields, actual_id, title=title)
     nodes[actual_id] = node
@@ -1338,7 +1404,9 @@ def apply_changes(
             node_id = resolve(str(change.get("id")))
             if node_id not in nodes:
                 raise ValueError(f"更新目标不存在：{node_id}")
-            nodes[node_id] = merge_fields(nodes[node_id], dict(change.get("fields") or {}))
+            nodes[node_id] = merge_fields(
+                nodes[node_id], dict(change.get("fields") or {})
+            )
         elif action == "set_status":
             node_id = resolve(str(change.get("id")))
             if node_id not in nodes:
@@ -1353,12 +1421,24 @@ def apply_changes(
                 raise ValueError(f"废止目标不存在：{node_id}")
             nodes[node_id] = merge_fields(
                 nodes[node_id],
-                {"status": "deprecated", "deprecated_at": now_iso(), "summary": change.get("reason", nodes[node_id].get("summary", ""))},
+                {
+                    "status": "deprecated",
+                    "deprecated_at": now_iso(),
+                    "summary": change.get("reason", nodes[node_id].get("summary", "")),
+                },
             )
         elif action == "add_edge":
             source = resolve(str(change.get("from")))
             target = resolve(str(change.get("to")))
-            add_edge(config, nodes, edges, source, target, str(change.get("type")), dict(change.get("edge") or {}))
+            add_edge(
+                config,
+                nodes,
+                edges,
+                source,
+                target,
+                str(change.get("type")),
+                dict(change.get("edge") or {}),
+            )
         elif action == "remove_edge":
             edge_id = change.get("id")
             if edge_id:
@@ -1367,14 +1447,23 @@ def apply_changes(
                 source = resolve(str(change.get("from")))
                 target = resolve(str(change.get("to")))
                 edge_type = str(change.get("type"))
-                to_remove = [eid for eid, edge in edges.items() if edge["from"] == source and edge["to"] == target and edge["type"] == edge_type]
+                to_remove = [
+                    eid
+                    for eid, edge in edges.items()
+                    if edge["from"] == source
+                    and edge["to"] == target
+                    and edge["type"] == edge_type
+                ]
                 for eid in to_remove:
                     edges.pop(eid, None)
         elif action == "record_deviation":
             deviation = dict(change.get("deviation") or {})
             deviation.setdefault("id", f"TFD-{uuid.uuid4().hex[:10]}")
             deviation.setdefault("created_at", now_iso())
-            related = [resolve(str(item)) for item in normalize_list(deviation.get("related_task_ids"))]
+            related = [
+                resolve(str(item))
+                for item in normalize_list(deviation.get("related_task_ids"))
+            ]
             deviation["related_task_ids"] = related
             for node_id in related:
                 if node_id in nodes:
@@ -1384,11 +1473,16 @@ def apply_changes(
             alignment = dict(change.get("alignment") or {})
             alignment.setdefault("id", f"TFA-{uuid.uuid4().hex[:10]}")
             alignment.setdefault("created_at", now_iso())
-            related = [resolve(str(item)) for item in normalize_list(alignment.get("related_task_ids"))]
+            related = [
+                resolve(str(item))
+                for item in normalize_list(alignment.get("related_task_ids"))
+            ]
             alignment["related_task_ids"] = related
             for node_id in related:
                 if node_id in nodes:
-                    nodes[node_id].setdefault("alignment_records", []).append(alignment["id"])
+                    nodes[node_id].setdefault("alignment_records", []).append(
+                        alignment["id"]
+                    )
                     if isinstance(alignment.get("node_alignment"), dict):
                         nodes[node_id]["alignment"] = alignment["node_alignment"]
                     nodes[node_id] = normalize_node(nodes[node_id], node_id)
@@ -1416,7 +1510,9 @@ def parse_json_arg(value: str | None, file_value: str | None, default: Any) -> A
 
 
 def print_human_node(node: dict[str, Any]) -> None:
-    print(f"{node['id']} | {node.get('status')} | {node.get('kind')} | {node.get('derived_progress', node.get('progress', 0))}% | {node.get('title')}")
+    print(
+        f"{node['id']} | {node.get('status')} | {node.get('kind')} | {node.get('derived_progress', node.get('progress', 0))}% | {node.get('title')}"
+    )
     if node.get("summary"):
         print(f"  摘要：{node['summary']}")
     if node.get("purpose"):
@@ -1474,16 +1570,46 @@ def cmd_add_node(args: argparse.Namespace) -> int:
         fields.update(extra)
         node_id = add_node(config, nodes, fields)
         for parent in args.parent:
-            add_edge(config, nodes, edges, node_id, parent, "child_of", {"reason": "CLI add-node --parent"})
+            add_edge(
+                config,
+                nodes,
+                edges,
+                node_id,
+                parent,
+                "child_of",
+                {"reason": "CLI add-node --parent"},
+            )
         for dep in args.depends_on:
-            add_edge(config, nodes, edges, node_id, dep, "depends_on", {"reason": "CLI add-node --depends-on"})
+            add_edge(
+                config,
+                nodes,
+                edges,
+                node_id,
+                dep,
+                "depends_on",
+                {"reason": "CLI add-node --depends-on"},
+            )
         for target in args.contributes_to:
-            add_edge(config, nodes, edges, node_id, target, "contributes_to", {"reason": "CLI add-node --contributes-to"})
+            add_edge(
+                config,
+                nodes,
+                edges,
+                node_id,
+                target,
+                "contributes_to",
+                {"reason": "CLI add-node --contributes-to"},
+            )
         errors, _ = validate_state(nodes, edges)
         if errors:
             raise ValueError("; ".join(errors))
         after = {"nodes": copy.deepcopy(nodes), "edges": copy.deepcopy(edges)}
-        event = store.record_event("add_node", args.actor, {"node_id": node_id, "title": args.title}, before, after)
+        event = store.record_event(
+            "add_node",
+            args.actor,
+            {"node_id": node_id, "title": args.title},
+            before,
+            after,
+        )
         store.write_snapshot(config, nodes, edges, "add_node", event["event_id"])
         store.save(config, nodes, edges)
         store.rebuild_generated()
@@ -1500,7 +1626,18 @@ def cmd_update_node(args: argparse.Namespace) -> int:
             raise ValueError(f"节点不存在：{args.id}")
         before = {"nodes": copy.deepcopy(nodes), "edges": copy.deepcopy(edges)}
         fields: dict[str, Any] = {}
-        for key in ["title", "kind", "status", "summary", "priority", "difficulty", "estimate", "remaining_min", "remaining_max", "confidence"]:
+        for key in [
+            "title",
+            "kind",
+            "status",
+            "summary",
+            "priority",
+            "difficulty",
+            "estimate",
+            "remaining_min",
+            "remaining_max",
+            "confidence",
+        ]:
             value = getattr(args, key)
             if value is not None:
                 target_key = {
@@ -1552,7 +1689,13 @@ def cmd_update_node(args: argparse.Namespace) -> int:
         if errors:
             raise ValueError("; ".join(errors))
         after = {"nodes": copy.deepcopy(nodes), "edges": copy.deepcopy(edges)}
-        event = store.record_event("update_node", args.actor, {"node_id": args.id, "fields": sorted(fields)}, before, after)
+        event = store.record_event(
+            "update_node",
+            args.actor,
+            {"node_id": args.id, "fields": sorted(fields)},
+            before,
+            after,
+        )
         store.write_snapshot(config, nodes, edges, "update_node", event["event_id"])
         store.save(config, nodes, edges)
         store.rebuild_generated()
@@ -1573,10 +1716,16 @@ def cmd_add_edge(args: argparse.Namespace) -> int:
             args.from_id,
             args.to_id,
             args.type,
-            {"reason": args.reason or "", "confidence": args.confidence, "created_from_session": args.session_id},
+            {
+                "reason": args.reason or "",
+                "confidence": args.confidence,
+                "created_from_session": args.session_id,
+            },
         )
         after = {"nodes": copy.deepcopy(nodes), "edges": copy.deepcopy(edges)}
-        event = store.record_event("add_edge", args.actor, {"edge_id": edge_id}, before, after)
+        event = store.record_event(
+            "add_edge", args.actor, {"edge_id": edge_id}, before, after
+        )
         store.write_snapshot(config, nodes, edges, "add_edge", event["event_id"])
         store.save(config, nodes, edges)
         store.rebuild_generated()
@@ -1599,14 +1748,20 @@ def cmd_remove_edge(args: argparse.Namespace) -> int:
                 edges.pop(args.id)
         else:
             for edge_id, edge in list(edges.items()):
-                if edge["from"] == args.from_id and edge["to"] == args.to_id and edge["type"] == args.type:
+                if (
+                    edge["from"] == args.from_id
+                    and edge["to"] == args.to_id
+                    and edge["type"] == args.type
+                ):
                     removed.append(edge_id)
                     edges.pop(edge_id)
         errors, _ = validate_state(nodes, edges)
         if errors:
             raise ValueError("; ".join(errors))
         after = {"nodes": copy.deepcopy(nodes), "edges": copy.deepcopy(edges)}
-        event = store.record_event("remove_edge", args.actor, {"removed": removed}, before, after)
+        event = store.record_event(
+            "remove_edge", args.actor, {"removed": removed}, before, after
+        )
         store.write_snapshot(config, nodes, edges, "remove_edge", event["event_id"])
         store.save(config, nodes, edges)
         store.rebuild_generated()
@@ -1652,7 +1807,11 @@ def cmd_show(args: argparse.Namespace) -> int:
         print(json.dumps(node, ensure_ascii=False, indent=2, sort_keys=True))
     else:
         print_human_node(node)
-        related = [edge for edge in graph["edges"].values() if edge["from"] == args.id or edge["to"] == args.id]
+        related = [
+            edge
+            for edge in graph["edges"].values()
+            if edge["from"] == args.id or edge["to"] == args.id
+        ]
         for edge in related:
             print(f"  边：{edge['id']} {edge['from']} -[{edge['type']}]-> {edge['to']}")
     return 0
@@ -1675,9 +1834,13 @@ def cmd_todo(args: argparse.Namespace) -> int:
     for item in todos[: args.limit]:
         estimate = "未知"
         if item["remaining_minutes_min"] is not None:
-            estimate = f"{item['remaining_minutes_min']}-{item['remaining_minutes_max']} 分钟"
+            estimate = (
+                f"{item['remaining_minutes_min']}-{item['remaining_minutes_max']} 分钟"
+            )
         ready = "ready" if item["ready"] else "blocked"
-        print(f"{item['id']} | {ready} | P{item['priority']} | {item['progress']}% | {estimate} | {item['title']}")
+        print(
+            f"{item['id']} | {ready} | P{item['priority']} | {item['progress']}% | {estimate} | {item['title']}"
+        )
         print(f"  下一步：{item['next_action']}")
     return 0
 
@@ -1728,13 +1891,23 @@ def cmd_proposal_save(args: argparse.Namespace) -> int:
         proposal.setdefault("base_graph_hash", graph_hash(nodes, edges))
         proposal.setdefault(
             "base_summary",
-            {"node_count": len(nodes), "edge_count": len(edges), "workspace_path": str(workspace)},
+            {
+                "node_count": len(nodes),
+                "edge_count": len(edges),
+                "workspace_path": str(workspace),
+            },
         )
-        dry_config, dry_nodes, dry_edges = copy.deepcopy(config), copy.deepcopy(nodes), copy.deepcopy(edges)
+        dry_config, dry_nodes, dry_edges = (
+            copy.deepcopy(config),
+            copy.deepcopy(nodes),
+            copy.deepcopy(edges),
+        )
         apply_changes(dry_config, dry_nodes, dry_edges, list(proposal["changes"]))
         proposal_path = store.root / "proposals" / f"{proposal_id}.json"
         if proposal_path.exists() and not args.overwrite:
-            raise ValueError(f"proposal 已存在：{proposal_id}；如确需替换请传入 --overwrite")
+            raise ValueError(
+                f"proposal 已存在：{proposal_id}；如确需替换请传入 --overwrite"
+            )
         write_json_atomic(proposal_path, proposal)
     update_global_registry(workspace, "proposal-save")
     print(f"已保存变更提案：{proposal_id}")
@@ -1773,7 +1946,11 @@ def cmd_proposal_apply(args: argparse.Namespace) -> int:
         event = store.record_event(
             "proposal_applied",
             args.actor,
-            {"proposal_id": proposal.get("proposal_id"), "session_id": proposal.get("session_id"), "change_count": len(changes)},
+            {
+                "proposal_id": proposal.get("proposal_id"),
+                "session_id": proposal.get("session_id"),
+                "change_count": len(changes),
+            },
             before,
             after,
         )
@@ -1785,7 +1962,9 @@ def cmd_proposal_apply(args: argparse.Namespace) -> int:
         proposal["status"] = "applied"
         proposal["applied_at"] = now_iso()
         write_json_atomic(proposal_path, proposal)
-        store.write_snapshot(config, nodes, edges, "proposal_applied", event["event_id"])
+        store.write_snapshot(
+            config, nodes, edges, "proposal_applied", event["event_id"]
+        )
         store.save(config, nodes, edges)
         store.rebuild_generated()
     update_global_registry(workspace, "proposal-apply")
@@ -1797,1288 +1976,26 @@ def html_json(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
 
 
-def render_html(graph: dict[str, Any], snapshots: list[dict[str, Any]], todos: list[dict[str, Any]]) -> str:
-    title = f"任务森林 - {Path(str(graph.get('workspace_path') or '')).name or 'workspace'}"
-    replacements = {
-        "__TITLE__": html.escape(title),
-        "__GRAPH_DATA__": html_json(graph),
-        "__SNAPSHOTS_DATA__": html_json(snapshots),
-        "__TODOS_DATA__": html_json(todos),
-    }
-    template = """<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>__TITLE__</title>
-  <style>
-    :root {
-      --bg: #f7f8fb;
-      --panel: #ffffff;
-      --panel-2: #fafbfc;
-      --text: #182133;
-      --muted: #6b7484;
-      --line: #d8dee8;
-      --soft-line: #edf1f6;
-      --blue: #2f6fe4;
-      --green: #12845a;
-      --amber: #b7791f;
-      --red: #c2413b;
-      --purple: #6d5bd0;
-      --gray: #64748b;
-      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 12px 32px rgba(16, 24, 40, 0.07);
-      --radius: 8px;
-      --sticky-rail-top: 96px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      --left-col: minmax(290px, 330px);
-      --right-col: minmax(330px, 420px);
-    }
-    body.left-collapsed { --left-col: 48px; }
-    body.right-collapsed { --right-col: 48px; }
-    button, input, select { font: inherit; }
-    button { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: var(--radius); padding: 6px 10px; cursor: pointer; }
-    button:hover { border-color: #a9b4c2; background: #f8fafc; }
-    button.active, button[aria-pressed="true"] { border-color: var(--blue); color: #1e56bd; background: #eef5ff; }
-    button:disabled { opacity: 0.48; cursor: not-allowed; }
-    header { padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5; }
-    h1 { margin: 0 0 10px; font-size: 22px; letter-spacing: 0; }
-    .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
-    .summary-chip { display: inline-flex; gap: 5px; align-items: center; border-radius: 999px; padding: 5px 10px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-weight: 650; }
-    button.summary-chip { cursor: pointer; }
-    button.summary-chip:hover { border-color: var(--blue); background: #f8fbff; }
-    .summary-chip strong { color: inherit; font-weight: 780; }
-    .summary-chip.is-filtered { border-color: var(--blue); background: #eef5ff; color: #1e56bd; }
-    .layout { display: grid; grid-template-columns: var(--left-col) minmax(420px, 1fr) var(--right-col); gap: 16px; padding: 16px; align-items: stretch; transition: grid-template-columns 160ms ease; }
-    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); min-height: 80px; overflow: hidden; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03); }
-    .panel h2 { margin: 0; padding: 13px 16px; font-size: 15px; border-bottom: 1px solid var(--line); }
-    .panel-body { padding: 14px 16px; }
-    .side-panel { max-height: calc(100vh - 136px); display: flex; flex-direction: column; min-width: 0; }
-    .side-panel-content { overflow: auto; min-height: 0; }
-    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: #fff; }
-    .panel-title h2 { margin: 0; padding: 0; border: 0; font-size: 15px; }
-    .panel-title button { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
-    body.left-collapsed .left-panel .side-panel-content,
-    body.right-collapsed .right-panel .side-panel-content { display: none; }
-    body.left-collapsed .left-panel,
-    body.right-collapsed .right-panel {
-      position: sticky;
-      top: var(--sticky-rail-top);
-      align-self: start;
-      z-index: 4;
-      min-height: min(520px, calc(100vh - var(--sticky-rail-top) - 16px));
-      height: min(520px, calc(100vh - var(--sticky-rail-top) - 16px));
-      max-height: calc(100vh - var(--sticky-rail-top) - 16px);
-    }
-    body.left-collapsed .left-panel .panel-title,
-    body.right-collapsed .right-panel .panel-title { height: 100%; flex-direction: column; justify-content: flex-start; padding: 8px 5px; }
-    body.left-collapsed .left-panel .panel-title h2,
-    body.right-collapsed .right-panel .panel-title h2 { writing-mode: vertical-rl; text-orientation: mixed; font-size: 13px; line-height: 1.2; margin-top: 6px; }
-    body.left-collapsed .left-panel .panel-title button,
-    body.right-collapsed .right-panel .panel-title button { order: -1; }
-    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); background: #fff; position: static; z-index: 1; }
-    .toolbar-group { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .toolbar-spacer { flex: 1 1 28px; }
-    .toolbar input[type="search"] { min-width: min(280px, 100%); flex: 1 1 320px; border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; }
-    .zoom-controls { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
-    .zoom-controls button { min-width: 34px; }
-    .zoom-label { min-width: 46px; text-align: center; color: var(--muted); font-size: 12px; }
-    .active-filter { color: var(--muted); font-size: 12px; padding: 8px 12px; border-bottom: 1px solid var(--soft-line); background: #fbfcfe; }
-    .timeline input[type="range"] { width: 100%; }
-    .timeline-controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-    .timeline-controls select { border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; background: #fff; }
-    .toggle-line { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); font-size: 12px; }
-    .snapshot-label { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .snapshot-diff { margin-top: 10px; padding: 9px 10px; border: 1px solid var(--soft-line); background: var(--panel-2); border-radius: 7px; font-size: 12px; line-height: 1.45; color: var(--muted); }
-    .queue-block { margin-bottom: 14px; }
-    .queue-title { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-weight: 750; margin-bottom: 7px; }
-    .todo, .queue-item { padding: 9px 0; border-bottom: 1px solid #eef1f5; cursor: pointer; }
-    .todo:hover, .queue-item:hover { background: #fafcff; }
-    .todo:last-child, .queue-item:last-child { border-bottom: 0; }
-    .todo-title, .queue-title-line { font-weight: 700; font-size: 13px; line-height: 1.35; }
-    .todo-meta, .queue-meta { margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
-    .legend { display: grid; gap: 6px; }
-    details.legend-details { border-top: 1px solid var(--line); }
-    details.legend-details summary { padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 750; color: var(--text); }
-    .legend-row { display: grid; grid-template-columns: 92px 1fr; gap: 8px; font-size: 12px; line-height: 1.35; color: var(--muted); }
-    .forest { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
-    .canvas { padding: 24px 16px 28px; overflow: hidden; min-height: 680px; position: relative; cursor: grab; background-color: #fbfcfe; background-image: radial-gradient(#e8edf4 0.7px, transparent 0.7px); background-size: 20px 20px; }
-    .canvas.dragging { cursor: grabbing; user-select: none; }
-    .tree-viewport { display: inline-block; min-width: max-content; transform-origin: 0 0; will-change: transform; }
-    .tree-list, .tree-list ul { list-style: none; margin: 0; padding: 0; }
-    .tree-list { display: flex; justify-content: center; align-items: flex-start; min-width: max-content; }
-    .tree-list li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0 8px; }
-    .tree-list > li { padding-top: 0; }
-    .tree-list ul { display: flex; justify-content: center; align-items: flex-start; gap: 15px; position: relative; padding-top: 30px; margin-top: 12px; min-width: max-content; }
-    .tree-list ul::before { content: ""; position: absolute; top: 0; left: 50%; height: 16px; border-left: 2px solid var(--line); }
-    .tree-list ul > li::before { content: ""; position: absolute; top: -16px; left: 50%; height: 16px; border-left: 2px solid var(--line); }
-    .tree-list ul > li::after { content: ""; position: absolute; top: -16px; left: 0; right: 0; border-top: 2px solid var(--line); }
-    .tree-list ul > li:first-child::after { left: 50%; }
-    .tree-list ul > li:last-child::after { right: 50%; }
-    .tree-list ul > li:only-child::after { display: none; }
-    .node { width: clamp(132px, 11vw, 168px); min-height: 58px; border: 1px solid var(--line); border-left: 4px solid var(--gray); border-radius: var(--radius); padding: 8px 9px; background: #fff; cursor: pointer; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035); overflow: hidden; }
-    .node:hover { border-color: #9aa7b7; }
-    .node.active { outline: 2px solid rgba(37, 99, 235, 0.28); box-shadow: var(--shadow); }
-    .node.context-only { opacity: 0.62; }
-    .node.done { border-left-color: var(--green); }
-    .node.in_progress, .node.ready, .node.proposed { border-left-color: var(--blue); }
-    .node.blocked { border-left-color: var(--amber); }
-    .node.review_needed { border-left-color: var(--red); }
-    .node.deprecated, .node.archived { opacity: 0.58; }
-    .node-head { display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: start; min-width: 0; }
-    .node-toggle { width: 18px; height: 18px; padding: 0; line-height: 1; border-radius: 6px; color: var(--muted); font-size: 11px; }
-    .node-toggle.empty { visibility: hidden; }
-    .node-title { min-width: 0; font-size: 12px; font-weight: 760; line-height: 1.32; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
-    .bar { height: 5px; border-radius: 999px; background: #e4e8ef; overflow: hidden; margin-top: 8px; }
-    .bar span { display: block; height: 100%; background: #2f6fe4; }
-    .node.done .bar span { background: var(--green); }
-    .node.review_needed .bar span { background: #cc514a; }
-    .node.blocked .bar span { background: var(--amber); }
-    .edge-chip, .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 11px; margin: 3px 4px 0 0; border: 0; }
-    .edge-chip { cursor: pointer; border: 1px solid #dbe4ff; }
-    .edge-chip:hover { background: #e0e7ff; }
-    .edge-chip.depends_on { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
-    .edge-chip.contributes_to { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
-    .edge-chip.child_of { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
-    .edge-chip.related_to { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
-    .edge-chip.duplicates { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
-    .edge-chip.supersedes { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
-    .edge-chip.clarifies { background: #eef2ff; color: #3730a3; border-color: #c7d2fe; }
-    .edge-chip.derived_from { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-    .edge-panel { border-top: 1px solid var(--line); padding: 14px 16px 16px; background: #fbfcfe; }
-    .edge-panel h3 { margin: 0 0 10px; font-size: 14px; }
-    .edge-list { display: grid; gap: 8px; }
-    .edge-card { border: 1px solid var(--line); border-left: 4px solid var(--gray); border-radius: var(--radius); padding: 9px 10px; background: #fff; cursor: pointer; }
-    .edge-card:hover, .edge-card.active { border-color: var(--blue); background: #eff6ff; }
-    .edge-card.depends_on, .edge-row.depends_on { border-left-color: var(--amber); }
-    .edge-card.contributes_to, .edge-row.contributes_to { border-left-color: var(--purple); }
-    .edge-card.child_of, .edge-row.child_of { border-left-color: var(--green); }
-    .edge-card.clarifies, .edge-row.clarifies { border-left-color: var(--blue); }
-    .edge-card.duplicates, .edge-row.duplicates { border-left-color: var(--red); }
-    .edge-card.supersedes, .edge-row.supersedes { border-left-color: #0891b2; }
-    .edge-card.related_to, .edge-row.related_to { border-left-color: #64748b; }
-    .edge-card.derived_from, .edge-row.derived_from { border-left-color: #15803d; }
-    .edge-card-title { font-size: 12px; font-weight: 750; }
-    .edge-card-meta { color: var(--muted); font-size: 12px; line-height: 1.4; margin-top: 4px; }
-    .dag-graph { position: relative; min-width: max-content; min-height: max-content; }
-    .dag-svg { position: absolute; inset: 0; overflow: visible; pointer-events: auto; }
-    .dag-edge { pointer-events: stroke; fill: none; stroke-width: 2.4; stroke-linecap: round; cursor: pointer; opacity: 0.86; }
-    .dag-edge:hover, .dag-edge.active { stroke-width: 4; opacity: 1; }
-    .dag-edge.child_of { stroke: var(--green); }
-    .dag-edge.depends_on { stroke: var(--amber); }
-    .dag-edge.contributes_to { stroke: var(--purple); }
-    .dag-edge.clarifies { stroke: var(--blue); }
-    .dag-edge.duplicates { stroke: var(--red); stroke-dasharray: 7 5; }
-    .dag-edge.supersedes { stroke: #0891b2; }
-    .dag-edge.related_to { stroke: #64748b; stroke-dasharray: 4 5; }
-    .dag-edge.derived_from { stroke: #15803d; stroke-dasharray: 8 4; }
-    .dag-arrow.child_of { fill: var(--green); }
-    .dag-arrow.depends_on { fill: var(--amber); }
-    .dag-arrow.contributes_to { fill: var(--purple); }
-    .dag-arrow.clarifies { fill: var(--blue); }
-    .dag-arrow.duplicates { fill: var(--red); }
-    .dag-arrow.supersedes { fill: #0891b2; }
-    .dag-arrow.related_to { fill: #64748b; }
-    .dag-arrow.derived_from { fill: #15803d; }
-    .dag-edge-hit { pointer-events: stroke; fill: none; stroke: transparent; stroke-width: 14; cursor: pointer; }
-    .dag-node { position: absolute; width: 154px; min-height: 58px; border: 1px solid var(--line); border-left: 4px solid var(--gray); border-radius: var(--radius); padding: 8px 9px; background: #fff; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); cursor: grab; touch-action: none; user-select: none; }
-    .dag-node:hover { border-color: #a9b4c2; }
-    .dag-node.active { outline: 2px solid rgba(37, 99, 235, 0.28); box-shadow: var(--shadow); }
-    .dag-node.dragging { cursor: grabbing; z-index: 4; box-shadow: var(--shadow); }
-    .dag-node.done { border-left-color: var(--green); }
-    .dag-node.in_progress, .dag-node.ready, .dag-node.proposed { border-left-color: var(--blue); }
-    .dag-node.blocked { border-left-color: var(--amber); }
-    .dag-node.review_needed { border-left-color: var(--red); }
-    .dag-node-title { font-size: 12px; font-weight: 760; line-height: 1.32; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
-    .dag-node-meta { margin-top: 4px; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dag-edge-label { position: absolute; transform: translate(-50%, -50%); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.94); color: var(--muted); font-size: 11px; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); }
-    .dag-edge-label:hover, .dag-edge-label.active { border-color: var(--blue); color: #1e56bd; background: #eef5ff; }
-    .dag-legend { position: absolute; left: 0; top: 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; max-width: 760px; padding: 8px 10px; border: 1px solid var(--line); border-left: 4px solid var(--blue); border-radius: var(--radius); background: rgba(255,255,255,0.95); color: var(--muted); font-size: 12px; }
-    .dag-legend-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-    .dag-legend-swatch { width: 18px; height: 2px; border-radius: 999px; background: var(--gray); }
-    .dag-legend-swatch.child_of { background: var(--green); }
-    .dag-legend-swatch.depends_on { background: var(--amber); }
-    .dag-legend-swatch.contributes_to { background: var(--purple); }
-    .dag-legend-swatch.clarifies { background: var(--blue); }
-    .dag-legend-swatch.duplicates { background: var(--red); }
-    .dag-legend-swatch.supersedes { background: #0891b2; }
-    .dag-legend-swatch.related_to { background: #64748b; }
-    .dag-legend-swatch.derived_from { background: #15803d; }
-    .detail-title { font-size: 18px; font-weight: 780; line-height: 1.3; margin-bottom: 8px; overflow-wrap: anywhere; }
-    .detail-section { margin-top: 14px; }
-    .detail-section h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
-    .detail-section ul { margin: 0; padding-left: 18px; }
-    .detail-section li { margin: 4px 0; font-size: 13px; line-height: 1.45; }
-    .review-guide { margin-top: 10px; padding: 12px; border: 1px solid #f5b7b1; background: #fff8f7; border-radius: var(--radius); font-size: 13px; line-height: 1.48; }
-    .review-guide strong { color: #991b1b; }
-    .review-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-    .edge-table { display: grid; gap: 7px; }
-    .edge-row { border: 1px solid var(--soft-line); border-left: 4px solid var(--gray); border-radius: var(--radius); padding: 9px 10px; background: #fff; cursor: pointer; }
-    .edge-row:hover { border-color: var(--blue); }
-    .detail-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    .empty { color: var(--muted); font-size: 13px; }
-    .muted { color: var(--muted); }
-    .hidden { display: none !important; }
-    @media (max-width: 1200px) {
-      body { --left-col: 1fr; --right-col: 1fr; }
-      body.left-collapsed, body.right-collapsed { --left-col: 1fr; --right-col: 1fr; }
-      .layout { grid-template-columns: 1fr; }
-      .canvas { min-height: 520px; }
-      .node { width: 210px; }
-      body.left-collapsed .left-panel .side-panel-content,
-      body.right-collapsed .right-panel .side-panel-content { display: block; }
-      body.left-collapsed .left-panel,
-      body.right-collapsed .right-panel { position: static; height: auto; max-height: none; min-height: 80px; }
-      body.left-collapsed .left-panel .panel-title,
-      body.right-collapsed .right-panel .panel-title { height: auto; flex-direction: row; padding: 12px 14px; }
-      body.left-collapsed .left-panel .panel-title h2,
-      body.right-collapsed .right-panel .panel-title h2 { writing-mode: horizontal-tb; margin-top: 0; }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>__TITLE__</h1>
-    <div class="meta" id="summary"></div>
-  </header>
-  <main class="layout">
-    <section class="panel side-panel left-panel" id="leftPanel">
-      <div class="panel-title">
-        <h2>历史与队列</h2>
-        <button type="button" id="toggleLeftPanel" data-collapse-panel="left" aria-expanded="true" title="收起左侧面板">‹</button>
-      </div>
-      <div class="side-panel-content">
-      <h2>历史变化</h2>
-      <div class="panel-body timeline">
-        <div class="timeline-controls">
-          <button id="prevSnapshot" type="button">上一步</button>
-          <button id="playSnapshot" type="button" aria-pressed="false">播放</button>
-          <button id="nextSnapshot" type="button">下一步</button>
-          <select id="playSpeed" aria-label="播放速度">
-            <option value="1800">慢</option>
-            <option value="1100" selected>中</option>
-            <option value="650">快</option>
-          </select>
-          <label class="toggle-line"><input id="loopPlayback" type="checkbox">循环</label>
-        </div>
-        <input id="snapshot" type="range" min="0" max="0" value="0">
-        <div class="snapshot-label" id="snapshotLabel"></div>
-        <div class="snapshot-diff" id="snapshotDiff"></div>
-      </div>
-      <h2>状态队列</h2>
-      <div class="panel-body" id="statusQueues"></div>
-      <h2>未完成事项</h2>
-      <div class="panel-body" id="todoList"></div>
-      <details class="legend-details" open>
-        <summary>状态和边说明</summary>
-        <div class="panel-body legend" id="legend"></div>
-      </details>
-      </div>
-    </section>
-    <section class="panel forest">
-      <div class="toolbar">
-        <div class="toolbar-group">
-        <button type="button" data-view="tree">树视图</button>
-        <button type="button" data-view="dag" title="DAG 视图会用图结构展示所有任务节点和不同类型的关系边">DAG 视图</button>
-        <button type="button" data-view="all">全部</button>
-        </div>
-        <input id="search" type="search" placeholder="搜索 id、标题、状态、类型或标签">
-        <div class="toolbar-group">
-          <button type="button" id="expandAll">全部展开</button>
-          <button type="button" id="collapseAll">全部折叠</button>
-          <button type="button" id="clearFilter">清除筛选</button>
-          <button type="button" id="resetDagLayout" title="重置 DAG 视图中手动拖动过的节点位置">重置布局</button>
-        </div>
-        <div class="toolbar-spacer"></div>
-        <div class="zoom-controls" aria-label="树图缩放和平移">
-          <button type="button" id="zoomOut" title="缩小">-</button>
-          <button type="button" id="zoomReset" title="重置缩放和平移">100%</button>
-          <button type="button" id="zoomIn" title="放大">+</button>
-          <button type="button" id="zoomFit" title="适配当前画布">适配</button>
-          <span class="zoom-label" id="zoomLabel">100%</span>
-        </div>
-      </div>
-      <div class="active-filter" id="activeFilter"></div>
-      <div class="canvas" id="canvas" title="拖拽空白区域可平移；按住 Ctrl/⌘/Alt 并滚轮可缩放">
-        <div class="tree-viewport" id="treeViewport">
-          <div class="tree" id="tree"></div>
-        </div>
-      </div>
-      <div class="edge-panel" id="edgePanel"></div>
-    </section>
-    <section class="panel side-panel right-panel" id="rightPanel">
-      <div class="panel-title">
-        <h2 id="detailHeading">节点详情</h2>
-        <button type="button" id="toggleRightPanel" data-collapse-panel="right" aria-expanded="true" title="收起右侧面板">›</button>
-      </div>
-      <div class="side-panel-content">
-        <div class="panel-body" id="detail"></div>
-      </div>
-    </section>
-  </main>
-  <script>
-    const CURRENT_GRAPH = __GRAPH_DATA__;
-    const SNAPSHOTS = __SNAPSHOTS_DATA__;
-    const CURRENT_TODOS = __TODOS_DATA__;
-    const OPEN_STATUSES = new Set(["proposed", "ready", "in_progress", "blocked", "review_needed"]);
-    const VIEW_LABELS = {tree: "树视图", dag: "DAG 视图", all: "全部"};
-    const STATUS_LABELS = {
-      proposed: "待确认",
-      ready: "可执行",
-      in_progress: "进行中",
-      blocked: "阻塞",
-      review_needed: "待复核",
-      done: "已完成",
-      deprecated: "已废止",
-      archived: "已归档"
-    };
-    const STATUS_DESCRIPTIONS = {
-      proposed: "已提出但尚未确认或排期",
-      ready: "可开始执行，当前没有未满足依赖",
-      in_progress: "正在推进或作为长期目标持续演进",
-      blocked: "被依赖、信息或外部条件阻塞",
-      review_needed: "产物或判断已到可检查阶段，但需要复核验收标准、证据、不足风险和实际结果后，才能标为已完成。",
-      done: "已完成并通过验收",
-      deprecated: "已废止但保留历史",
-      archived: "已归档，通常不参与当前待办"
-    };
-    const KIND_LABELS = {
-      global_task: "全局任务",
-      task: "任务",
-      subtask: "子任务",
-      follow_up: "后续事项",
-      risk: "风险",
-      requirement: "要求",
-      decision: "决策",
-      alignment: "目标对齐",
-      deviation: "偏差"
-    };
-    const EDGE_LABELS = {
-      child_of: "子任务",
-      depends_on: "依赖",
-      contributes_to: "贡献",
-      related_to: "相关",
-      duplicates: "重复",
-      supersedes: "替代",
-      clarifies: "澄清",
-      derived_from: "派生"
-    };
-    const EDGE_DESCRIPTIONS = {
-      child_of: "子任务关系：起点任务是目标任务的子任务，构成默认树/森林",
-      depends_on: "执行依赖边，起点任务必须等待目标任务完成",
-      contributes_to: "多目标贡献边，不改变主父节点",
-      related_to: "弱相关边，不影响可执行状态或进度判断",
-      duplicates: "重复语义边，通常应合并或废止其中一个节点",
-      supersedes: "替代边，起点任务替代目标任务",
-      clarifies: "澄清边，起点任务澄清目标任务的要求或问题",
-      derived_from: "来源边，起点任务从目标任务拆解或派生"
-    };
-    let graph = CURRENT_GRAPH;
-    let selectedId = (CURRENT_GRAPH.status_queues?.review_needed?.[0] || CURRENT_GRAPH.roots?.[0] || null);
-    let selectedEdgeId = null;
-    let detailHistory = [];
-    let activeFilter = "all";
-    let query = "";
-    let viewMode = "tree";
-    let collapsed = new Set();
-    let snapshotIndex = SNAPSHOTS.length ? SNAPSHOTS.length - 1 : 0;
-    let playTimer = null;
-    let graphScale = 1;
-    let panX = 0;
-    let panY = 0;
-    let isPanning = false;
-    let panStart = {x: 0, y: 0, panX: 0, panY: 0};
-    let initialFitDone = false;
-    let dagPositionOverrides = {};
-    let currentDagLayout = null;
-    let dagDrag = null;
-    let suppressNextDagNodeClick = false;
-
-    const HTML_ESCAPE = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    };
-    function esc(value) {
-      return String(value ?? "").replace(/[&<>"']/g, ch => HTML_ESCAPE[ch]);
-    }
-    function nodesObj(g = graph) { return g.nodes || {}; }
-    function edgesObj(g = graph) { return g.edges || {}; }
-    function nodeById(id) { return nodesObj()[id]; }
-    function edgeById(id) { return edgesObj()[id]; }
-    function statusLegend(status) { return STATUS_DESCRIPTIONS[status] || graph.status_legend?.[status] || CURRENT_GRAPH.status_legend?.[status] || status; }
-    function edgeTypeLegend(type) { return EDGE_DESCRIPTIONS[type] || graph.edge_type_legend?.[type] || CURRENT_GRAPH.edge_type_legend?.[type] || type; }
-    function statusLabel(status) { return STATUS_LABELS[status] || status; }
-    function kindLabel(kind) { return KIND_LABELS[kind] || kind; }
-    function edgeTypeLabel(type) { return EDGE_LABELS[type] || type; }
-    function compactTitle(node) {
-      const raw = String(node?.short_title || node?.display_title || node?.title || node?.id || "").trim();
-      const rules = [
-        [/build a personal ai workbench/i, "AI workbench"],
-        [/set up the task-forest skill/i, "Task forest setup"],
-        [/prepare a public-safe task-forest package/i, "Public package"],
-        [/downstream planning tools/i, "Downstream tools"],
-        [/evergreen/i, "Evergreen goal"],
-        [/html.*dag|dag.*html/i, "HTML DAG view"]
-      ];
-      for (const [pattern, replacement] of rules) {
-        if (pattern.test(raw)) return replacement;
-      }
-      const cleaned = raw
-        .replace(/^TF-\\d+\\s*[·:：-]\\s*/i, "")
-        .replace(/^(实现|安装|支持|构建|发布|重建|重构|修正|优化|添加|连接|prepare|build|set up|add|connect)\\s*/i, "")
-        .replace(/\\s+/g, " ")
-        .trim();
-      if ([...cleaned].length <= 12) return cleaned || raw || "未命名任务";
-      return [...cleaned].slice(0, 12).join("") + "…";
-    }
-    function reviewPrompt(node, passed) {
-      if (passed) {
-        return `请用 $task-forest 为当前 workspace 生成 proposal：我已经复核 ${node.id}《${node.title}》，验收标准、证据、实际产物、关系边和不足风险都已确认通过。请把该节点状态从 review_needed 更新为 done，并保留复核记录。先给 proposal，不要直接 apply。`;
-      }
-      return `请用 $task-forest 为当前 workspace 生成 proposal：我复核 ${node.id}《${node.title}》后发现还不能标为 done。请把缺口整理为新的 follow_up、requirement 或 risk，并说明它与原节点的关系。先给 proposal，不要直接 apply。缺口如下：`;
-    }
-    async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } catch (_) {
-        const area = document.createElement("textarea");
-        area.value = text;
-        area.setAttribute("readonly", "");
-        area.style.position = "fixed";
-        area.style.left = "-9999px";
-        document.body.appendChild(area);
-        area.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(area);
-        return ok;
-      }
-    }
-    function getChildren(id, g = graph) {
-      const node = (g.nodes || {})[id];
-      if (Array.isArray(node?.children)) return node.children;
-      return Object.values(g.edges || {}).filter(edge => edge.type === "child_of" && edge.to === id).map(edge => edge.from).sort();
-    }
-    function rootsFor(g = graph) {
-      if (Array.isArray(g.roots) && g.roots.length) return g.roots;
-      const childIds = new Set(Object.values(g.edges || {}).filter(edge => edge.type === "child_of").map(edge => edge.from));
-      return Object.keys(g.nodes || {}).filter(id => !childIds.has(id)).sort();
-    }
-    function edgeIndexFor(id) {
-      const cached = graph.edge_index?.[id];
-      if (cached) return cached;
-      const incoming = [], outgoing = [], blocking_edges = [], cross_edges = [], tree_child_edges = [];
-      let tree_parent_edge = null;
-      Object.entries(edgesObj()).forEach(([edgeId, edge]) => {
-        if (edge.from === id) {
-          outgoing.push(edgeId);
-          if (edge.blocking) blocking_edges.push(edgeId);
-          if (edge.type === "child_of") tree_parent_edge = edgeId;
-          else cross_edges.push(edgeId);
-        }
-        if (edge.to === id) {
-          incoming.push(edgeId);
-          if (edge.type === "child_of") tree_child_edges.push(edgeId);
-          else cross_edges.push(edgeId);
-        }
-      });
-      return {incoming, outgoing, blocking_edges, cross_edges, tree_parent_edge, tree_child_edges};
-    }
-    function relatedEdgesFor(id) {
-      const idx = edgeIndexFor(id);
-      return [...new Set([...(idx.incoming || []), ...(idx.outgoing || [])])].filter(edgeId => edgeById(edgeId));
-    }
-    function statusQueue(status) {
-      const cached = graph.status_queues?.by_status?.[status] || graph.status_queues?.[status];
-      if (Array.isArray(cached)) return cached;
-      return Object.values(nodesObj()).filter(node => node.status === status).map(node => node.id).sort();
-    }
-    function nodeMatches(id) {
-      const node = nodeById(id);
-      if (!node) return false;
-      const statusMatch = activeFilter === "all" || (activeFilter === "open" ? OPEN_STATUSES.has(node.status) : node.status === activeFilter);
-      const haystack = [node.id, node.title, node.kind, node.status, node.summary, ...(node.context_tags || [])].join(" ").toLowerCase();
-      const queryMatch = !query || haystack.includes(query.toLowerCase());
-      return statusMatch && queryMatch;
-    }
-    function subtreeMatches(id) {
-      return nodeMatches(id) || getChildren(id).some(child => subtreeMatches(child));
-    }
-    function nodeProgress(node) { return Number(node?.derived_progress ?? node?.progress ?? 0); }
-    function edgeTitle(edge) { return `${edge.id || ""} · ${edge.from} -[${edgeTypeLabel(edge.type)}]-> ${edge.to}`; }
-    function filterLabel() {
-      const status = activeFilter === "all" ? "全部状态" : activeFilter === "open" ? "未完成/开放" : `${statusLabel(activeFilter)} · ${statusLegend(activeFilter)}`;
-      const q = query ? ` · 搜索: ${query}` : "";
-      return `${VIEW_LABELS[viewMode] || viewMode} · ${status}${q}`;
-    }
-    function clampScale(value) {
-      return Math.max(0.35, Math.min(1.8, Number(value) || 1));
-    }
-    function applyTreeTransform() {
-      const viewport = document.getElementById("treeViewport");
-      if (!viewport) return;
-      viewport.style.transform = `translate(${panX}px, ${panY}px) scale(${graphScale})`;
-      const label = document.getElementById("zoomLabel");
-      if (label) label.textContent = `${Math.round(graphScale * 100)}%`;
-    }
-    function setZoom(nextScale, anchor = null) {
-      const canvas = document.getElementById("canvas");
-      const oldScale = graphScale;
-      const newScale = clampScale(nextScale);
-      if (!canvas || oldScale === newScale) {
-        graphScale = newScale;
-        applyTreeTransform();
-        return;
-      }
-      const rect = canvas.getBoundingClientRect();
-      const point = anchor || {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
-      const localX = (point.x - rect.left - panX) / oldScale;
-      const localY = (point.y - rect.top - panY) / oldScale;
-      graphScale = newScale;
-      panX = point.x - rect.left - localX * newScale;
-      panY = point.y - rect.top - localY * newScale;
-      applyTreeTransform();
-    }
-    function resetViewport() {
-      graphScale = 1;
-      panX = 0;
-      panY = 0;
-      applyTreeTransform();
-    }
-    function fitTreeToViewport() {
-      const canvas = document.getElementById("canvas");
-      const tree = document.getElementById("tree");
-      if (!canvas || !tree) return;
-      const treeWidth = Math.max(1, tree.scrollWidth);
-      const treeHeight = Math.max(1, tree.scrollHeight);
-      const availableWidth = Math.max(1, canvas.clientWidth - 48);
-      const availableHeight = Math.max(1, canvas.clientHeight - 48);
-      graphScale = clampScale(Math.min(1, availableWidth / treeWidth, availableHeight / treeHeight));
-      panX = Math.max(18, (canvas.clientWidth - treeWidth * graphScale) / 2);
-      panY = Math.max(18, (canvas.clientHeight - treeHeight * graphScale) / 2);
-      applyTreeTransform();
-    }
-    function centerNodeInCanvas(id) {
-      const canvas = document.getElementById("canvas");
-      const node = document.querySelector(`#tree [data-node="${CSS.escape(id)}"]`);
-      if (!canvas || !node || viewMode === "dag") return;
-      const canvasRect = canvas.getBoundingClientRect();
-      const nodeRect = node.getBoundingClientRect();
-      panX += canvasRect.left + canvasRect.width / 2 - (nodeRect.left + nodeRect.width / 2);
-      panY += canvasRect.top + canvasRect.height / 2 - (nodeRect.top + nodeRect.height / 2);
-      applyTreeTransform();
-    }
-    function setPanelCollapsed(side, collapsedState) {
-      const className = side === "left" ? "left-collapsed" : "right-collapsed";
-      const button = document.getElementById(side === "left" ? "toggleLeftPanel" : "toggleRightPanel");
-      const wasCollapsed = document.body.classList.contains(className);
-      document.body.classList.toggle(className, collapsedState);
-      if (button) {
-        button.setAttribute("aria-expanded", String(!collapsedState));
-        button.textContent = collapsedState ? (side === "left" ? "›" : "‹") : (side === "left" ? "‹" : "›");
-        button.title = collapsedState ? (side === "left" ? "展开左侧面板" : "展开右侧面板") : (side === "left" ? "收起左侧面板" : "收起右侧面板");
-      }
-      if (wasCollapsed === collapsedState) return;
-      requestAnimationFrame(() => {
-        fitTreeToViewport();
-      });
-    }
-    function syncStickyOffsets() {
-      const header = document.querySelector("header");
-      const height = header ? header.getBoundingClientRect().height : 80;
-      document.documentElement.style.setProperty("--sticky-rail-top", `${Math.ceil(height + 16)}px`);
-    }
-
-    function renderSummary() {
-      const s = graph.summary || {};
-      const chips = [
-        {label: "节点", value: s.node_count ?? Object.keys(nodesObj()).length},
-        {label: "边", value: s.edge_count ?? Object.keys(edgesObj()).length, view: "dag"},
-        {label: "未完成", value: s.open_count ?? Object.values(nodesObj()).filter(n => OPEN_STATUSES.has(n.status)).length, filter: "open"},
-        {label: "阻塞", value: s.blocked_count ?? statusQueue("blocked").length, filter: "blocked"},
-        {label: "待复核", value: s.review_needed_count ?? statusQueue("review_needed").length, filter: "review_needed"},
-        {label: "生成于", value: graph.generated_at || ""},
-      ];
-      document.getElementById("summary").innerHTML = chips.map(chip => {
-        const active = chip.filter && activeFilter === chip.filter;
-        const clickable = chip.filter || chip.view;
-        const attrs = chip.filter ? `data-filter="${esc(chip.filter)}"` : chip.view ? `data-view="${esc(chip.view)}"` : "";
-        const title = chip.filter === "review_needed" ? "点击查看所有待复核节点；再次点击取消筛选" : chip.filter ? `点击筛选 ${chip.label}；再次点击取消筛选` : chip.view ? "点击打开 DAG 视图" : "";
-        return clickable ? `<button type="button" class="summary-chip ${active ? "is-filtered" : ""}" ${attrs} title="${esc(title)}"><span>${esc(chip.label)}</span><strong>${esc(chip.value)}</strong></button>` : `<span class="summary-chip"><span>${esc(chip.label)}</span><strong>${esc(chip.value)}</strong></span>`;
-      }).join("");
-    }
-
-    function nodeHtml(id, level = 0) {
-      const node = nodeById(id);
-      if (!node || !subtreeMatches(id)) return "";
-      const children = getChildren(id).filter(child => subtreeMatches(child));
-      const isCollapsed = collapsed.has(id);
-      const progress = nodeProgress(node);
-      const direct = nodeMatches(id);
-      const childHtml = children.length && !isCollapsed ? `<ul>${children.map(child => `<li>${nodeHtml(child, level + 1)}</li>`).join("")}</ul>` : "";
-      const toggle = children.length ? `<button type="button" class="node-toggle" data-toggle="${esc(id)}" aria-expanded="${String(!isCollapsed)}">${isCollapsed ? "+" : "-"}</button>` : `<button type="button" class="node-toggle empty" tabindex="-1">-</button>`;
-      return `<div class="node ${esc(node.status)} ${selectedId === id ? "active" : ""} ${direct ? "" : "context-only"}" data-node="${esc(id)}" style="--level:${level}">
-        <div class="node-head">
-          ${toggle}
-          <div class="node-title" title="${esc(node.id)} · ${esc(node.title)}">${esc(compactTitle(node))}</div>
-        </div>
-        <div class="bar"><span style="width:${Math.max(0, Math.min(100, progress))}%"></span></div>
-      </div>${childHtml}`;
-    }
-
-    function visibleNodeIdsForGraph() {
-      return Object.keys(nodesObj()).filter(id => nodeMatches(id) || activeFilter === "all" || relatedEdgesFor(id).some(edgeId => {
-        const edge = edgeById(edgeId);
-        const other = edge?.from === id ? edge.to : edge?.from;
-        return other && nodeMatches(other);
-      })).sort();
-    }
-
-    function visibleEdgeIdsForGraph(nodeIds) {
-      const visible = new Set(nodeIds);
-      return Object.keys(edgesObj()).filter(edgeId => {
-        const edge = edgeById(edgeId);
-        return edge && visible.has(edge.from) && visible.has(edge.to);
-      }).sort();
-    }
-
-    function dagDepths(nodeIds) {
-      const visible = new Set(nodeIds);
-      const parents = new Map(nodeIds.map(id => [id, []]));
-      Object.values(edgesObj()).forEach(edge => {
-        if (edge.type === "child_of" && visible.has(edge.from) && visible.has(edge.to)) {
-          parents.get(edge.from).push(edge.to);
-        }
-      });
-      const memo = new Map();
-      const visiting = new Set();
-      function depth(id) {
-        if (memo.has(id)) return memo.get(id);
-        if (visiting.has(id)) return 0;
-        visiting.add(id);
-        const value = Math.max(0, ...parents.get(id).map(parent => depth(parent) + 1));
-        visiting.delete(id);
-        memo.set(id, value);
-        return value;
-      }
-      nodeIds.forEach(depth);
-      return memo;
-    }
-
-    function buildDagLayout() {
-      const nodeIds = visibleNodeIdsForGraph();
-      const edgeIds = visibleEdgeIdsForGraph(nodeIds);
-      const depthById = dagDepths(nodeIds);
-      const columns = new Map();
-      nodeIds.forEach(id => {
-        const depth = depthById.get(id) || 0;
-        if (!columns.has(depth)) columns.set(depth, []);
-        columns.get(depth).push(id);
-      });
-      const nodeW = 154, nodeH = 72, xGap = 116, yGap = 34, topPad = 72, leftPad = 36;
-      const sortedDepths = [...columns.keys()].sort((a, b) => a - b);
-      const maxRows = Math.max(1, ...[...columns.values()].map(ids => ids.length));
-      const positions = {};
-      sortedDepths.forEach((depth, colIndex) => {
-        const ids = columns.get(depth).sort((a, b) => String(a).localeCompare(String(b)));
-        const offset = (maxRows - ids.length) * (nodeH + yGap) / 2;
-        ids.forEach((id, rowIndex) => {
-          positions[id] = {
-            x: leftPad + colIndex * (nodeW + xGap),
-            y: topPad + offset + rowIndex * (nodeH + yGap),
-            w: nodeW,
-            h: nodeH
-          };
-        });
-      });
-      const width = leftPad * 2 + Math.max(1, sortedDepths.length) * nodeW + Math.max(0, sortedDepths.length - 1) * xGap;
-      const height = topPad + Math.max(1, maxRows) * nodeH + Math.max(0, maxRows - 1) * yGap + 42;
-      Object.entries(dagPositionOverrides).forEach(([id, override]) => {
-        if (!positions[id]) return;
-        const x = Number(override?.x);
-        const y = Number(override?.y);
-        if (Number.isFinite(x)) positions[id].x = Math.max(0, x);
-        if (Number.isFinite(y)) positions[id].y = Math.max(42, y);
-      });
-      const maxRight = Math.max(width, ...Object.values(positions).map(pos => pos.x + pos.w + 80));
-      const maxBottom = Math.max(height, ...Object.values(positions).map(pos => pos.y + pos.h + 80));
-      return {nodeIds, edgeIds, positions, width: maxRight, height: maxBottom, baseWidth: width, baseHeight: height, nodeW, nodeH};
-    }
-
-    function cubicPoint(p0, p1, p2, p3, t) {
-      const mt = 1 - t;
-      return {
-        x: mt * mt * mt * p0.x + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t * t * t * p3.x,
-        y: mt * mt * mt * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * p3.y
-      };
-    }
-
-    function edgeGeometry(edge, positions, index = 0) {
-      const from = positions[edge.from];
-      const to = positions[edge.to];
-      if (!from || !to) return {d: "", label: {x: 0, y: 0}};
-      const start = {x: from.x + from.w, y: from.y + from.h / 2};
-      const end = {x: to.x, y: to.y + to.h / 2};
-      const sameOrBack = end.x <= start.x;
-      const lane = (index % 5 - 2) * 9;
-      let control1, control2;
-      if (sameOrBack) {
-        const midX = Math.max(start.x, end.x) + 52 + Math.abs(index % 4) * 14;
-        control1 = {x: midX, y: start.y + lane};
-        control2 = {x: midX, y: end.y - lane};
-      } else {
-        const delta = Math.max(48, (end.x - start.x) * 0.5);
-        control1 = {x: start.x + delta, y: start.y + lane};
-        control2 = {x: end.x - delta, y: end.y - lane};
-      }
-      return {
-        d: `M ${start.x} ${start.y} C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${end.x} ${end.y}`,
-        label: cubicPoint(start, control1, control2, end, 0.5)
-      };
-    }
-
-    function edgePath(edge, positions, index = 0) {
-      return edgeGeometry(edge, positions, index).d;
-    }
-
-    function edgeLabelPosition(edge, positions, index = 0) {
-      return edgeGeometry(edge, positions, index).label;
-    }
-
-    function renderDagGraph() {
-      const layout = buildDagLayout();
-      currentDagLayout = layout;
-      if (!layout.nodeIds.length) {
-        currentDagLayout = null;
-        return `<div class="empty">没有匹配当前筛选的节点。</div>`;
-      }
-      const legendTypes = [...new Set(layout.edgeIds.map(edgeId => edgeById(edgeId)?.type).filter(Boolean))];
-      const markers = legendTypes.map(type => `<marker id="arrow-${esc(type)}" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" class="dag-arrow ${esc(type)}"></path></marker>`).join("");
-      const edgePaths = layout.edgeIds.map((edgeId, index) => {
-        const edge = edgeById(edgeId);
-        const d = edgePath(edge, layout.positions, index);
-        return `<g class="dag-edge-group" data-edge="${esc(edgeId)}"><path class="dag-edge-hit" data-edge="${esc(edgeId)}" d="${esc(d)}"></path><path class="dag-edge ${esc(edge.type)} ${selectedEdgeId === edgeId ? "active" : ""}" data-edge="${esc(edgeId)}" d="${esc(d)}" marker-end="url(#arrow-${esc(edge.type)})"></path></g>`;
-      }).join("");
-      const labels = layout.edgeIds.map((edgeId, index) => {
-        const edge = edgeById(edgeId);
-        const pos = edgeLabelPosition(edge, layout.positions, index);
-        return `<div class="dag-edge-label ${selectedEdgeId === edgeId ? "active" : ""}" data-edge="${esc(edgeId)}" style="left:${pos.x}px;top:${pos.y}px" title="${esc(edgeTitle(edge))}">${esc(edgeTypeLabel(edge.type))}</div>`;
-      }).join("");
-      const nodes = layout.nodeIds.map(id => {
-        const node = nodeById(id);
-        const pos = layout.positions[id];
-        return `<div class="dag-node ${esc(node.status)} ${selectedId === id && !selectedEdgeId ? "active" : ""}" data-node="${esc(id)}" style="left:${pos.x}px;top:${pos.y}px" title="${esc(id)} · ${esc(node.title)}"><div class="dag-node-title">${esc(compactTitle(node))}</div><div class="dag-node-meta">${esc(statusLabel(node.status))} · ${esc(nodeProgress(node))}%</div><div class="bar"><span style="width:${Math.max(0, Math.min(100, nodeProgress(node)))}%"></span></div></div>`;
-      }).join("");
-      const legend = legendTypes.length ? `<div class="dag-legend">${legendTypes.map(type => `<span class="dag-legend-item"><span class="dag-legend-swatch ${esc(type)}"></span>${esc(edgeTypeLabel(type))}</span>`).join("")}</div>` : "";
-      return `<div class="dag-graph" style="width:${layout.width}px;height:${layout.height}px">${legend}<svg class="dag-svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" aria-label="DAG 任务关系图"><defs>${markers}</defs>${edgePaths}</svg>${labels}${nodes}</div>`;
-    }
-
-    function updateDagGeometry() {
-      if (!currentDagLayout || viewMode !== "dag") return;
-      const graphEl = document.querySelector("#tree .dag-graph");
-      const svg = document.querySelector("#tree svg.dag-svg");
-      const positions = currentDagLayout.positions || {};
-      const maxRight = Math.max(currentDagLayout.baseWidth || currentDagLayout.width || 1, ...Object.values(positions).map(pos => pos.x + pos.w + 80));
-      const maxBottom = Math.max(currentDagLayout.baseHeight || currentDagLayout.height || 1, ...Object.values(positions).map(pos => pos.y + pos.h + 80));
-      currentDagLayout.width = maxRight;
-      currentDagLayout.height = maxBottom;
-      if (graphEl) {
-        graphEl.style.width = `${maxRight}px`;
-        graphEl.style.height = `${maxBottom}px`;
-      }
-      if (svg) {
-        svg.setAttribute("width", String(maxRight));
-        svg.setAttribute("height", String(maxBottom));
-        svg.setAttribute("viewBox", `0 0 ${maxRight} ${maxBottom}`);
-      }
-      currentDagLayout.edgeIds.forEach((edgeId, index) => {
-        const edge = edgeById(edgeId);
-        if (!edge) return;
-        const d = edgePath(edge, positions, index);
-        document.querySelectorAll(`#tree [data-edge="${CSS.escape(edgeId)}"].dag-edge, #tree [data-edge="${CSS.escape(edgeId)}"].dag-edge-hit`).forEach(path => {
-          path.setAttribute("d", d);
-        });
-        const label = document.querySelector(`#tree .dag-edge-label[data-edge="${CSS.escape(edgeId)}"]`);
-        if (label) {
-          const pos = edgeLabelPosition(edge, positions, index);
-          label.style.left = `${pos.x}px`;
-          label.style.top = `${pos.y}px`;
-        }
-      });
-    }
-
-    function startDagNodeDrag(event) {
-      if (viewMode !== "dag" || event.button !== 0) return;
-      const nodeEl = event.target.closest(".dag-node[data-node]");
-      if (!nodeEl || !currentDagLayout) return;
-      const id = nodeEl.dataset.node;
-      const pos = currentDagLayout.positions?.[id];
-      if (!pos) return;
-      dagDrag = {
-        id,
-        el: nodeEl,
-        startClientX: event.clientX,
-        startClientY: event.clientY,
-        startX: pos.x,
-        startY: pos.y,
-        moved: false
-      };
-      nodeEl.classList.add("dragging");
-      try { nodeEl.setPointerCapture(event.pointerId); } catch (_) {}
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    function moveDagNode(event) {
-      if (!dagDrag || !currentDagLayout) return;
-      const pos = currentDagLayout.positions?.[dagDrag.id];
-      if (!pos) return;
-      const dx = (event.clientX - dagDrag.startClientX) / Math.max(0.1, graphScale);
-      const dy = (event.clientY - dagDrag.startClientY) / Math.max(0.1, graphScale);
-      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dagDrag.moved = true;
-      const nextX = Math.max(0, dagDrag.startX + dx);
-      const nextY = Math.max(42, dagDrag.startY + dy);
-      pos.x = nextX;
-      pos.y = nextY;
-      dagPositionOverrides[dagDrag.id] = {x: nextX, y: nextY};
-      dagDrag.el.style.left = `${nextX}px`;
-      dagDrag.el.style.top = `${nextY}px`;
-      updateDagGeometry();
-      event.preventDefault();
-    }
-
-    function endDagNodeDrag(event) {
-      if (!dagDrag) return;
-      const nodeEl = dagDrag.el;
-      const moved = dagDrag.moved;
-      nodeEl.classList.remove("dragging");
-      try { nodeEl.releasePointerCapture(event.pointerId); } catch (_) {}
-      dagDrag = null;
-      if (moved) suppressNextDagNodeClick = true;
-    }
-
-    function renderTree() {
-      const tree = document.getElementById("tree");
-      if (viewMode === "dag") {
-        tree.innerHTML = renderDagGraph();
-        return;
-      }
-      const roots = rootsFor().filter(root => subtreeMatches(root));
-      tree.innerHTML = roots.length ? `<ul class="tree-list">${roots.map(root => `<li>${nodeHtml(root, 0)}</li>`).join("")}</ul>` : `<div class="empty">没有匹配当前筛选的节点。</div>`;
-    }
-
-    function edgeCard(edgeId) {
-      const edge = edgeById(edgeId);
-      if (!edge) return "";
-      const from = nodeById(edge.from);
-      const to = nodeById(edge.to);
-      return `<div class="edge-card ${esc(edge.type)} ${selectedEdgeId === edgeId ? "active" : ""}" data-edge="${esc(edgeId)}">
-        <div class="edge-card-title">${esc(edge.id)} · ${esc(edgeTypeLabel(edge.type))}${edge.blocking ? " · 阻塞" : ""}</div>
-        <div class="edge-card-meta">${esc(edge.from)} ${from ? "· " + esc(compactTitle(from)) : ""}<br>→ ${esc(edge.to)} ${to ? "· " + esc(compactTitle(to)) : ""}<br>${esc(edge.reason || edgeTypeLegend(edge.type))}</div>
-      </div>`;
-    }
-
-    function renderEdgePanel() {
-      const panel = document.getElementById("edgePanel");
-      const allIds = Object.keys(edgesObj()).sort();
-      const crossIds = allIds.filter(edgeId => edgeById(edgeId)?.type !== "child_of");
-      const ids = viewMode === "tree" ? crossIds : allIds;
-      const heading = viewMode === "tree" ? "跨层级关系" : "全部关系边";
-      panel.innerHTML = `<h3>${heading}</h3>${ids.length ? `<div class="edge-list">${ids.map(edgeCard).join("")}</div>` : `<div class="empty">当前没有需要单独展示的跨边。</div>`}`;
-    }
-
-    function renderQueues() {
-      const blocks = [
-        {label: "待复核", status: "review_needed"},
-        {label: "阻塞", status: "blocked"},
-        {label: "可执行", status: "ready"},
-        {label: "持续目标", custom: graph.status_queues?.evergreen_open_goals || []},
-      ];
-      document.getElementById("statusQueues").innerHTML = blocks.map(block => {
-        const ids = block.custom || statusQueue(block.status);
-        const body = ids.length ? ids.map(id => {
-          const node = nodeById(id);
-          if (!node) return "";
-          const reviewHint = node.status === "review_needed" ? "<br>点击查看复核清单" : "";
-          return `<div class="queue-item" data-node="${esc(id)}"><div class="queue-title-line">${esc(id)} · ${esc(node.title)}</div><div class="queue-meta">${esc(statusLabel(node.status))} · ${nodeProgress(node)}%<br>${esc(statusLegend(node.status))}${reviewHint}</div></div>`;
-        }).join("") : `<div class="empty">无</div>`;
-        return `<div class="queue-block"><div class="queue-title"><span>${esc(block.label)}</span><span>${ids.length}</span></div>${body}</div>`;
-      }).join("");
-    }
-
-    function buildTodoItems() {
-      const currentMap = new Map(CURRENT_TODOS.map(item => [item.id, item]));
-      return Object.values(nodesObj())
-        .filter(node => OPEN_STATUSES.has(node.status))
-        .map(node => currentMap.get(node.id) || {id: node.id, title: node.title, progress: nodeProgress(node), status: node.status, kind: node.kind, next_action: "查看节点详情", priority: node.priority})
-        .sort((a, b) => (b.priority || 0) - (a.priority || 0) || String(a.id).localeCompare(String(b.id)));
-    }
-
-    function renderTodos() {
-      const todos = buildTodoItems();
-      const actionable = todos.filter(item => !(item.kind === "global_task" && item.status === "in_progress" && item.remaining_minutes_min == null));
-      const evergreen = todos.filter(item => item.kind === "global_task" && item.status === "in_progress" && item.remaining_minutes_min == null);
-      const renderItems = items => items.length ? items.map(item => `<div class="todo" data-node="${esc(item.id)}"><div class="todo-title">${esc(item.id)} · ${esc(item.title)}</div><div class="todo-meta">${esc(statusLabel(item.status))} · ${esc(item.progress)}%<br>${esc(item.next_action || "查看节点详情")}</div></div>`).join("") : `<div class="empty">无</div>`;
-      document.getElementById("todoList").innerHTML = `<div class="queue-block"><div class="queue-title"><span>可行动项</span><span>${actionable.length}</span></div>${renderItems(actionable)}</div><div class="queue-block"><div class="queue-title"><span>持续开放目标</span><span>${evergreen.length}</span></div>${renderItems(evergreen)}</div>`;
-    }
-
-    function listItems(items) {
-      if (!items || !items.length) return `<div class="empty">无</div>`;
-      return `<ul>${items.map(item => `<li>${esc(typeof item === "object" ? (item.text || item.title || JSON.stringify(item)) : item)}</li>`).join("")}</ul>`;
-    }
-
-    function renderNodeDetail(node) {
-      const alignment = node.alignment || {};
-      const related = relatedEdgesFor(node.id);
-      return `
-        <div class="detail-title">${esc(node.id)} · ${esc(node.title)}</div>
-        <div>${esc(node.summary || "无摘要")}</div>
-        <div class="detail-section"><h3>状态</h3>
-          <span class="badge">${esc(kindLabel(node.kind))}</span><span class="badge">${esc(statusLabel(node.status))}</span><span class="badge">进度 ${esc(nodeProgress(node))}%</span><span class="badge">优先级 P${esc(node.priority)}</span>
-          <div class="muted">${esc(statusLegend(node.status))}</div>
-          ${node.status === "review_needed" ? `<div class="review-guide"><strong>待复核要看什么</strong><br>为什么待复核：${esc(statusLegend(node.status))}<br>复核对象：验收标准、证据、实际产物、关系边、以及“不足或风险”。<br>通过复核：让 $task-forest 生成 proposal 把 ${esc(node.id)} 改为 done。<br>不通过复核：指出缺口，把缺口写成新的后续事项、要求或风险。<div class="review-actions"><button type="button" data-review-copy="pass" data-node="${esc(node.id)}">复制通过复核指令</button><button type="button" data-review-copy="fail" data-node="${esc(node.id)}">复制记录缺口指令</button></div></div>` : ""}
-        </div>
-        <div class="detail-section"><h3>全局目的</h3><div>${esc(node.purpose || alignment.user_goal || "无")}</div></div>
-        <div class="detail-section"><h3>为什么这个任务符合目的</h3><div>${esc(alignment.why_this_task || "无")}</div></div>
-        <div class="detail-section"><h3>不足或风险</h3><div>${esc(alignment.why_not_enough || "无")}</div></div>
-        <div class="detail-section"><h3>期望结果</h3>${listItems(node.desired_outcomes)}</div>
-        <div class="detail-section"><h3>成功指标</h3>${listItems(node.success_metrics)}</div>
-        <div class="detail-section"><h3>具体要求</h3>${listItems(node.requirements)}</div>
-        <div class="detail-section"><h3>验收标准</h3>${listItems(node.acceptance_criteria)}</div>
-        <div class="detail-section"><h3>非目标</h3>${listItems(node.non_goals)}</div>
-        <div class="detail-section"><h3>关键假设</h3>${listItems(node.assumptions)}</div>
-        <div class="detail-section"><h3>验证计划</h3>${listItems(alignment.validation_plan)}</div>
-        <div class="detail-section"><h3>执行提示</h3>${listItems(node.execution_hints)}</div>
-        <div class="detail-section"><h3>证据</h3>${listItems(node.evidence)}</div>
-        <div class="detail-section"><h3>关系边</h3>${related.length ? `<div class="edge-table">${related.map(edgeId => edgeRow(edgeId)).join("")}</div>` : `<div class="empty">无</div>`}</div>
-        <div class="detail-section"><h3>偏差记录</h3>${listItems(node.deviations)}</div>
-      `;
-    }
-
-    function edgeRow(edgeId) {
-      const edge = edgeById(edgeId);
-      if (!edge) return "";
-      return `<div class="edge-row ${esc(edge.type)}" data-edge="${esc(edgeId)}"><strong>${esc(edge.id)} · ${esc(edgeTypeLabel(edge.type))}</strong><br><span class="muted">${esc(edge.from)} → ${esc(edge.to)}${edge.blocking ? " · 阻塞" : ""}</span><br>${esc(edge.reason || edgeTypeLegend(edge.type))}</div>`;
-    }
-
-    function renderEdgeDetail(edge) {
-      const from = nodeById(edge.from);
-      const to = nodeById(edge.to);
-      return `
-        <div class="detail-toolbar"><button type="button" data-detail-back>返回上一项</button>${selectedId ? `<button type="button" data-node="${esc(selectedId)}">返回当前节点</button>` : ""}</div>
-        <div class="detail-title">${esc(edge.id)} · ${esc(edgeTypeLabel(edge.type))}</div>
-        <div class="muted">${esc(edgeTypeLegend(edge.type))}</div>
-        <div class="detail-section"><h3>方向</h3><div><button type="button" data-node="${esc(edge.from)}">${esc(edge.from)}</button> → <button type="button" data-node="${esc(edge.to)}">${esc(edge.to)}</button></div></div>
-        <div class="detail-section"><h3>起点任务</h3><div>${esc(from ? from.title : edge.from)}</div></div>
-        <div class="detail-section"><h3>目标任务</h3><div>${esc(to ? to.title : edge.to)}</div></div>
-        <div class="detail-section"><h3>边属性</h3><div>阻塞关系：${edge.blocking ? "是" : "否"}</div><div>置信度：${esc(edge.confidence ?? "未记录")}</div></div>
-        <div class="detail-section"><h3>原因</h3><div>${esc(edge.reason || "无")}</div></div>
-        <div class="detail-section"><h3>创建信息</h3><div class="muted">${esc(edge.created_at || "无")}<br>${esc(edge.created_from_session || "")}</div></div>
-      `;
-    }
-
-    function renderDetail() {
-      const detail = document.getElementById("detail");
-      const edge = selectedEdgeId ? edgeById(selectedEdgeId) : null;
-      const node = selectedId ? nodeById(selectedId) : null;
-      if (edge) {
-        document.getElementById("detailHeading").textContent = "边详情";
-        detail.innerHTML = renderEdgeDetail(edge);
-        return;
-      }
-      document.getElementById("detailHeading").textContent = "节点详情";
-      detail.innerHTML = node ? renderNodeDetail(node) : `<div class="empty">选择一个节点查看完整说明、要求、进度、偏差和关系。</div>`;
-    }
-
-    function snapshotDiff(index) {
-      if (!SNAPSHOTS.length) return ["暂无历史快照；当前展示最新任务图。"];
-      const curr = SNAPSHOTS[index]?.graph || CURRENT_GRAPH;
-      const prev = index > 0 ? (SNAPSHOTS[index - 1]?.graph || {nodes:{}, edges:{}}) : {nodes:{}, edges:{}};
-      const currNodes = curr.nodes || {}, prevNodes = prev.nodes || {};
-      const currEdges = curr.edges || {}, prevEdges = prev.edges || {};
-      const addedNodes = Object.keys(currNodes).filter(id => !prevNodes[id]);
-      const removedNodes = Object.keys(prevNodes).filter(id => !currNodes[id]);
-      const addedEdges = Object.keys(currEdges).filter(id => !prevEdges[id]);
-      const statusChanges = Object.keys(currNodes).filter(id => prevNodes[id] && prevNodes[id].status !== currNodes[id].status);
-      const progressChanges = Object.keys(currNodes).filter(id => prevNodes[id] && Number(prevNodes[id].derived_progress ?? prevNodes[id].progress ?? 0) !== Number(currNodes[id].derived_progress ?? currNodes[id].progress ?? 0));
-      const lines = [];
-      if (addedNodes.length) lines.push(`新增节点 ${addedNodes.length}: ${addedNodes.join("、")}`);
-      if (removedNodes.length) lines.push(`移除节点 ${removedNodes.length}: ${removedNodes.join("、")}`);
-      if (addedEdges.length) lines.push(`新增边 ${addedEdges.length}: ${addedEdges.join("、")}`);
-      if (statusChanges.length) lines.push(`状态变化 ${statusChanges.length}: ${statusChanges.map(id => `${id} ${prevNodes[id].status}->${currNodes[id].status}`).join("、")}`);
-      if (progressChanges.length) lines.push(`进度变化 ${progressChanges.length}: ${progressChanges.map(id => `${id} ${Number(prevNodes[id].derived_progress ?? prevNodes[id].progress ?? 0)}%->${Number(currNodes[id].derived_progress ?? currNodes[id].progress ?? 0)}%`).join("、")}`);
-      return lines.length ? lines : ["该快照相对前一快照没有结构性变化。"];
-    }
-
-    function renderTimeline() {
-      const slider = document.getElementById("snapshot");
-      const label = document.getElementById("snapshotLabel");
-      const diff = document.getElementById("snapshotDiff");
-      const has = SNAPSHOTS.length > 0;
-      slider.max = Math.max(0, SNAPSHOTS.length - 1);
-      slider.disabled = !has;
-      document.getElementById("prevSnapshot").disabled = !has || snapshotIndex <= 0;
-      document.getElementById("nextSnapshot").disabled = !has || snapshotIndex >= SNAPSHOTS.length - 1;
-      if (!has) {
-        label.textContent = "暂无历史快照；当前展示最新任务图。";
-        diff.textContent = "";
-        return;
-      }
-      slider.value = String(snapshotIndex);
-      const snap = SNAPSHOTS[snapshotIndex];
-      label.textContent = `${snap.snapshot_id || ""} · ${snap.created_at || ""} · ${snap.graph?.reason || ""}`;
-      diff.innerHTML = snapshotDiff(snapshotIndex).map(line => `<div>${esc(line)}</div>`).join("");
-    }
-
-    function renderLegend() {
-      const statuses = ["proposed", "ready", "in_progress", "blocked", "review_needed", "done", "deprecated", "archived"];
-      const edgeTypes = ["child_of", "depends_on", "contributes_to", "related_to", "duplicates", "supersedes", "clarifies", "derived_from"];
-      document.getElementById("legend").innerHTML = `<div><strong>状态</strong></div>${statuses.map(s => `<div class="legend-row"><span>${esc(statusLabel(s))}</span><span>${esc(statusLegend(s))}</span></div>`).join("")}<div style="margin-top:10px"><strong>边</strong></div>${edgeTypes.map(t => `<div class="legend-row"><span>${esc(edgeTypeLabel(t))}</span><span>${esc(edgeTypeLegend(t))}</span></div>`).join("")}`;
-    }
-
-    function setView(mode) {
-      viewMode = mode;
-      render();
-      requestAnimationFrame(() => {
-        fitTreeToViewport();
-      });
-    }
-    function firstNodeForFilter(filter) {
-      const ids = filter === "open"
-        ? Object.values(nodesObj()).filter(node => OPEN_STATUSES.has(node.status)).map(node => node.id)
-        : filter === "all"
-          ? rootsFor()
-          : statusQueue(filter);
-      return ids.find(id => nodeById(id)) || null;
-    }
-    function setFilter(filter) {
-      activeFilter = activeFilter === filter ? "all" : filter;
-      selectedEdgeId = null;
-      const first = firstNodeForFilter(activeFilter);
-      if (first) selectedId = first;
-      render();
-      if (first) requestAnimationFrame(() => centerNodeInCanvas(first));
-    }
-    function selectNode(id, scroll = true) {
-      if (!nodeById(id)) return;
-      selectedId = id;
-      selectedEdgeId = null;
-      setPanelCollapsed("right", false);
-      render();
-      if (scroll) requestAnimationFrame(() => centerNodeInCanvas(id));
-    }
-    function selectEdge(id) {
-      if (!edgeById(id)) return;
-      if (selectedEdgeId !== id) {
-        detailHistory.push({selectedId, selectedEdgeId});
-        if (detailHistory.length > 30) detailHistory.shift();
-      }
-      selectedEdgeId = id;
-      const edge = edgeById(id);
-      selectedId = edge.from;
-      viewMode = viewMode === "tree" ? "all" : viewMode;
-      setPanelCollapsed("right", false);
-      render();
-    }
-    function goBackDetail() {
-      const previous = detailHistory.pop();
-      if (!previous) {
-        selectedEdgeId = null;
-        render();
-        return;
-      }
-      selectedId = previous.selectedId;
-      selectedEdgeId = previous.selectedEdgeId;
-      render();
-    }
-    function useSnapshot(index) {
-      if (!SNAPSHOTS.length) return;
-      snapshotIndex = Math.max(0, Math.min(SNAPSHOTS.length - 1, index));
-      graph = SNAPSHOTS[snapshotIndex]?.graph || CURRENT_GRAPH;
-      dagPositionOverrides = {};
-      currentDagLayout = null;
-      if (selectedId && !nodeById(selectedId)) selectedId = rootsFor()[0] || null;
-      if (selectedEdgeId && !edgeById(selectedEdgeId)) selectedEdgeId = null;
-      render();
-    }
-    function stopPlayback() {
-      if (playTimer) clearInterval(playTimer);
-      playTimer = null;
-      document.getElementById("playSnapshot").textContent = "播放";
-      document.getElementById("playSnapshot").setAttribute("aria-pressed", "false");
-    }
-    function startPlayback() {
-      if (!SNAPSHOTS.length) return;
-      stopPlayback();
-      document.getElementById("playSnapshot").textContent = "暂停";
-      document.getElementById("playSnapshot").setAttribute("aria-pressed", "true");
-      const delay = Number(document.getElementById("playSpeed").value || 1100);
-      playTimer = setInterval(() => {
-        const next = snapshotIndex + 1;
-        if (next < SNAPSHOTS.length) useSnapshot(next);
-        else if (document.getElementById("loopPlayback").checked) useSnapshot(0);
-        else stopPlayback();
-      }, delay);
-    }
-
-    function render() {
-      renderSummary();
-      renderTree();
-      renderEdgePanel();
-      renderQueues();
-      renderTodos();
-      renderDetail();
-      renderTimeline();
-      renderLegend();
-      document.getElementById("activeFilter").textContent = filterLabel();
-      document.querySelectorAll("[data-view]").forEach(btn => btn.classList.toggle("active", btn.dataset.view === viewMode));
-      document.querySelectorAll("[data-filter]").forEach(btn => btn.classList.toggle("active", btn.dataset.filter === activeFilter));
-      const search = document.getElementById("search");
-      if (search.value !== query) search.value = query;
-      requestAnimationFrame(() => {
-        applyTreeTransform();
-        if (!initialFitDone && viewMode !== "dag") {
-          initialFitDone = true;
-          fitTreeToViewport();
-        }
-      });
-    }
-
-    document.addEventListener("click", event => {
-      const toggle = event.target.closest("[data-toggle]");
-      if (toggle) {
-        const id = toggle.dataset.toggle;
-        collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id);
-        render();
-        event.stopPropagation();
-        return;
-      }
-      const view = event.target.closest("[data-view]");
-      if (view) { setView(view.dataset.view); return; }
-      const filter = event.target.closest("[data-filter]");
-      if (filter) { setFilter(filter.dataset.filter); return; }
-      const back = event.target.closest("[data-detail-back]");
-      if (back) { goBackDetail(); return; }
-      const reviewCopy = event.target.closest("[data-review-copy]");
-      if (reviewCopy) {
-        const node = nodeById(reviewCopy.dataset.node);
-        if (!node) return;
-        copyText(reviewPrompt(node, reviewCopy.dataset.reviewCopy === "pass")).then(ok => {
-          reviewCopy.textContent = ok ? "已复制指令" : "复制失败，请手动复制";
-          setTimeout(() => {
-            reviewCopy.textContent = reviewCopy.dataset.reviewCopy === "pass" ? "复制通过复核指令" : "复制记录缺口指令";
-          }, 1400);
-        });
-        return;
-      }
-      const edge = event.target.closest("[data-edge]");
-      if (edge) { selectEdge(edge.dataset.edge); return; }
-      const node = event.target.closest("[data-node]");
-      if (node) {
-        if (suppressNextDagNodeClick && node.classList.contains("dag-node")) {
-          suppressNextDagNodeClick = false;
-          return;
-        }
-        selectNode(node.dataset.node, false);
-        return;
-      }
-    });
-    document.getElementById("search").addEventListener("input", event => { query = event.target.value.trim(); render(); });
-    document.getElementById("clearFilter").addEventListener("click", () => { activeFilter = "all"; query = ""; selectedEdgeId = null; render(); });
-    document.getElementById("resetDagLayout").addEventListener("click", () => {
-      dagPositionOverrides = {};
-      currentDagLayout = null;
-      render();
-      requestAnimationFrame(fitTreeToViewport);
-    });
-    document.getElementById("expandAll").addEventListener("click", () => { collapsed.clear(); render(); });
-    document.getElementById("collapseAll").addEventListener("click", () => { Object.keys(nodesObj()).forEach(id => { if (getChildren(id).length) collapsed.add(id); }); render(); });
-    document.getElementById("snapshot").addEventListener("input", event => { stopPlayback(); useSnapshot(Number(event.target.value)); });
-    document.getElementById("prevSnapshot").addEventListener("click", () => { stopPlayback(); useSnapshot(snapshotIndex - 1); });
-    document.getElementById("nextSnapshot").addEventListener("click", () => { stopPlayback(); useSnapshot(snapshotIndex + 1); });
-    document.getElementById("playSnapshot").addEventListener("click", () => { playTimer ? stopPlayback() : startPlayback(); });
-    document.getElementById("playSpeed").addEventListener("change", () => { if (playTimer) startPlayback(); });
-    document.querySelectorAll("[data-collapse-panel]").forEach(button => {
-      button.addEventListener("click", () => {
-        const side = button.dataset.collapsePanel;
-        const className = side === "left" ? "left-collapsed" : "right-collapsed";
-        setPanelCollapsed(side, !document.body.classList.contains(className));
-      });
-    });
-    document.getElementById("zoomOut").addEventListener("click", () => setZoom(graphScale - 0.12));
-    document.getElementById("zoomIn").addEventListener("click", () => setZoom(graphScale + 0.12));
-    document.getElementById("zoomReset").addEventListener("click", resetViewport);
-    document.getElementById("zoomFit").addEventListener("click", fitTreeToViewport);
-    document.addEventListener("pointerdown", startDagNodeDrag);
-    document.addEventListener("pointermove", moveDagNode);
-    document.addEventListener("pointerup", endDagNodeDrag);
-    document.addEventListener("pointercancel", endDagNodeDrag);
-    const canvas = document.getElementById("canvas");
-    canvas.addEventListener("pointerdown", event => {
-      if (event.button !== 0) return;
-      if (event.target.closest("button, input, select, .node, .dag-node, .edge-card, .edge-chip, .dag-edge-label, .dag-edge, .dag-edge-hit, .dag-edge-group")) return;
-      isPanning = true;
-      panStart = {x: event.clientX, y: event.clientY, panX, panY};
-      canvas.classList.add("dragging");
-      canvas.setPointerCapture(event.pointerId);
-    });
-    canvas.addEventListener("pointermove", event => {
-      if (!isPanning) return;
-      panX = panStart.panX + event.clientX - panStart.x;
-      panY = panStart.panY + event.clientY - panStart.y;
-      applyTreeTransform();
-    });
-    function endPan(event) {
-      if (!isPanning) return;
-      isPanning = false;
-      canvas.classList.remove("dragging");
-      try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
-    }
-    canvas.addEventListener("pointerup", endPan);
-    canvas.addEventListener("pointercancel", endPan);
-    canvas.addEventListener("wheel", event => {
-      if (!(event.ctrlKey || event.metaKey || event.altKey)) return;
-      event.preventDefault();
-      const direction = event.deltaY > 0 ? -1 : 1;
-      setZoom(graphScale + direction * 0.08, {x: event.clientX, y: event.clientY});
-    }, {passive: false});
-    window.addEventListener("resize", () => {
-      syncStickyOffsets();
-      requestAnimationFrame(fitTreeToViewport);
-    });
-    syncStickyOffsets();
-    if (SNAPSHOTS.length) useSnapshot(snapshotIndex);
-    else render();
-  </script>
-</body>
-</html>
-"""
-    for key, value in replacements.items():
-        template = template.replace(key, value)
-    return template
-
-
 def add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--workspace", help="任务目录；默认当前工作目录")
-    parser.add_argument("--root", help="task-forest 数据目录；默认 <workspace>/.agent-workbench/task-forest")
+    parser.add_argument(
+        "--root",
+        help="task-forest 数据目录；默认 <workspace>/.agent-workbench/task-forest",
+    )
     parser.add_argument(
         "--lock-timeout",
         type=float,
-        default=float(os.environ.get("TASK_FOREST_LOCK_TIMEOUT", DEFAULT_LOCK_TIMEOUT_SECONDS)),
+        default=float(
+            os.environ.get("TASK_FOREST_LOCK_TIMEOUT", DEFAULT_LOCK_TIMEOUT_SECONDS)
+        ),
         help="等待 task-forest 写锁的秒数；默认 30 秒，可用 TASK_FOREST_LOCK_TIMEOUT 覆盖",
     )
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="维护 repo-local 任务森林/DAG、历史快照和 HTML 可视化。")
+    parser = argparse.ArgumentParser(
+        description="维护 repo-local 任务森林/DAG、历史快照和 HTML 可视化。"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("init", help="初始化当前任务目录的 task-forest")
@@ -3092,12 +2009,26 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--status", default="proposed", choices=sorted(NODE_STATUSES))
     p.add_argument("--summary")
     p.add_argument("--purpose", help="该任务在全局目标中的意义或用户目的")
-    p.add_argument("--desired-outcome", action="append", default=[], help="用户期望该任务带来的具体结果")
+    p.add_argument(
+        "--desired-outcome",
+        action="append",
+        default=[],
+        help="用户期望该任务带来的具体结果",
+    )
     p.add_argument("--requirement", action="append", default=[])
     p.add_argument("--acceptance", action="append", default=[])
-    p.add_argument("--success-metric", action="append", default=[], help="判断目的是否达成的指标或证据")
-    p.add_argument("--non-goal", action="append", default=[], help="明确不希望该任务承担的目标")
-    p.add_argument("--assumption", action="append", default=[], help="生成或执行该任务时依赖的假设")
+    p.add_argument(
+        "--success-metric",
+        action="append",
+        default=[],
+        help="判断目的是否达成的指标或证据",
+    )
+    p.add_argument(
+        "--non-goal", action="append", default=[], help="明确不希望该任务承担的目标"
+    )
+    p.add_argument(
+        "--assumption", action="append", default=[], help="生成或执行该任务时依赖的假设"
+    )
     p.add_argument("--alignment-json", help="任务与用户真实目标的结构化对齐摘要 JSON")
     p.add_argument("--progress", type=float, default=0.0)
     p.add_argument("--priority", type=int, default=3)
@@ -3203,15 +2134,25 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--proposal-json")
     p.add_argument("--proposal-file")
     p.add_argument("--session-id")
-    p.add_argument("--overwrite", action="store_true", help="允许覆盖同名未应用 proposal")
+    p.add_argument(
+        "--overwrite", action="store_true", help="允许覆盖同名未应用 proposal"
+    )
     p.set_defaults(func=cmd_proposal_save)
 
     p = sub.add_parser("proposal-apply", help="应用已确认的变更提案")
     add_common(p)
     p.add_argument("proposal")
     p.add_argument("--yes", action="store_true")
-    p.add_argument("--allow-stale", action="store_true", help="允许应用基于旧 graph hash 的 proposal；仅在人工确认无冲突后使用")
-    p.add_argument("--allow-reapply", action="store_true", help="允许重复应用已标记 applied 的 proposal")
+    p.add_argument(
+        "--allow-stale",
+        action="store_true",
+        help="允许应用基于旧 graph hash 的 proposal；仅在人工确认无冲突后使用",
+    )
+    p.add_argument(
+        "--allow-reapply",
+        action="store_true",
+        help="允许重复应用已标记 applied 的 proposal",
+    )
     p.add_argument("--actor", default=default_actor())
     p.set_defaults(func=cmd_proposal_apply)
 

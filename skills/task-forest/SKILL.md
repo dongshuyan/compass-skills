@@ -1,122 +1,95 @@
 ---
 name: task-forest
-description: Maintains a repo-local task forest or task DAG for the current workspace. Use when the user asks to initialize, update, close a session, summarize evolving project tasks, decide whether a new request is a global task or subtask, track task progress/history/deviations/todos, export a task graph HTML, or provide task data for gap-router/local-agent-control-room. Do not use for executing the tasks themselves.
+description: Maintains a repo-local task forest or task DAG for the current workspace. Use when the user asks to initialize or update a task forest, close a session, summarize evolving project work, align a request with a global goal, track progress/history/deviations/todos, save or apply a task proposal, or export the client-readable task-forest HTML. Do not use for executing the tracked tasks themselves or for generic HTML work.
 ---
 
 # Task Forest
 
-## Language Policy
+## Purpose
 
-**All output directed at the user — task titles, node fields, proposals, reports, questions, confirmations, and exported user-facing content — must be written in the user's language.** Detect the user's language from their message. Default to Chinese when unknown. Skill instructions are written in English; that does not affect the language of user-facing output.
+Maintain the current workspace's task structure, proposals, history, and progress. Produce one standalone HTML deliverable that a first-time reader can understand without opening another task list or internal file.
 
-## Role
-
-Maintain repo-local task structure. Record long-running goals, subtasks, dependencies, progress, deviations, todos, and session history under the current workspace. Export an offline HTML view of the task graph.
+Use the user's language for task content, proposals, reports, and HTML. Default to Chinese when unknown.
 
 ## Portability
 
-Resolve paths from the directory that contains this `SKILL.md`. Use the available Python command on the host (`python3`, `python`, or `py -3`). The scripts are intended for macOS, Windows, and Linux with Python 3 and the standard library. In portable builds, agents may set `COMPASS_AGENT_NAME` or `AGENT_NAME` when they want graph history to record the calling agent.
+This skill is agent-agnostic. Install the whole `task-forest` directory in any host-supported skill location, then resolve scripts, references, and assets from the directory containing this `SKILL.md`. Do not assume a specific agent name, skill root, home-directory layout, shell, path separator, or operating system.
 
-## Core Principles
+Use an available Python 3 launcher on the host (`python3`, `python`, or `py -3`). The scripts use the Python standard library and support macOS, Linux, and Windows. To label task history with the calling agent, set `COMPASS_AGENT_NAME` or `AGENT_NAME`, or pass `--actor`; otherwise the neutral value `agent` is used.
 
-1. Write task-forest data only through `scripts/task_forest.py`; never edit files under `.agent-workbench/task-forest/` directly.
-2. The internal model is a DAG. The default presentation is a forest: one primary `child_of` parent per node, `contributes_to` for secondary ownership, and `depends_on` for execution prerequisites.
-3. If user intent is unclear, apply `$task-clarifier` before task graph work. If intent is clear enough, present a proposal and wait for confirmation before applying it.
-4. Keep unconfirmed assumptions in proposals. Write formal graph changes only after confirmation.
-5. When execution diverges from the user's requirement, record a deviation and move related tasks to `review_needed` or wait for user confirmation.
-6. Store canonical data in the current workspace at `.agent-workbench/task-forest/`. Store only lightweight registry data in the global SQLite index.
-7. In concurrent sessions, read and write through the CLI so locking and stale-hash checks can run.
-8. Treat HTML export as a primary product surface. Changes to the HTML template must satisfy `references/html-visualization-contract.md` and pass `scripts/validate_task_forest_export.py`.
+## Core Rules
 
-## CLI
+1. Read and write task-forest data only through `scripts/task_forest.py`; never hand-edit `.agent-workbench/task-forest/` canonical files.
+2. Use one primary `child_of` parent per node, `contributes_to` for secondary ownership, and `depends_on` for prerequisites.
+3. Save graph changes as a proposal and wait for user confirmation before `proposal-apply --yes`.
+4. Keep low-confidence inference in a question or proposal. Record material execution drift as a deviation.
+5. Write visible task titles and purposes in plain language. A reader must understand what the task delivers, why it exists, and what has been completed without knowing internal codes such as `P04` or reading another file.
+6. Export one HTML surface: `exports/task-forest.html`. It shows `done`, `in_progress`, and their necessary `child_of` ancestors, with history playback. Do not expose internal discussions, evidence, queues, filesystem paths, sessions, or proposal content in the HTML.
+7. Keep HTML interactions read-only. Formal changes always return through the proposal workflow.
 
-Resolve `<skill-dir>` to the directory that contains this `SKILL.md`. Use the available Python command for the host (`python3`, `python`, or `py -3`). Examples use `python3`; adapt only the Python executable name when needed.
+## Main Workflow
 
-```bash
-python3 <skill-dir>/scripts/task_forest.py --help
-```
+When initializing, updating, or closing a session:
 
-The default workspace is the current working directory. To target a specific workspace:
+1. Run `init`.
+2. Read `list --json` and `todo --json`.
+3. Identify the global goal served by the session and the task structure that must remain visible.
+4. When the workspace has an authoritative task list, preserve its meaningful `goal -> phase -> module -> concrete task` hierarchy and sibling order for every `done` or `in_progress` task. Include necessary ancestors, omit wholly unstarted branches, and attach extra fixes under the feature they improve. Never collapse several phases into one node or rely on edge creation order; set `display_order` for all siblings when source order is not otherwise stable.
+5. Make every visible node independently understandable. Use a clear title plus `summary` or `purpose`; add outcomes or acceptance criteria when they clarify delivery. Treat internal codes as secondary labels, not as the task name.
+6. Show and save a proposal. Do not apply it before confirmation.
+7. After confirmation, run `proposal-apply --yes`, `validate`, and `export`.
+8. Return the proposal path and the single HTML path.
 
-```bash
-python3 <skill-dir>/scripts/task_forest.py init \
-  --workspace /path/to/repo
-```
+Use `$task-clarifier` when user intent or the target global goal is genuinely unclear.
 
-Common commands:
+## Commands
+
+Resolve `<skill-dir>` from this file and use an available Python 3 executable. The examples use `python3`; substitute the host's available launcher when needed.
 
 ```bash
 python3 <skill-dir>/scripts/task_forest.py init
-
-python3 <skill-dir>/scripts/task_forest.py add-node \
-  --kind global_task \
-  --title "Maintain the local agent workbench" \
-  --requirement "Task data stays inside the workspace" \
-  --acceptance "The task graph can be exported to HTML"
-
-python3 <skill-dir>/scripts/task_forest.py add-node \
-  --title "Implement task graph HTML export" \
-  --parent TF-0001 \
-  --estimate 120 \
-  --difficulty medium
-
-python3 <skill-dir>/scripts/task_forest.py todo
-python3 <skill-dir>/scripts/task_forest.py export
+python3 <skill-dir>/scripts/task_forest.py list --json
+python3 <skill-dir>/scripts/task_forest.py todo --json
+python3 <skill-dir>/scripts/task_forest.py proposal-save --proposal-file /path/to/proposal.json
+python3 <skill-dir>/scripts/task_forest.py proposal-apply <proposal-id> --yes
 python3 <skill-dir>/scripts/task_forest.py validate
+python3 <skill-dir>/scripts/task_forest.py export
 ```
 
-## Session Close Workflow
+The default workspace is the current directory. Use `--workspace` only when another workspace is explicit. Use `--root` only when the caller explicitly selected a non-default task-forest root.
 
-When the user asks to update the task forest, close the current session, or maintain the task list from the conversation:
+## Outputs
 
-1. Run `init` to ensure the data directory exists.
-2. Run `list --json` and `todo --json` to read current nodes and open work.
-3. Analyze the session and create candidate changes only: new nodes, node updates, edges, deprecations, deviations, or questions.
-4. If the session goal is unclear, ask which goal this conversation mainly served.
-5. If the goal is clear enough, show the proposal: where each new node goes, how it relates to existing tasks, and which fields would change.
-6. Save the candidate changes as a proposal. Apply with `proposal-apply --yes` only after user confirmation.
-7. After applying, run `validate` and `export`, inspect the HTML against `references/html-visualization-contract.md`, and tell the user the HTML path.
-
-Proposal JSON fields and invariants live in `references/schema.md`. Complex session-close reasoning lives in `references/session-close-workflow.md`.
-
-Read `references/goal-alignment.md` when judging how a task serves a global goal, whether it can achieve the user's purpose, or which candidate task plan to offer. Clarification methods come from `$task-clarifier`; task-forest owns graph meaning, candidate task structure, and proposal writes.
-
-Read `references/node-types.md` only when adding or classifying nodes.
-
-Concurrency and multi-session rules live in `references/concurrency.md`. Proposals store `base_graph_hash`; application rejects stale proposals by default. Use `--allow-stale` only after manual conflict review.
-
-## Outputs And Integration
-
-Exports are fixed at:
+The user-facing artifacts are:
 
 ```text
-.agent-workbench/task-forest/exports/task-forest.graph.json
-.agent-workbench/task-forest/exports/task-forest.todos.json
-.agent-workbench/task-forest/exports/task-forest.timeline.json
-.agent-workbench/task-forest/exports/task-forest.html
+proposals/<proposal_id>.json
+exports/task-forest.html
 ```
 
-`gap-router` and `local-agent-control-room` read these exports. They must leave canonical task-forest data unchanged. Field contracts live in `references/integration-contract.md`.
-
-The CLI updates a lightweight global registry when possible during `init`, `export`, `validate`, `proposal-save`, and `proposal-apply`:
+The exporter also maintains three internal compatibility files for `gap-router` and `local-agent-control-room`:
 
 ```text
-~/.agent-workbench/agent-workbench.sqlite3
+exports/task-forest.graph.json
+exports/task-forest.todos.json
+exports/task-forest.timeline.json
 ```
 
-The registry stores workspace paths, task-forest paths, export paths, export hashes, node/edge/status counts, command status, and error summaries. It omits node bodies, edge bodies, history snapshots, HTML, proposal content, and full conversation summaries. Use `AGENT_WORKBENCH_DB` to set another registry path. Set `TASK_FOREST_DISABLE_GLOBAL_REGISTRY=1` to disable the global registry.
+Do not present those JSON files as delivery artifacts unless the user explicitly asks for machine-readable data.
 
-Full rebuild regression:
+## References and Validation
+
+- Read `references/schema.md` for node fields, proposal actions, and canonical invariants.
+- Read `references/goal-alignment.md` only when judging global-goal fit or competing candidate plans.
+- Read `references/node-types.md` only when node classification is unclear.
+- Read `references/concurrency.md` before resolving stale proposals or concurrent writes.
+- Read `references/html-visualization-contract.md` when changing or validating the HTML.
+- Read `references/integration-contract.md` only when changing JSON or registry compatibility.
+
+For HTML or exporter changes, run:
 
 ```bash
 python3 <skill-dir>/scripts/validate_task_forest_export.py --skill-dir <skill-dir>
 ```
 
-The validator creates a temporary workspace, initializes task-forest, builds a sample DAG with multiple states and edge types, runs `validate/export`, and checks exported JSON and HTML behavior.
-
-## Boundaries
-
-- Explicit invocation is the reliable way to run this skill at session end.
-- Low-confidence goal inference must become a question or stay in a proposal.
-- Prefer `deprecated` for removed tasks so history remains reviewable.
-- Estimates must include confidence. Use `unknown` or low confidence when evidence is thin.
+The HTML remains a derived, read-only view. Canonical task data and proposal history stay repo-local.

@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Forest"
-  short_description: "Maintain repo-local task DAGs and HTML exports"
-  default_prompt: "Use $task-forest to close this session, update the repo-local task DAG, and export the HTML task forest."
+  short_description: "Maintain task proposals and one client-readable HTML"
+  default_prompt: "Use $task-forest to update this workspace through a proposal and export the single client-readable task-forest HTML."

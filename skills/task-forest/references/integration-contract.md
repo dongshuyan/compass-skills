@@ -104,7 +104,7 @@ cross_edges
 
 控制室应使用这些字段定位“谁卡住、谁待复核、谁有跨任务依赖”。展示层可以默认使用 `child_of` 作为层级树，把 `depends_on`、`contributes_to`、`clarifies` 等边作为可点击关系边展示，避免把 DAG 误读成纯树。
 
-如果控制室复用 `task-forest.html` 的交互经验，应遵守 `html-visualization-contract.md` 的用户语义：`child_of` 面向用户显示为 `子任务`，DAG 节点拖拽只是展示层布局，不是任务事实，不能把拖拽后的坐标写回 task-forest graph。
+如果控制室复用 `task-forest.html` 的交互经验，应遵守 `html-visualization-contract.md` 的用户语义：`child_of` 面向用户显示为“子任务”，搜索、筛选、展开和历史播放都只是浏览器视图状态，不能写回 task-forest graph。
 
 控制室不应直接修改 task-forest 的正式状态。它可以生成 proposal：
 
@@ -128,7 +128,7 @@ scripts/task_forest.py
 - 写入未确认 proposal；
 - 写入外部观察日志，再由 task-forest 转成 proposal。
 
-HTML 中的按钮、搜索、筛选、播放、缩放、平移、DAG 节点拖拽和侧栏折叠都属于浏览器本地视图状态。其他插件不应把这些 UI 状态当成任务状态，也不应从 HTML 反向解析任务事实；需要任务数据时读取 JSON export。
+HTML 中的按钮、搜索、筛选、展开、详情和历史播放都属于浏览器本地视图状态。其他插件不应把这些 UI 状态当成任务状态，也不应从 HTML 反向解析任务事实；需要完整任务数据时读取 JSON export。
 
 ## 全局 SQLite 边界
 

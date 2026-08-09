@@ -73,6 +73,7 @@ lock
   "alignment_records": [],
   "progress": 40,
   "progress_source": "manual",
+  "display_order": 10,
   "priority": 3,
   "difficulty": "medium",
   "estimated_total_minutes": 180,
@@ -89,6 +90,8 @@ lock
   "deprecated_at": null
 }
 ```
+
+`display_order` 是可选的同级展示顺序。存在权威任务清单且节点创建顺序与业务顺序可能不同时，同一父节点下的所有兄弟节点应使用数值 `display_order`。数值越小越靠前；未设置时，HTML 尝试识别 `P01`、`P01.M02`、`P01.M02.T03` 一类编号，仍无法判断时保持原创建顺序。
 
 允许的 `kind`：
 
@@ -148,26 +151,24 @@ child_of, depends_on, contributes_to, related_to, duplicates, supersedes, clarif
 
 task-forest 的权威数据模型是有向无环图（DAG），不是纯树。原因是一个任务可能既属于一个主分解路径，又依赖、贡献、澄清或替代另一个任务。
 
-为了让用户容易理解层级，HTML 默认使用 `child_of` 边生成竖向树形主视图：
+为了让用户容易理解层级，HTML 使用 `child_of` 边生成沟通树：
 
 - `child_of` 是唯一主父边：每个节点最多只能有一个 `child_of` 父节点。
 - 非 `child_of` 边是跨边：用于表达依赖、贡献、澄清、替代、重复、来源等关系，不改变节点在主树中的位置。
-- 所有边仍然保留在 DAG 中，HTML 的 `DAG 视图` 和节点详情会展示这些边的方向、类型、原因和置信度。
+- 完整 DAG 关系保留在 canonical 数据和兼容 JSON 中；对外 HTML 只呈现容易理解的主层级。
 
 因此，“树”只是默认可读视图；“DAG”才是完整任务关系。
 
 ## HTML 可视化契约
 
-HTML 导出不是数据模型本身，但它是 task-forest 的主要用户界面。`task-forest.html` 必须遵守 `references/html-visualization-contract.md`：
+HTML 导出不是数据模型本身，但它是 task-forest 的主要交付界面。`task-forest.html` 必须遵守 `references/html-visualization-contract.md`：
 
-- 树视图用 `child_of` 展示主层级；
-- DAG 视图展示所有可见边，不应叫“DAG 边”；
-- `child_of` 对用户显示为 `子任务`；
-- 边标签可点击并跟随对应边移动；
-- DAG 节点拖拽只改变当前页面运行态布局，不写回 `nodes.json` 或 `edges.json`；
-- `review_needed` 必须能定位到具体节点，并解释复核对象和下一步；
+- 只投影 `done`、`in_progress` 及保持层级所需的祖先；
+- 用自然语言展示根目标、任务目的、成果和验收口径；
+- 使用纵向阅读、横向展开层级的混合树布局；
+- 内部 ID 只用于数据关联，不作为卡片主要名称；
 - 历史快照必须支持手动查看和播放；
-- 左右侧栏收起后，滚动页面时仍应保留可展开按钮。
+- 页面只读、离线、响应式，并且不依赖其他任务文件才能理解。
 
 ## 导出视图模型
 
@@ -208,7 +209,7 @@ HTML 导出不是数据模型本身，但它是 task-forest 的主要用户界�
 
 - gap-router 可以读取 `status_queues.actionable_todos`、`evergreen_open_goals` 和节点的 `remaining_minutes_*`，给用户推荐等待间隙可做事项。
 - local-agent-control-room 可以读取 `status_queues.blocked`、`review_needed`、`edge_index` 和 `edge_type_counts`，展示谁卡住、谁待复核、哪些任务存在依赖或跨任务关系。
-- HTML 可以读取 `status_legend` 和 `edge_type_legend`，把“待复核”等统计数字解释清楚，并让用户点到具体节点或边。
+- HTML 从完整图中提取对外交付所需的主层级和进度；下游工具继续读取完整 JSON。
 
 ## 事件和快照
 
