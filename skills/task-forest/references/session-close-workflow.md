@@ -42,6 +42,8 @@ python3 scripts/task_forest.py todo --json
 - 前置关系：加 `depends_on`，不要误用 `child_of`。
 - 讨论产物只是解释旧任务：建 `clarifies` 或直接更新旧节点。
 - 用户说的动作不能达成用户目的：不要直接建 ready 任务；先生成候选方案或记录 risk/deviation。
+- session 检查点优先保留在事件、快照或现有节点证据中；只有它本身是可独立理解的业务交付时才建节点，并挂到实际服务的功能阶段。
+- 新增或调整同级节点前检查整个兄弟组。若使用 `display_order`，在同一 proposal 中为全组提供唯一数值，不能只给新节点补一个尾部序号。
 
 4. 生成 proposal，先预校验，再让用户确认。
 

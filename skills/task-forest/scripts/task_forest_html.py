@@ -9,6 +9,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from task_forest_ordering import sort_sibling_ids
+
 OVERVIEW_STATUSES = {"done", "in_progress"}
 OVERVIEW_FIELDS = {
     "id",
@@ -26,10 +28,6 @@ OVERVIEW_FIELDS = {
     "primary_parent",
     "children",
 }
-TASK_SEQUENCE_RE = re.compile(
-    r"\bP(?P<phase>\d{2})(?:\.M(?P<module>\d{2}))?(?:\.T(?P<task>\d{2}))?\b",
-    re.IGNORECASE,
-)
 
 
 def _nodes_by_id(graph: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -63,56 +61,13 @@ def _parents_from_structure(
     return parents
 
 
-def _task_sequence(node: dict[str, Any]) -> tuple[int, int, int] | None:
-    candidates = node.get("context_tags")
-    values = candidates if isinstance(candidates, list) else []
-    values = [*values, node.get("title", "")]
-    for value in values:
-        match = TASK_SEQUENCE_RE.search(str(value))
-        if match:
-            return tuple(
-                int(match.group(name)) if match.group(name) is not None else -1
-                for name in ("phase", "module", "task")
-            )
-    return None
-
-
-def _display_order(node: dict[str, Any]) -> float | None:
-    value = node.get("display_order")
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int):
-        return float(value)
-    if isinstance(value, float):
-        return float(value)
-    text = str(value).strip()
-    if re.fullmatch(r"-?\d+(?:\.\d+)?", text):
-        return float(text)
-    return None
-
-
 def _sort_sequenced_children(
     children: dict[str, list[str]], nodes: dict[str, dict[str, Any]]
 ) -> None:
     """Preserve source order without coupling the view to edge creation order."""
 
-    for child_ids in children.values():
-        explicit = {child_id: _display_order(nodes[child_id]) for child_id in child_ids}
-        if any(order is not None for order in explicit.values()):
-            child_ids.sort(
-                key=lambda child_id: (
-                    (0, explicit[child_id])
-                    if explicit[child_id] is not None
-                    else (1, 0.0)
-                )
-            )
-            continue
-        sequence = {child_id: _task_sequence(nodes[child_id]) for child_id in child_ids}
-        child_ids.sort(
-            key=lambda child_id: (
-                (0, sequence[child_id]) if sequence[child_id] is not None else (1, None)
-            )
-        )
+    for parent_id, child_ids in children.items():
+        child_ids[:] = sort_sibling_ids(child_ids, nodes, parent_id)
 
 
 def _children_from_graph(

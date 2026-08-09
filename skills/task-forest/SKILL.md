@@ -34,7 +34,7 @@ When initializing, updating, or closing a session:
 1. Run `init`.
 2. Read `list --json` and `todo --json`.
 3. Identify the global goal served by the session and the task structure that must remain visible.
-4. When the workspace has an authoritative task list, preserve its meaningful `goal -> phase -> module -> concrete task` hierarchy and sibling order for every `done` or `in_progress` task. Include necessary ancestors, omit wholly unstarted branches, and attach extra fixes under the feature they improve. Never collapse several phases into one node or rely on edge creation order; set `display_order` for all siblings when source order is not otherwise stable.
+4. When the workspace has an authoritative task list, preserve its meaningful `goal -> phase -> module -> concrete task` hierarchy and sibling order for every `done` or `in_progress` task. Include necessary ancestors, omit wholly unstarted branches, and attach extra fixes under the feature they improve. Never collapse several phases into one node or rely on edge creation order. If one sibling needs `display_order`, set a unique numeric value for the whole sibling group; partial, duplicate, or invalid values must fail validation.
 5. Make every visible node independently understandable. Use a clear title plus `summary` or `purpose`; add outcomes or acceptance criteria when they clarify delivery. Treat internal codes as secondary labels, not as the task name.
 6. Show and save a proposal. Do not apply it before confirmation.
 7. After confirmation, run `proposal-apply --yes`, `validate`, and `export`.

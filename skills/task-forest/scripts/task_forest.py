@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from task_forest_html import render_overview_html
+from task_forest_ordering import sibling_order_errors, sort_sibling_ids
 
 SCHEMA_VERSION = 1
 DEFAULT_LOCK_TIMEOUT_SECONDS = 30.0
@@ -711,6 +712,8 @@ class Store:
         )
         if not config:
             return
+        for error in current_ordering_errors(nodes, edges):
+            print(f"警告：{error}；HTML 已使用安全回退顺序。", file=sys.stderr)
         export = build_export(config, nodes, edges, reason="rebuild", event_id=None)
         write_json_atomic(self.forest_path, export["graph"])
         write_json_atomic(self.todos_path, export["todos"])
@@ -965,6 +968,8 @@ def validate_state(
                 f"节点 {node_id} 有多个 child_of 父节点；请改用 contributes_to 表达多归属"
             )
 
+    errors.extend(current_ordering_errors(nodes, edges))
+
     for edge_type in ("child_of", "depends_on"):
         cycle = detect_cycle(edges, edge_type)
         if cycle:
@@ -973,13 +978,40 @@ def validate_state(
     return errors, warnings
 
 
-def build_children(edges: dict[str, Any]) -> dict[str, list[str]]:
+def ordering_groups(
+    nodes: dict[str, Any], edges: dict[str, Any]
+) -> dict[str | None, list[str]]:
+    groups: dict[str | None, list[str]] = {}
+    parented: set[str] = set()
+    for edge in edges.values():
+        if edge.get("type") != "child_of":
+            continue
+        child = edge.get("from")
+        parent = edge.get("to")
+        if child in nodes and parent in nodes:
+            groups.setdefault(str(parent), []).append(str(child))
+            parented.add(str(child))
+    groups[None] = [node_id for node_id in nodes if node_id not in parented]
+    return groups
+
+
+def current_ordering_errors(nodes: dict[str, Any], edges: dict[str, Any]) -> list[str]:
+    return sibling_order_errors(nodes, ordering_groups(nodes, edges))
+
+
+def build_children(
+    edges: dict[str, Any], nodes: dict[str, Any]
+) -> dict[str, list[str]]:
     children: dict[str, list[str]] = {}
     for edge in edges.values():
-        if edge.get("type") == "child_of":
+        if (
+            edge.get("type") == "child_of"
+            and edge.get("from") in nodes
+            and edge.get("to") in nodes
+        ):
             children.setdefault(edge["to"], []).append(edge["from"])
-    for values in children.values():
-        values.sort()
+    for parent_id, values in children.items():
+        values[:] = sort_sibling_ids(values, nodes, parent_id)
     return children
 
 
@@ -1253,15 +1285,16 @@ def build_export(
     reason: str,
     event_id: str | None,
 ) -> dict[str, Any]:
-    children = build_children(edges)
+    children = build_children(edges, nodes)
     parents = build_parents(edges)
     progress_memo: dict[str, float] = {}
     progress_by_id = {
         node_id: derived_progress(node_id, nodes, children, progress_memo)
         for node_id in nodes
     }
-    roots = [node_id for node_id in nodes if node_id not in parents]
-    roots.sort(key=lambda nid: (nodes[nid].get("kind") != "global_task", nid))
+    roots = sort_sibling_ids(
+        [node_id for node_id in nodes if node_id not in parents], nodes, None
+    )
     enriched_nodes = copy.deepcopy(nodes)
     for node_id, progress in progress_by_id.items():
         enriched_nodes[node_id]["derived_progress"] = progress

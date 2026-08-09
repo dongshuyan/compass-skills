@@ -12,6 +12,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from task_forest import validate_state
 from task_forest_html import render_overview_html
 
 
@@ -73,6 +74,358 @@ def digest_paths(paths: list[Path]) -> dict[str, str]:
         for path in paths
         if path.exists()
     }
+
+
+def ordering_node(
+    node_id: str,
+    title: str,
+    created_at: str,
+    *,
+    tags: list[str] | None = None,
+    display_order: object | None = None,
+) -> dict[str, object]:
+    node: dict[str, object] = {
+        "id": node_id,
+        "title": title,
+        "status": "in_progress" if node_id == "root" else "done",
+        "kind": "global_task" if node_id == "root" else "task",
+        "summary": f"{title}的排序回归说明。",
+        "created_at": created_at,
+        "context_tags": tags or [],
+    }
+    if display_order is not None:
+        node["display_order"] = display_order
+    return node
+
+
+def ordering_graph(
+    nodes: dict[str, dict[str, object]], relations: list[tuple[str, str]]
+) -> dict[str, object]:
+    return {
+        "roots": ["root"],
+        "nodes": nodes,
+        "edges": {
+            f"edge-{index}": {
+                "id": f"edge-{index}",
+                "from": child,
+                "to": parent,
+                "type": "child_of",
+            }
+            for index, (child, parent) in enumerate(relations, start=1)
+        },
+    }
+
+
+def projected_children(graph: dict[str, object], parent_id: str) -> list[str]:
+    overview = extract_json_script(
+        render_overview_html(graph, []), "task-forest-overview-data"
+    )
+    if not isinstance(overview, dict):
+        raise AssertionError("沟通 HTML 内嵌任务数据类型错误")
+    nodes = overview.get("nodes", [])
+    if not isinstance(nodes, list):
+        raise AssertionError("沟通 HTML 内嵌节点类型错误")
+    by_id = {
+        str(node.get("id")): node
+        for node in nodes
+        if isinstance(node, dict) and node.get("id")
+    }
+    parent = by_id.get(parent_id)
+    if not isinstance(parent, dict) or not isinstance(parent.get("children"), list):
+        raise AssertionError(f"沟通 HTML 缺少父节点或子节点：{parent_id}")
+    return [str(child_id) for child_id in parent["children"]]
+
+
+def validate_ordering_regressions() -> None:
+    root = ordering_node("root", "端到端目标", "2026-08-09T00:00:00Z")
+    mixed_nodes = {
+        "root": root,
+        "p00": ordering_node(
+            "p00", "架构基础（P00）", "2026-08-09T01:00:00Z", tags=["P00"]
+        ),
+        "p01": ordering_node(
+            "p01", "领域基础（P01）", "2026-08-09T02:00:00Z", tags=["P01"]
+        ),
+        "session": ordering_node(
+            "session",
+            "本阶段会话收口",
+            "2026-08-09T03:00:00Z",
+            tags=["session-close"],
+            display_order=90,
+        ),
+    }
+    mixed_graph = ordering_graph(
+        mixed_nodes, [("p00", "root"), ("p01", "root"), ("session", "root")]
+    )
+    if projected_children(mixed_graph, "root") != ["p00", "p01", "session"]:
+        raise AssertionError("历史混合顺序必须安全回退到业务编号")
+    mixed_errors, _ = validate_state(mixed_nodes, mixed_graph["edges"])
+    if not any("display_order" in error for error in mixed_errors):
+        raise AssertionError("当前部分 display_order 必须被校验拒绝")
+
+    nested_nodes = {
+        "root": root,
+        "p04-m04": ordering_node(
+            "p04-m04",
+            "会议结论与结束（P04.M04）",
+            "2026-08-09T01:00:00Z",
+            tags=["P04.M04"],
+        ),
+        "t01": ordering_node(
+            "t01",
+            "完成四类会议结论（P04.M04.T01）",
+            "2026-08-09T02:00:00Z",
+            tags=["P04.M04.T01"],
+        ),
+        "slice": ordering_node(
+            "slice",
+            "受控结束会议实现切片",
+            "2026-08-09T03:00:00Z",
+            tags=["P04", "meeting-end"],
+            display_order=40,
+        ),
+    }
+    nested_graph = ordering_graph(
+        nested_nodes,
+        [("p04-m04", "root"), ("t01", "p04-m04"), ("slice", "p04-m04")],
+    )
+    if projected_children(nested_graph, "p04-m04") != ["t01", "slice"]:
+        raise AssertionError("嵌套排序必须使用相对父节点的最具体业务编号")
+
+    explicit_nodes = {
+        "root": root,
+        "later": ordering_node(
+            "later", "后续任务", "2026-08-09T01:00:00Z", display_order=20
+        ),
+        "earlier": ordering_node(
+            "earlier", "先行任务", "2026-08-09T02:00:00Z", display_order=10
+        ),
+    }
+    explicit_graph = ordering_graph(
+        explicit_nodes, [("later", "root"), ("earlier", "root")]
+    )
+    if projected_children(explicit_graph, "root") != ["earlier", "later"]:
+        raise AssertionError("完整 display_order 必须按数值升序")
+
+    duplicate_nodes = {
+        "root": root,
+        "p02": ordering_node(
+            "p02",
+            "第二阶段（P02）",
+            "2026-08-09T01:00:00Z",
+            tags=["P02"],
+            display_order=10,
+        ),
+        "p01": ordering_node(
+            "p01",
+            "第一阶段（P01）",
+            "2026-08-09T02:00:00Z",
+            tags=["P01"],
+            display_order=10,
+        ),
+    }
+    duplicate_graph = ordering_graph(
+        duplicate_nodes, [("p02", "root"), ("p01", "root")]
+    )
+    if projected_children(duplicate_graph, "root") != ["p01", "p02"]:
+        raise AssertionError("历史重复 display_order 必须回退到业务编号")
+    duplicate_errors, _ = validate_state(duplicate_nodes, duplicate_graph["edges"])
+    if not any("重复" in error for error in duplicate_errors):
+        raise AssertionError("当前重复 display_order 必须被校验拒绝")
+
+    invalid_nodes = {
+        "root": root,
+        "invalid": ordering_node(
+            "invalid",
+            "非法顺序任务",
+            "2026-08-09T01:00:00Z",
+            display_order=True,
+        ),
+    }
+    invalid_graph = ordering_graph(invalid_nodes, [("invalid", "root")])
+    invalid_errors, _ = validate_state(invalid_nodes, invalid_graph["edges"])
+    if not any("有限数值" in error for error in invalid_errors):
+        raise AssertionError("非法 display_order 必须被校验拒绝")
+
+    free_nodes = {
+        "root": root,
+        "newer": ordering_node("newer", "后创建任务", "2026-08-09T02:00:00Z"),
+        "older": ordering_node("older", "先创建任务", "2026-08-09T01:00:00Z"),
+    }
+    free_graph = ordering_graph(free_nodes, [("newer", "root"), ("older", "root")])
+    if projected_children(free_graph, "root") != ["older", "newer"]:
+        raise AssertionError("无编号自由任务必须按创建时间稳定排序")
+
+
+def validate_legacy_mixed_export(script: Path, workspace: Path) -> None:
+    cli(script, workspace, "init")
+    root = extract_node_id(
+        cli(
+            script,
+            workspace,
+            "add-node",
+            "--kind",
+            "global_task",
+            "--status",
+            "in_progress",
+            "--title",
+            "端到端目标",
+            "--summary",
+            "验证旧混合顺序仍可安全导出。",
+        ).stdout
+    )
+    child_ids: dict[str, str] = {}
+    for alias, title, tag in [
+        ("p00", "架构基础（P00）", "P00"),
+        ("p01", "领域基础（P01）", "P01"),
+        ("session", "本阶段会话收口", "session-close"),
+    ]:
+        child_ids[alias] = extract_node_id(
+            cli(
+                script,
+                workspace,
+                "add-node",
+                "--kind",
+                "task",
+                "--status",
+                "done",
+                "--title",
+                title,
+                "--summary",
+                f"{title}的回归说明。",
+                "--tag",
+                tag,
+                "--parent",
+                root,
+            ).stdout
+        )
+
+    canonical = workspace / ".agent-workbench" / "task-forest"
+    nodes_path = canonical / "graph" / "nodes.json"
+    edges_path = canonical / "graph" / "edges.json"
+    nodes = json.loads(nodes_path.read_text(encoding="utf-8"))
+    nodes[child_ids["session"]]["display_order"] = 90
+    nodes_path.write_text(
+        json.dumps(nodes, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    before = digest_paths([nodes_path, edges_path])
+
+    export_result = subprocess.run(
+        [sys.executable, str(script), "export", "--workspace", str(workspace)],
+        env=validation_env(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if export_result.returncode != 0:
+        raise AssertionError(
+            "旧混合顺序必须保持可导出：\n" + export_result.stdout + export_result.stderr
+        )
+    if "HTML 已使用安全回退顺序" not in export_result.stderr:
+        raise AssertionError("旧混合顺序导出必须给出安全回退警告")
+    if before != digest_paths([nodes_path, edges_path]):
+        raise AssertionError("旧混合顺序导出不得修改 canonical task 数据")
+
+    overview = extract_json_script(
+        (canonical / "exports" / "task-forest.html").read_text(encoding="utf-8"),
+        "task-forest-overview-data",
+    )
+    if not isinstance(overview, dict):
+        raise AssertionError("旧混合顺序导出缺少沟通视图数据")
+    by_id = {
+        str(node.get("id")): node
+        for node in overview.get("nodes", [])
+        if isinstance(node, dict) and node.get("id")
+    }
+    if by_id[root].get("children") != [
+        child_ids["p00"],
+        child_ids["p01"],
+        child_ids["session"],
+    ]:
+        raise AssertionError("旧混合顺序导出未按业务编号安全回退")
+
+    validate_result = subprocess.run(
+        [sys.executable, str(script), "validate", "--workspace", str(workspace)],
+        env=validation_env(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if validate_result.returncode == 0 or "display_order" not in (
+        validate_result.stdout + validate_result.stderr
+    ):
+        raise AssertionError("旧混合顺序必须被 validate 明确拒绝")
+
+    blocked_proposal_id = "TFP-ordering-must-fail"
+    blocked_proposal = {
+        "proposal_id": blocked_proposal_id,
+        "changes": [
+            {
+                "action": "update_node",
+                "id": root,
+                "fields": {"summary": "不相关更新不能绕过同级顺序校验。"},
+            }
+        ],
+    }
+    blocked_result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "proposal-save",
+            "--proposal-json",
+            json.dumps(blocked_proposal, ensure_ascii=False),
+            "--workspace",
+            str(workspace),
+        ],
+        env=validation_env(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if blocked_result.returncode == 0 or "display_order" not in (
+        blocked_result.stdout + blocked_result.stderr
+    ):
+        raise AssertionError("proposal-save 必须拒绝仍保留混合顺序的候选变更")
+    if (canonical / "proposals" / f"{blocked_proposal_id}.json").exists():
+        raise AssertionError("失败的顺序 proposal 不得被保存")
+
+    repair_proposal = {
+        "proposal_id": "TFP-ordering-repair",
+        "changes": [
+            {
+                "action": "update_node",
+                "id": child_ids["p00"],
+                "fields": {"display_order": 0},
+            },
+            {
+                "action": "update_node",
+                "id": child_ids["p01"],
+                "fields": {"display_order": 10},
+            },
+        ],
+    }
+    repair_result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "proposal-save",
+            "--proposal-json",
+            json.dumps(repair_proposal, ensure_ascii=False),
+            "--workspace",
+            str(workspace),
+        ],
+        env=validation_env(),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if repair_result.returncode != 0:
+        raise AssertionError(
+            "一次补齐整个兄弟组的 proposal 应通过：\n"
+            + repair_result.stdout
+            + repair_result.stderr
+        )
 
 
 def validation_env(**overrides: str) -> dict[str, str]:
@@ -313,6 +666,8 @@ def build_sample_graph(script: Path, workspace: Path) -> None:
             "65",
             "--priority",
             "2",
+            "--fields-json",
+            '{"display_order":50}',
             "--parent",
             root,
         ).stdout
@@ -603,10 +958,31 @@ def validate_exports(workspace: Path) -> None:
         next(node["title"] for node in visible_nodes if node["id"] == child_id)
         for child_id in root_node.get("children", [])
     ]
-    if root_child_titles.index("完成资料协作与 AI 总结") > root_child_titles.index(
-        "打通用户登录与访问权限"
-    ):
-        raise AssertionError("沟通 HTML 未按显式 display_order 排列阶段")
+    if root_child_titles != [
+        "完成资料协作与 AI 总结",
+        "打通用户登录与访问权限",
+    ]:
+        raise AssertionError(
+            f"沟通 HTML 未按显式 display_order 排列阶段：{root_child_titles}"
+        )
+    graph_nodes = graph.get("nodes", {})
+    graph_by_title = {
+        node.get("title"): node
+        for node in graph_nodes.values()
+        if isinstance(node, dict) and node.get("title")
+    }
+    canonical_root_children = [
+        graph_nodes[child_id]["title"]
+        for child_id in graph_by_title["端到端实现第一版产品 Demo"].get("children", [])
+    ]
+    if canonical_root_children != [
+        "完成资料协作与 AI 总结",
+        "打通用户登录与访问权限",
+        "待复核的性能优化",
+    ]:
+        raise AssertionError(
+            f"兼容 JSON 根阶段未复用共享排序：{canonical_root_children}"
+        )
     numbered_graph = {
         "roots": ["root"],
         "nodes": {
@@ -698,8 +1074,10 @@ def main() -> int:
     workspace = Path(temp.name) / "workspace"
     workspace.mkdir(parents=True, exist_ok=True)
     try:
+        validate_ordering_regressions()
         validate_process_probe_portability(script)
         validate_actor_portability(script, Path(temp.name) / "actor-workspace")
+        validate_legacy_mixed_export(script, Path(temp.name) / "legacy-workspace")
         build_sample_graph(script, workspace)
         cli(script, workspace, "validate")
         canonical = workspace / ".agent-workbench" / "task-forest"
