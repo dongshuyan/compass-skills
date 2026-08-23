@@ -20,9 +20,9 @@
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```
 
-COMPASS Skills gives AI agents seven local skills: four runtime collaboration skills, two run-history skill-engineering skills, and one academic humanization skill for avoiding and removing AI-sounding prose.
+COMPASS Skills gives AI agents eight local skills: four runtime collaboration skills, two run-history skill-engineering skills, one academic humanization skill, and one local hiring-support skill.
 
-The project currently ships seven `SKILL.md` skills:
+The project currently ships eight `SKILL.md` skills:
 
 | Skill | Purpose |
 | --- | --- |
@@ -33,6 +33,7 @@ The project currently ships seven `SKILL.md` skills:
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | Turns completed or repeatedly refined run history into a new reusable skill package or a reviewed skill-design plan. |
 | [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | Automatically turns session evidence from real execution, encountered and resolved difficulties, validation results, and user feedback into an upgrade plan for an existing skill, forming the simplest controlled self-evolution loop; it applies changes only after explicit approval. |
 | [`academic-humanizer`](skills/academic-humanizer/) | Helps write or revise English and Chinese academic prose by removing formulaic AI-like patterns and restoring a natural scholarly voice while preserving claims, evidence strength, and logical relations. |
+| [`assess-interview-candidate`](skills/assess-interview-candidate/) | Turns an authorized resume and job description into an auditable evidence layer and a concise three-part offline interviewer report with resume checks and markable structured questions. |
 
 For multi-skill repositories, install only the functions you actually need. The `run-history` pair supports skill engineering; `academic-humanizer` helps authors avoid AI-sounding language while drafting and remove it from existing academic prose.
 
@@ -66,9 +67,10 @@ $user-profile-keeper
 $run-history-skill-builder
 $run-history-skill-upgrader
 $academic-humanizer
+$assess-interview-candidate
 ```
 
-For manual installation, copy the seven folders under [`skills/`](skills/) into the agent's local skills directory and keep their `references/`, `scripts/`, `evals/`, and `agents/` subdirectories intact.
+For manual installation, copy the eight folders under [`skills/`](skills/) into the agent's local skills directory and keep their `references/`, `scripts/`, `assets/`, `evals/`, and `agents/` subdirectories intact.
 
 ## Why COMPASS Exists
 
@@ -102,6 +104,8 @@ COMPASS organizes that state into four local workflows:
 
 `academic-humanizer` helps authors avoid AI-sounding language while drafting and remove it from existing academic prose. It targets formulaic, vacuous, mechanically repetitive, and process-leaking patterns while protecting claims, evidence strength, quotations, formulas, citations, technical names, modality, logic, and scope. The result aims to read as natural, credible scholarly writing and to reduce the likelihood that readers perceive it as AI-generated; it does not promise a universal authorship judgment.
 
+`assess-interview-candidate` prepares human recruiters for a structured interview. It keeps detailed evidence and validation data in a local audit layer while presenting only a candidate overview, job-relevant resume uncertainties, and 12-18 directly readable questions in the offline HTML. It never authorizes automatic hiring, rejection, or ranking.
+
 ```text
 user-profile-keeper    -> who is the user and how should we collaborate?
 task-forest            -> where does this task fit and is it still aligned?
@@ -110,6 +114,7 @@ task-clarifier         -> what should the agent do now?
 run-history-skill-builder  -> how do we package this proven workflow as a new skill?
 run-history-skill-upgrader -> how does a skill self-evolve safely from real session evidence?
 academic-humanizer         -> how do we remove AI-sounding prose without changing its claims?
+assess-interview-candidate -> how do we prepare a focused, evidence-bounded human interview?
 ```
 
 ## Task Clarifier Example
@@ -221,7 +226,7 @@ COMPASS works across agent runtimes as a `SKILL.md` package with Markdown instru
 | Codex | Use the `skills` CLI with `-a codex` when supported by your environment, or use the repo as a local skills source. |
 | OpenCode / OpenClaw / other agents | Keep [`AGENTS.md`](AGENTS.md) and load the matching `SKILL.md` first, then use `references/` and `scripts/` as needed. |
 
-The scripts use Python standard-library components and run locally.
+The scripts use Python standard-library components and run locally. `assess-interview-candidate` requires Python 3.10 or later and uses capability-based instructions instead of fixed Agent tools or installation paths.
 
 ## Safety Model
 
@@ -235,6 +240,7 @@ COMPASS keeps runtime data local:
 - `run-history-skill-builder` reads only user-authorized workflow history and writes new skill files only to a user-approved local directory.
 - `run-history-skill-upgrader` is plan-only by default. It can synthesize real session evidence into an upgrade plan automatically, but it enables a controlled self-evolution loop only after explicit approval of a concrete plan.
 - `academic-humanizer` preserves source claims and locked spans, never invents facts or citations, and uses its Python script only for optional read-only diagnostics.
+- `assess-interview-candidate` keeps authorized resumes and reports local, excludes contact details and precise addresses from the interviewer view, and prevents age, birthplace, hometown, marital status, or location from entering fit scores or hiring decisions.
 - High-risk actions such as deletion, overwrite, publishing, remote writes, credential use, and global configuration changes require explicit confirmation.
 
 Important: `user-profile-keeper` uses local plaintext storage without encryption. Do not store passwords, tokens, private keys, verification codes, or highly sensitive personal data in the profile.
@@ -325,6 +331,14 @@ Preserve every claim, number, citation, comparison, hedge, causal relation, and 
 Passage: ...
 ```
 
+Prepare a structured candidate interview report:
+
+```text
+Use $assess-interview-candidate with the authorized resume and job description I provide.
+
+Requirements: read every page of the PDF through both text extraction and visual inspection; keep the detailed evidence and validation data in the local audit layer; make the interviewer HTML contain only a candidate overview, job-relevant resume uncertainties, and 12-18 directly readable questions. Display candidate-provided schools, employers, and cities without guessing missing facts. Keep age, birthplace, hometown, marital status, and location out of fit scores and hiring decisions. Write only below the local case root I approve.
+```
+
 ## Validation Status
 
 The public install path has been validated with `skills@1.5.11`:
@@ -333,6 +347,9 @@ The public install path has been validated with `skills@1.5.11`:
 - `npx skills add dongshuyan/compass-skills --skill '*' -a claude-code --copy -y` installs the released skills into a temporary project's `.claude/skills/` directory.
 - `python3 skills/session-handoff-prompt/scripts/smoke_test_handoff.py --skill-dir skills/session-handoff-prompt` validates compacted-event projection, task-forest read-only summaries, local validation, and shareable redaction.
 - `printf '%s\n' 'Samples were randomized.' | python3 skills/academic-humanizer/scripts/metrics.py - --json` provides read-only descriptive diagnostics for language routing, process leaks, and contrast candidates without assigning an authorship or quality score.
+- With `skills@1.5.23`, the current local source is detected as eight skills, and `assess-interview-candidate` copies successfully into temporary Codex and Claude Code skill roots.
+- Its 26 unit and package tests pass on Python 3.11 and 3.14. The package also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, offline report validation, and local browser interaction checks.
+- Windows and Linux compatibility is enforced through path, launcher, standard-library, reserved-filename, and shell-neutral contracts. This release was not run on physical Windows or Linux hosts.
 
 ## Roadmap
 

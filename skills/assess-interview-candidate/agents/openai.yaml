@@ -1,0 +1,4 @@
+interface:
+  display_name: "候选人评估与面试报告"
+  short_description: "根据简历和岗位生成精简报告、简历疑点与可标记面试题"
+  default_prompt: "使用 $assess-interview-candidate 根据这份简历和岗位要求生成后台可审计、前台三模块的候选人评估与离线面试报告。"

@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.skills.example/assess-interview-candidate/schema-source-record.json",
+  "title": "Candidate Assessment Source Ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "records"],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "case_id": {"$ref": "#/$defs/nonEmptyString"},
+    "records": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+    "metadata": {"type": "object", "additionalProperties": true}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "research_purpose", "query", "title", "url", "publisher", "source_tier",
+        "source_type", "origin", "query_redacted", "social_search_authorized", "accessed_at", "jurisdiction", "status", "accepted", "direct_support",
+        "job_relevance", "capability_ids", "adopted_claims", "rejected_claims", "identity", "volatility", "scoring_eligible",
+        "sensitive_data_present", "sensitive_content_retained", "exclusion_code"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "research_purpose": {"enum": ["role_current", "candidate_professional", "candidate_social", "methods", "legal_compliance"]},
+        "query": {"type": ["string", "null"], "description": "Use null for a supplied URL or local source that was not found through a query."},
+        "title": {"$ref": "#/$defs/nonEmptyString"},
+        "url": {"type": "string", "format": "uri"},
+        "publisher": {"$ref": "#/$defs/nonEmptyString"},
+        "source_tier": {"enum": ["A", "B", "C", "D", "excluded"]},
+        "source_type": {"enum": ["government", "standard", "peer_reviewed", "official_employer", "official_professional", "official_technical", "patent", "open_source", "public_social", "market_report", "local_document", "other"]},
+        "origin": {"enum": ["provided", "discovered", "not_applicable"]},
+        "query_redacted": {"type": "boolean", "description": "True when the stored query has been minimized or redacted to exclude unnecessary personal data."},
+        "social_search_authorized": {"type": "boolean"},
+        "published_at": {"type": ["string", "null"], "format": "date"},
+        "updated_at": {"type": ["string", "null"], "format": "date"},
+        "accessed_at": {"type": "string", "format": "date-time"},
+        "jurisdiction": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"enum": ["accepted", "rejected", "identity_unresolved", "superseded"]},
+        "accepted": {"type": "boolean"},
+        "direct_support": {"$ref": "#/$defs/nonEmptyString"},
+        "job_relevance": {"enum": ["direct", "supporting", "none"]},
+        "capability_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "adopted_claims": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "rejected_claims": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "rejection_reason": {"type": ["string", "null"]},
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "status", "matching_anchors"],
+          "properties": {
+            "required": {"type": "boolean"},
+            "status": {"enum": ["not_applicable", "confirmed", "unresolved", "conflict"]},
+            "matching_anchors": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+            "notes": {"type": ["string", "null"]}
+          }
+        },
+        "volatility": {"enum": ["low", "medium", "high"]},
+        "refresh_after": {"type": ["string", "null"], "format": "date"},
+        "scoring_eligible": {"type": "boolean"},
+        "sensitive_data_present": {"type": "boolean", "description": "Boolean audit marker only; do not retain the sensitive value or original text."},
+        "sensitive_content_retained": {"const": false, "description": "Sensitive values and excerpts must never be stored in the source ledger."},
+        "exclusion_code": {
+          "type": ["string", "null"],
+          "enum": [null, "excluded_by_policy", "identity_unresolved", "low_quality", "stale", "irrelevant", "duplicate", "other"]
+        },
+        "notes": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"accepted": {"const": true}}, "required": ["accepted"]},
+          "then": {"properties": {"status": {"const": "accepted"}, "sensitive_data_present": {"const": false}, "exclusion_code": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "accepted"}}, "required": ["status"]},
+          "then": {"properties": {"accepted": {"const": true}}},
+          "else": {"properties": {"accepted": {"const": false}}}
+        },
+        {
+          "if": {"properties": {"sensitive_data_present": {"const": true}}, "required": ["sensitive_data_present"]},
+          "then": {
+            "properties": {
+              "accepted": {"const": false},
+              "status": {"const": "rejected"},
+              "scoring_eligible": {"const": false},
+              "exclusion_code": {"const": "excluded_by_policy"},
+              "sensitive_content_retained": {"const": false}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"enum": ["rejected", "identity_unresolved"]}}, "required": ["status"]},
+          "then": {"required": ["rejection_reason"], "properties": {"rejection_reason": {"type": "string", "minLength": 1}, "scoring_eligible": {"const": false}}}
+        },
+        {
+          "if": {"properties": {"source_type": {"const": "public_social"}}, "required": ["source_type"]},
+          "then": {
+            "properties": {
+              "research_purpose": {"const": "candidate_social"},
+              "social_search_authorized": {"const": true},
+              "scoring_eligible": {"const": false}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"research_purpose": {"const": "candidate_professional"}}, "required": ["research_purpose"]},
+          "then": {"properties": {"identity": {"properties": {"required": {"const": true}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "research_purpose": {"enum": ["candidate_professional", "candidate_social"]}
+            },
+            "required": ["research_purpose"]
+          },
+          "then": {
+            "properties": {
+              "query_redacted": {"const": true},
+              "identity": {"properties": {"required": {"const": true}}}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "research_purpose": {"enum": ["role_current", "methods", "legal_compliance"]}
+            },
+            "required": ["research_purpose"]
+          },
+          "then": {
+            "properties": {
+              "origin": {"const": "not_applicable"},
+              "social_search_authorized": {"const": false},
+              "identity": {
+                "properties": {
+                  "required": {"const": false},
+                  "status": {"const": "not_applicable"},
+                  "matching_anchors": {"maxItems": 0}
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "research_purpose": {"enum": ["candidate_professional", "candidate_social"]},
+              "accepted": {"const": true}
+            },
+            "required": ["research_purpose", "accepted"]
+          },
+          "then": {"properties": {"identity": {"properties": {"status": {"const": "confirmed"}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "research_purpose": {"enum": ["role_current", "candidate_professional", "candidate_social"]},
+              "accepted": {"const": true}
+            },
+            "required": ["research_purpose", "accepted"]
+          },
+          "then": {
+            "properties": {
+              "job_relevance": {"enum": ["direct", "supporting"]},
+              "capability_ids": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "research_purpose": {"enum": ["candidate_professional", "candidate_social"]},
+              "origin": {"const": "discovered"},
+              "accepted": {"const": true}
+            },
+            "required": ["research_purpose", "origin", "accepted"]
+          },
+          "then": {"properties": {"identity": {"properties": {"required": {"const": true}, "matching_anchors": {"minItems": 2}}}}}
+        },
+        {
+          "if": {
+            "properties": {
+              "research_purpose": {"enum": ["candidate_professional", "candidate_social"]},
+              "origin": {"const": "provided"},
+              "accepted": {"const": true}
+            },
+            "required": ["research_purpose", "origin", "accepted"]
+          },
+          "then": {"properties": {"identity": {"properties": {"required": {"const": true}, "matching_anchors": {"minItems": 1}}}}}
+        },
+        {
+          "if": {"properties": {"research_purpose": {"const": "candidate_social"}}, "required": ["research_purpose"]},
+          "then": {
+            "properties": {
+              "source_type": {"const": "public_social"},
+              "social_search_authorized": {"const": true},
+              "scoring_eligible": {"const": false},
+              "identity": {"properties": {"required": {"const": true}, "status": {"const": "confirmed"}}}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

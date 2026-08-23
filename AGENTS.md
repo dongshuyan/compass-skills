@@ -6,7 +6,7 @@ This repository contains agent-agnostic `SKILL.md` skills. Use this file when yo
 
 - Available skills live under `skills/<skill-name>/SKILL.md`.
 - Read each skill's YAML frontmatter `name` and `description` to decide whether it applies.
-- Prefer explicit user invocation such as `$task-clarifier`, `$task-forest`, `$session-handoff-prompt`, `$user-profile-keeper`, `$run-history-skill-builder`, or `$run-history-skill-upgrader`.
+- Prefer explicit user invocation such as `$task-clarifier`, `$task-forest`, `$session-handoff-prompt`, `$user-profile-keeper`, `$run-history-skill-builder`, `$run-history-skill-upgrader`, or `$assess-interview-candidate`.
 - If no skill clearly applies, continue normally; do not force a skill.
 
 ## Loading Protocol
@@ -28,6 +28,7 @@ Use $session-handoff-prompt to create a continuation prompt for a fresh session.
 Use $user-profile-keeper to initialize or update my local profile.
 Use $run-history-skill-builder to turn this completed workflow into a new skill package.
 Use $run-history-skill-upgrader to plan a safe upgrade for this existing skill from recent run evidence.
+Use $assess-interview-candidate to turn an authorized resume and job description into an auditable local interview report.
 ```
 
 ## Local Paths
@@ -37,6 +38,7 @@ Use $run-history-skill-upgrader to plan a safe upgrade for this existing skill f
 - `user-profile-keeper` writes profile data under the local user home: `.compass-skills/user-profiles/v1/`.
 - `run-history-skill-builder` writes new skill packages only to a user-approved local directory.
 - `run-history-skill-upgrader` is plan-only by default and edits existing skills only after explicit approval.
+- `assess-interview-candidate` writes case data and reports only below a user-approved local case root; generated candidate records stay outside this repository.
 - Set `COMPASS_USER_PROFILE_HOME` to override the profile directory.
 - Set `COMPASS_AGENT_NAME` to label task-forest changes by agent, for example `codex`, `claude-code`, `opencode`, or `openclaw`.
 
@@ -45,6 +47,8 @@ Use $run-history-skill-upgrader to plan a safe upgrade for this existing skill f
 - Do not upload profile data, task data, credentials, cookies, browser sessions, or private local logs.
 - Do not read password managers, keychains, SSH keys, browser cookies, API keys, tokens, or verification codes.
 - Do not save secrets in user profiles or task graphs.
+- Treat resumes and candidate reports as confidential local records. Do not upload them or search for private background information without explicit authorization.
+- Do not use candidate age, birthplace, hometown, marital status, or other protected or sensitive traits for fit scoring, ranking, hiring, or rejection decisions.
 - Before destructive actions, publishing, remote writes, global configuration changes, credential use, or external side effects, ask for explicit user confirmation.
 - Treat HTML exports as static offline views; they do not authorize modifying the task graph.
 

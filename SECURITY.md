@@ -11,6 +11,7 @@ COMPASS is designed as a local-first skills system.
 - `task-clarifier` does not write persistent data.
 - `run-history-skill-builder` reads only user-authorized workflow history and writes new skill files only to a user-approved local directory.
 - `run-history-skill-upgrader` is plan-only by default. It reads existing skill files and run evidence, and it edits target skill files only after explicit approval of a concrete plan.
+- `assess-interview-candidate` reads only recruiter-authorized candidate materials and optional, consent-bounded public professional sources. It writes pseudonymous case data and offline reports only below a user-approved local directory.
 - The skills do not upload profile data, task data, credentials, or browser session information.
 
 ## Sensitive Data Rules
@@ -21,6 +22,8 @@ These skills must not save:
 - Browser session data.
 - Raw sensitive or intimate evidence.
 - Unconfirmed sensitive inferences.
+
+Candidate materials may contain personal data. `assess-interview-candidate` keeps phone numbers, email addresses, and precise addresses out of the interviewer report; it does not search for private life, family, health, financial, political, or religious information. Candidate-provided age, birthplace, hometown, marital status, and location details may be displayed for interviewer reference but must not enter job-fit scoring, ranking, hiring, rejection, or stability predictions.
 
 `user-profile-keeper` may store private background information only when the user explicitly provides or confirms it. Other skills should only read the low-risk `clarification_summary` view.
 
@@ -36,6 +39,7 @@ The released skills do not publish, push, upload, email, schedule, or remotely w
 - Profile writes must go through `user-profile-keeper/scripts/profile_store.py`.
 - New skill-package writes must stay inside the user-approved target directory chosen for `run-history-skill-builder`.
 - Existing-skill edits from `run-history-skill-upgrader` must stay inside the user-approved target skill scope and happen only after plan approval.
+- Candidate cases and reports from `assess-interview-candidate` must stay below the user-approved case root and outside the installed skill directory. Existing cases and reports are not overwritten by default.
 - Session handoff prompts can preserve local workspace paths for same-machine continuation. Use `session-handoff-prompt/scripts/redact_handoff.py --privacy shareable` before sharing a handoff outside the local machine or trusted agent session.
 - HTML task-forest exports are static offline views and do not modify the task graph.
 

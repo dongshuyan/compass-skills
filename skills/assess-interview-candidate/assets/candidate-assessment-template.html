@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>__REPORT_TITLE_HTML__</title>
+  <style>
+    :root {
+      --bg: #f4f5f2;
+      --surface: #ffffff;
+      --surface-soft: #f8f9f7;
+      --text: #1d2823;
+      --muted: #5b6962;
+      --border: #d8ded9;
+      --brand: #245f49;
+      --brand-soft: #e8f1ed;
+      --yellow: #fff4bf;
+      --yellow-border: #c99814;
+      --red: #fde5e2;
+      --red-border: #bd3e32;
+      --blue: #e7f0fb;
+      --blue-border: #3973b7;
+      --good: #e5f3ea;
+      --good-text: #21663e;
+      --average: #fff2d7;
+      --average-text: #805d0d;
+      --poor: #f9e5e3;
+      --poor-text: #96372e;
+      --radius: 10px;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.6;
+    }
+
+    button, select, textarea { font: inherit; }
+    button, select { min-height: 2.5rem; }
+    button:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(36, 95, 73, 0.28);
+      outline-offset: 2px;
+    }
+
+    .page {
+      width: min(70rem, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: var(--space-6) 0 var(--space-8);
+    }
+
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 5px solid var(--brand);
+      border-radius: var(--radius);
+      padding: var(--space-6);
+    }
+
+    .eyebrow {
+      margin: 0 0 var(--space-2);
+      color: var(--brand);
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: var(--space-2); font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.25; }
+    h2 { margin-bottom: var(--space-2); font-size: 1.4rem; }
+    h3 { margin-bottom: var(--space-2); font-size: 1.05rem; }
+
+    .subtitle, .muted { color: var(--muted); }
+    .subtitle { margin-bottom: var(--space-4); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border);
+    }
+
+    .storage-status {
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+    }
+
+    .button:hover { border-color: var(--brand); }
+    .button-primary { background: var(--brand); border-color: var(--brand); color: #ffffff; }
+
+    .report-section {
+      margin-top: var(--space-5);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-6);
+    }
+
+    .section-intro { margin-bottom: var(--space-5); color: var(--muted); }
+    .subsection + .subsection { margin-top: var(--space-6); }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+
+    .info-item {
+      min-width: 0;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: var(--space-3);
+    }
+
+    .info-label { display: block; color: var(--muted); font-size: 0.8rem; }
+    .info-value { display: block; margin-top: var(--space-1); font-weight: 650; overflow-wrap: anywhere; }
+    .info-note { display: block; margin-top: var(--space-1); color: var(--muted); font-size: 0.76rem; }
+
+    .compact-list { margin: 0; padding-left: 1.25rem; }
+    .compact-list li + li { margin-top: var(--space-1); }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .history-card, .fit-item, .risk-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: var(--space-4);
+      background: var(--surface);
+    }
+
+    .history-card p, .fit-item p, .risk-card p { margin-bottom: var(--space-2); }
+    .history-card p:last-child, .fit-item p:last-child, .risk-card p:last-child { margin-bottom: 0; }
+
+    .fit-list { display: grid; gap: var(--space-3); }
+    .fit-head, .risk-head, .question-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .badge-match { background: var(--good); color: var(--good-text); border-color: #9bc9aa; }
+    .badge-check { background: var(--average); color: var(--average-text); border-color: #d9bd73; }
+    .badge-unknown { background: var(--surface-soft); color: var(--muted); }
+    .plain-block { padding: var(--space-4); border-left: 4px solid var(--brand); background: var(--brand-soft); }
+
+    .risk-list, .question-list { display: grid; gap: var(--space-4); }
+    .risk-card { border-left: 4px solid #9b6b24; }
+    .quote { color: var(--muted); padding-left: var(--space-3); border-left: 2px solid var(--border); }
+    .label-line strong { display: inline-block; min-width: 6.4rem; }
+
+    .question-card {
+      border: 1px solid var(--border);
+      border-left: 5px solid transparent;
+      border-radius: 8px;
+      padding: var(--space-4);
+      background: var(--surface);
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+
+    .question-card[data-highlight="maybe"] { background: var(--yellow); border-left-color: var(--yellow-border); }
+    .question-card[data-highlight="must"] { background: var(--red); border-left-color: var(--red-border); }
+    .question-card[data-highlight="backup"] { background: var(--blue); border-left-color: var(--blue-border); }
+
+    .question-number {
+      display: inline-grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #ffffff;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .question-title { display: flex; align-items: flex-start; gap: var(--space-3); min-width: 0; }
+    .question-text { margin: var(--space-1) 0 0; font-size: 1.03rem; font-weight: 700; }
+    .question-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+
+    .highlight-select { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); padding: 0.4rem; }
+
+    details { margin-top: var(--space-4); border-top: 1px solid var(--border); padding-top: var(--space-3); }
+    summary { cursor: pointer; color: var(--brand); font-weight: 700; }
+    .answer-reference { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
+    .answer-box { border: 1px solid var(--border); border-radius: 8px; padding: var(--space-3); background: var(--surface-soft); }
+    .answer-box strong { display: block; margin-bottom: var(--space-1); }
+    .signal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-3); }
+
+    .record-panel {
+      display: grid;
+      grid-template-columns: minmax(15rem, 0.7fr) minmax(18rem, 1.3fr);
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border);
+    }
+
+    .result-group { display: flex; flex-wrap: wrap; gap: var(--space-2); align-content: flex-start; }
+    .result-button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 0.45rem 0.7rem;
+      cursor: pointer;
+    }
+    .result-button[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); font-weight: 700; }
+    .result-button[aria-pressed="true"][data-result="good"] { background: var(--good); color: var(--good-text); border-color: #77ae8a; }
+    .result-button[aria-pressed="true"][data-result="average"] { background: var(--average); color: var(--average-text); border-color: #cba84a; }
+    .result-button[aria-pressed="true"][data-result="poor"] { background: var(--poor); color: var(--poor-text); border-color: #cd7e77; }
+
+    .notes-label { display: grid; gap: var(--space-1); color: var(--muted); font-size: 0.84rem; }
+    textarea {
+      width: 100%;
+      min-height: 5rem;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: var(--space-3);
+    }
+
+    .empty { padding: var(--space-4); color: var(--muted); background: var(--surface-soft); border: 1px dashed var(--border); }
+    footer { padding: var(--space-6) var(--space-2) 0; color: var(--muted); text-align: center; font-size: 0.84rem; }
+
+    @media (max-width: 52rem) {
+      .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .history-grid, .answer-reference, .signal-grid { grid-template-columns: 1fr; }
+      .record-panel { grid-template-columns: 1fr; }
+      .question-head { display: grid; }
+      .question-tools { justify-content: flex-start; }
+    }
+
+    @media (max-width: 32rem) {
+      .page { width: min(100% - 1rem, 70rem); padding-top: var(--space-2); }
+      .hero, .report-section { padding: var(--space-4); }
+      .info-grid { grid-template-columns: 1fr; }
+      .fit-head, .risk-head { display: grid; }
+      .toolbar { align-items: stretch; }
+      .storage-status { width: 100%; }
+      .button, .highlight-select { width: 100%; }
+      .question-tools { display: grid; grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: #ffffff; }
+      .page { width: 100%; padding: 0; }
+      .hero, .report-section { break-inside: avoid; box-shadow: none; }
+      .toolbar, .question-tools, .record-panel { display: none !important; }
+      .question-card { break-inside: avoid; }
+      details { display: block; }
+      details > * { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">招聘面试参考</p>
+      <h1 id="report-title">__REPORT_TITLE_HTML__</h1>
+      <p class="subtitle">目标岗位：<strong id="role-title"></strong>　·　报告日期：<span id="report-date"></span></p>
+      <div class="toolbar" aria-label="报告操作">
+        <span id="storage-status" class="storage-status" role="status">正在读取本机记录……</span>
+        <button id="export-state" class="button button-primary" type="button">导出面试记录</button>
+        <button id="reset-state" class="button" type="button">清空本机记录</button>
+      </div>
+    </header>
+
+    <main id="report-root">
+      <section id="candidate-overview" class="report-section" aria-labelledby="candidate-overview-title">
+        <h2 id="candidate-overview-title">1. 候选人简介</h2>
+        <p class="section-intro">快速了解候选人的明确经历、基本信息和岗位匹配情况。</p>
+        <div id="candidate-overview-content"></div>
+      </section>
+
+      <section id="resume-risks" class="report-section" aria-labelledby="resume-risks-title">
+        <h2 id="resume-risks-title">2. 简历疑点与水分排查</h2>
+        <p class="section-intro">只保留与岗位核心能力直接相关、需要在面试中核实的描述。</p>
+        <div id="resume-risks-content"></div>
+      </section>
+
+      <section id="interview-questions" class="report-section" aria-labelledby="interview-questions-title">
+        <h2 id="interview-questions-title">3. 面试提问</h2>
+        <p class="section-intro">问题已按优先级排列。点一下“标记”默认变为黄色，也可选择“一定要问”或“备选”。</p>
+        <div id="interview-questions-content" class="question-list"></div>
+      </section>
+    </main>
+
+    <footer id="footer-note"></footer>
+  </div>
+
+  <script id="interviewer-report-data" type="application/json">__INTERVIEWER_REPORT_DATA_JSON__</script>
+  <script>
+  (function () {
+    "use strict";
+
+    const data = JSON.parse(document.getElementById("interviewer-report-data").textContent);
+    const questions = Array.isArray(data.interview_questions) ? data.interview_questions : [];
+    const reportStateKey = "candidate-interview:v1:" + String(data.case.id);
+    const storageStatus = document.getElementById("storage-status");
+    const resetStateButton = document.getElementById("reset-state");
+    const questionElements = new Map();
+    let storageAvailable = true;
+    let resetArmed = false;
+    let resetTimer = null;
+
+    const highlightLabels = { none: "不标记", maybe: "可能要问", must: "一定要问", backup: "备选" };
+    const priorityLabels = { must_ask: "优先问", recommended: "建议问", optional: "可选" };
+    const fitLabels = {
+      match: "符合",
+      foundation_needs_confirmation: "有相关基础，需面试确认",
+      evidence_insufficient: "当前证据不足"
+    };
+
+    function makeElement(tagName, options) {
+      const element = document.createElement(tagName);
+      const config = options || {};
+      if (config.className) element.className = config.className;
+      if (config.text !== undefined) element.textContent = String(config.text);
+      Object.entries(config.attrs || {}).forEach(function (entry) { element.setAttribute(entry[0], String(entry[1])); });
+      (config.children || []).forEach(function (child) { if (child) element.appendChild(child); });
+      return element;
+    }
+
+    function append(parent) {
+      Array.prototype.slice.call(arguments, 1).forEach(function (child) { if (child) parent.appendChild(child); });
+      return parent;
+    }
+
+    function list(values, emptyText) {
+      if (!Array.isArray(values) || values.length === 0) return makeElement("div", { className: "empty", text: emptyText });
+      const element = makeElement("ul", { className: "compact-list" });
+      values.forEach(function (value) { element.appendChild(makeElement("li", { text: value })); });
+      return element;
+    }
+
+    function initialQuestionState(question) {
+      return { highlight: "none", result: "unasked", notes: "", evaluation_mode: question.evaluation_mode };
+    }
+
+    function initialState() {
+      const values = {};
+      questions.forEach(function (question) { values[question.id] = initialQuestionState(question); });
+      return { version: 1, case_id: data.case.id, questions: values };
+    }
+
+    let state = initialState();
+
+    function isAllowedHighlight(value) { return ["none", "maybe", "must", "backup"].includes(value); }
+
+    function isAllowedResult(question, value) {
+      const allowed = question.evaluation_mode === "rated"
+        ? ["unasked", "good", "average", "poor"]
+        : ["unasked", "recorded", "declined"];
+      return allowed.includes(value);
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(reportStateKey);
+        if (!raw) {
+          storageStatus.textContent = "尚未产生本机记录";
+          return;
+        }
+        const saved = JSON.parse(raw);
+        if (!saved || saved.version !== 1 || saved.case_id !== data.case.id || typeof saved.questions !== "object") {
+          storageStatus.textContent = "发现不兼容的旧记录，已使用空白记录";
+          return;
+        }
+        questions.forEach(function (question) {
+          const item = saved.questions[question.id];
+          if (!item || typeof item !== "object") return;
+          state.questions[question.id] = {
+            highlight: isAllowedHighlight(item.highlight) ? item.highlight : "none",
+            result: isAllowedResult(question, item.result) ? item.result : "unasked",
+            notes: typeof item.notes === "string" ? item.notes : "",
+            evaluation_mode: question.evaluation_mode
+          };
+        });
+        storageStatus.textContent = "已恢复本机记录";
+      } catch (error) {
+        storageAvailable = false;
+        storageStatus.textContent = "浏览器未提供本地保存；仍可导出记录";
+      }
+    }
+
+    function saveState() {
+      if (!storageAvailable) return;
+      try {
+        localStorage.setItem(reportStateKey, JSON.stringify(state));
+        storageStatus.textContent = "已自动保存到本机";
+      } catch (error) {
+        storageAvailable = false;
+        storageStatus.textContent = "本地保存失败；请及时导出记录";
+      }
+    }
+
+    function infoItem(label, value, note) {
+      const box = makeElement("div", { className: "info-item" });
+      append(box, makeElement("span", { className: "info-label", text: label }), makeElement("span", { className: "info-value", text: value }));
+      if (note) box.appendChild(makeElement("span", { className: "info-note", text: note }));
+      return box;
+    }
+
+    function renderHistory(title, items, type) {
+      const block = makeElement("div", { className: "subsection" });
+      block.appendChild(makeElement("h3", { text: title }));
+      if (!items.length) {
+        block.appendChild(makeElement("div", { className: "empty", text: "未提供" }));
+        return block;
+      }
+      const grid = makeElement("div", { className: "history-grid" });
+      items.forEach(function (item) {
+        const card = makeElement("article", { className: "history-card" });
+        if (type === "education") {
+          append(card, makeElement("h3", { text: item.school }), makeElement("p", { text: item.degree_or_program }), makeElement("p", { className: "muted", text: item.period + " · 城市：" + item.city }));
+        } else {
+          append(card, makeElement("h3", { text: item.organization }), makeElement("p", { text: item.role }), makeElement("p", { className: "muted", text: item.period + " · 城市：" + item.city }));
+        }
+        grid.appendChild(card);
+      });
+      block.appendChild(grid);
+      return block;
+    }
+
+    function renderOverview() {
+      const root = document.getElementById("candidate-overview-content");
+      const overview = data.candidate_overview;
+      const personal = overview.personal_info;
+      const ageNote = personal.age.source_status === "candidate_provided"
+        ? "出生信息：" + personal.birth_information.value + "；截至 " + personal.age.as_of
+        : "候选人材料未提供出生信息";
+      const infoGrid = makeElement("div", { className: "info-grid" });
+      [
+        ["姓名", data.case.candidate_name, "候选人材料"],
+        ["年龄", personal.age.display, ageNote],
+        ["出生地", personal.birthplace.value, "只展示候选人明确提供的信息"],
+        ["老家 / 籍贯", personal.hometown.value, "只展示候选人明确提供的信息"],
+        ["婚姻状况", personal.marital_status.value, "由候选人自愿提供，不进入岗位评分"],
+        ["现居城市", personal.current_city.value, "用于确认实际通勤或搬迁安排"],
+        ["目标岗位", data.case.role_title, "本次招聘岗位"],
+        ["公司工作地点", overview.location_and_availability.company_location, overview.location_and_availability.distance_summary]
+      ].forEach(function (row) { infoGrid.appendChild(infoItem(row[0], row[1], row[2])); });
+      root.appendChild(infoGrid);
+
+      const summary = makeElement("div", { className: "subsection" });
+      append(summary, makeElement("h3", { text: "五分钟概览" }), list(overview.profile_summary, "暂无概览。"));
+      root.appendChild(summary);
+      root.appendChild(renderHistory("教育经历", overview.education, "education"));
+      root.appendChild(renderHistory("工作经历", overview.employment, "employment"));
+
+      const fit = makeElement("div", { className: "subsection" });
+      fit.appendChild(makeElement("h3", { text: "岗位匹配情况" }));
+      const fitList = makeElement("div", { className: "fit-list" });
+      overview.fit_items.forEach(function (item) {
+        const tone = item.status === "match" ? "badge-match" : item.status === "foundation_needs_confirmation" ? "badge-check" : "badge-unknown";
+        const card = makeElement("article", { className: "fit-item" });
+        const head = makeElement("div", { className: "fit-head" });
+        append(head, makeElement("h3", { text: item.capability }), makeElement("span", { className: "badge " + tone, text: fitLabels[item.status] || item.status }));
+        append(card, head, makeElement("p", { text: item.summary }), makeElement("p", { className: "muted", text: "面试重点：" + item.interview_focus }));
+        fitList.appendChild(card);
+      });
+      fit.appendChild(fitList);
+      root.appendChild(fit);
+
+      const logistics = makeElement("div", { className: "subsection plain-block" });
+      append(logistics, makeElement("h3", { text: "地点与到岗安排" }), makeElement("p", { text: overview.location_and_availability.distance_summary }), list(overview.location_and_availability.questions, "暂无需要确认的问题。"));
+      root.appendChild(logistics);
+    }
+
+    function renderRisks() {
+      const root = document.getElementById("resume-risks-content");
+      const risks = Array.isArray(data.resume_risks) ? data.resume_risks : [];
+      if (!risks.length) {
+        root.appendChild(makeElement("div", { className: "empty", text: "当前没有需要优先列出的核心简历疑点。" }));
+        return;
+      }
+      const listElement = makeElement("div", { className: "risk-list" });
+      risks.forEach(function (risk) {
+        const card = makeElement("article", { className: "risk-card" });
+        const head = makeElement("div", { className: "risk-head" });
+        append(head, makeElement("h3", { text: risk.order + ". " + risk.capability }), makeElement("span", { className: "badge", text: "优先核实" }));
+        append(card, head,
+          makeElement("p", { className: "quote", text: "简历原话：" + risk.resume_excerpt }),
+          makeElement("p", { className: "label-line", children: [makeElement("strong", { text: "哪里说不清：" }), document.createTextNode(risk.unclear_point)] }),
+          makeElement("p", { className: "label-line", children: [makeElement("strong", { text: "为什么要核实：" }), document.createTextNode(risk.why_check)] }),
+          makeElement("p", { className: "label-line", children: [makeElement("strong", { text: "怎么核实：" }), document.createTextNode(risk.how_to_verify)] })
+        );
+        listElement.appendChild(card);
+      });
+      root.appendChild(listElement);
+    }
+
+    function referenceBlock(question) {
+      const details = makeElement("details");
+      details.appendChild(makeElement("summary", { text: "查看提问目的和回答判断参考" }));
+      details.appendChild(makeElement("p", { text: "提问目的：" + question.purpose }));
+      if (question.evaluation_mode === "record_only") {
+        details.appendChild(makeElement("div", { className: "plain-block", text: question.recording_guidance }));
+        return details;
+      }
+      const answers = makeElement("div", { className: "answer-reference" });
+      [["回答好", question.good_answer], ["回答一般", question.average_answer], ["回答差", question.poor_answer]].forEach(function (item) {
+        answers.appendChild(makeElement("div", { className: "answer-box", children: [makeElement("strong", { text: item[0] }), makeElement("span", { text: item[1] })] }));
+      });
+      details.appendChild(answers);
+      const signals = makeElement("div", { className: "signal-grid" });
+      append(signals,
+        makeElement("div", { className: "answer-box", children: [makeElement("strong", { text: "加分点" }), list(question.bonus_signals, "无")] }),
+        makeElement("div", { className: "answer-box", children: [makeElement("strong", { text: "减分点" }), list(question.penalty_signals, "无")] })
+      );
+      details.appendChild(signals);
+      return details;
+    }
+
+    function updateQuestionVisual(questionId) {
+      const elements = questionElements.get(questionId);
+      if (!elements) return;
+      const item = state.questions[questionId];
+      elements.card.dataset.highlight = item.highlight;
+      elements.highlightSelect.value = item.highlight;
+      elements.highlightButton.textContent = item.highlight === "none" ? "标记" : "已标：" + highlightLabels[item.highlight];
+      elements.resultButtons.forEach(function (button) { button.setAttribute("aria-pressed", String(button.dataset.result === item.result)); });
+      if (elements.notes.value !== item.notes) elements.notes.value = item.notes;
+    }
+
+    function setHighlight(questionId, highlight) {
+      state.questions[questionId].highlight = isAllowedHighlight(highlight) ? highlight : "none";
+      updateQuestionVisual(questionId);
+      saveState();
+    }
+
+    function applyDefaultHighlight(questionId) {
+      const current = state.questions[questionId].highlight;
+      setHighlight(questionId, current === "maybe" ? "none" : "maybe");
+    }
+
+    function resultOptions(question) {
+      return question.evaluation_mode === "rated"
+        ? [["unasked", "未问"], ["good", "好"], ["average", "一般"], ["poor", "差"]]
+        : [["unasked", "未问"], ["recorded", "已记录"], ["declined", "不便回答"]];
+    }
+
+    function renderQuestion(question) {
+      const itemState = state.questions[question.id];
+      const card = makeElement("article", { className: "question-card", attrs: { "data-highlight": itemState.highlight, "data-question-id": question.id } });
+      const head = makeElement("div", { className: "question-head" });
+      const title = makeElement("div", { className: "question-title" });
+      append(title, makeElement("span", { className: "question-number", text: question.order }), makeElement("div", { children: [makeElement("span", { className: "badge", text: priorityLabels[question.priority] || question.priority }), makeElement("p", { className: "question-text", text: question.question })] }));
+      const tools = makeElement("div", { className: "question-tools" });
+      const highlightButton = makeElement("button", { className: "button", text: "标记", attrs: { type: "button", "aria-label": "默认标记第 " + question.order + " 题为可能要问" } });
+      const highlightSelect = makeElement("select", { className: "highlight-select", attrs: { "aria-label": "选择第 " + question.order + " 题的重点程度" } });
+      [["none", "不标记"], ["maybe", "可能要问"], ["must", "一定要问"], ["backup", "备选"]].forEach(function (option) {
+        highlightSelect.appendChild(makeElement("option", { text: option[1], attrs: { value: option[0] } }));
+      });
+      append(tools, highlightButton, highlightSelect);
+      append(head, title, tools);
+      card.appendChild(head);
+      card.appendChild(referenceBlock(question));
+
+      const recordPanel = makeElement("div", { className: "record-panel" });
+      const resultGroup = makeElement("div", { className: "result-group", attrs: { role: "group", "aria-label": "记录第 " + question.order + " 题表现" } });
+      const resultButtons = [];
+      resultOptions(question).forEach(function (option) {
+        const button = makeElement("button", { className: "result-button", text: option[1], attrs: { type: "button", "data-result": option[0], "aria-pressed": "false" } });
+        button.addEventListener("click", function () {
+          state.questions[question.id].result = option[0];
+          updateQuestionVisual(question.id);
+          saveState();
+        });
+        resultButtons.push(button);
+        resultGroup.appendChild(button);
+      });
+      const notes = makeElement("textarea", { attrs: { "aria-label": "第 " + question.order + " 题面试记录", placeholder: question.evaluation_mode === "rated" ? "记录候选人的具体回答、本人行动、结果和疑点。" : "记录候选人自愿提供的信息；不方便回答也可如实记录。" } });
+      notes.value = itemState.notes;
+      notes.addEventListener("input", function () {
+        state.questions[question.id].notes = notes.value;
+        saveState();
+      });
+      append(recordPanel, resultGroup, makeElement("label", { className: "notes-label", text: "面试记录", children: [notes] }));
+      card.appendChild(recordPanel);
+
+      highlightButton.addEventListener("click", function () { applyDefaultHighlight(question.id); });
+      highlightSelect.addEventListener("change", function () { setHighlight(question.id, highlightSelect.value); });
+      questionElements.set(question.id, { card: card, highlightButton: highlightButton, highlightSelect: highlightSelect, resultButtons: resultButtons, notes: notes });
+      updateQuestionVisual(question.id);
+      return card;
+    }
+
+    function renderQuestions() {
+      const root = document.getElementById("interview-questions-content");
+      questions.forEach(function (question) { root.appendChild(renderQuestion(question)); });
+    }
+
+    function cleanExportState() {
+      const exportedQuestions = {};
+      questions.forEach(function (question) {
+        const item = state.questions[question.id];
+        const scoreMap = { good: 5, average: 3, poor: 1 };
+        exportedQuestions[question.id] = {
+          order: question.order,
+          question: question.question,
+          evaluation_mode: question.evaluation_mode,
+          highlight: item.highlight,
+          result: item.result,
+          audit_score: question.evaluation_mode === "rated" && Object.prototype.hasOwnProperty.call(scoreMap, item.result) ? scoreMap[item.result] : null,
+          notes: item.notes
+        };
+      });
+      return { schema_version: "1.0.0", case_id: data.case.id, blueprint_version: data.case.blueprint_version, candidate_name: data.case.candidate_name, exported_at: new Date().toISOString(), questions: exportedQuestions };
+    }
+
+    function safeDownloadName(value) {
+      return String(value).replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_").trim() || "候选人";
+    }
+
+    function exportInterviewState() {
+      try {
+        const payload = JSON.stringify(cleanExportState(), null, 2);
+        const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = safeDownloadName(data.case.candidate_name) + "-面试记录.json";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 0);
+        storageStatus.textContent = "面试记录已导出";
+      } catch (error) {
+        storageStatus.textContent = "导出失败，请保留当前页面并重试";
+      }
+    }
+
+    function cancelResetConfirmation(message) {
+      resetArmed = false;
+      if (resetTimer !== null) {
+        window.clearTimeout(resetTimer);
+        resetTimer = null;
+      }
+      resetStateButton.textContent = "清空本机记录";
+      if (message) storageStatus.textContent = message;
+    }
+
+    function resetInterviewState() {
+      if (!resetArmed) {
+        resetArmed = true;
+        resetStateButton.textContent = "再次点击确认清空";
+        storageStatus.textContent = "再次点击才会清空本机记录";
+        resetTimer = window.setTimeout(function () {
+          if (resetArmed) cancelResetConfirmation("未执行清空");
+        }, 5000);
+        return;
+      }
+      cancelResetConfirmation();
+      state = initialState();
+      try {
+        localStorage.removeItem(reportStateKey);
+      } catch (error) {
+        storageAvailable = false;
+      }
+      questions.forEach(function (question) { updateQuestionVisual(question.id); });
+      storageStatus.textContent = storageAvailable ? "本机记录已清空" : "记录已在当前页面清空";
+    }
+
+    loadState();
+    document.getElementById("role-title").textContent = data.case.role_title;
+    document.getElementById("report-date").textContent = data.case.report_date;
+    document.getElementById("footer-note").textContent = data.footer_note;
+    renderOverview();
+    renderRisks();
+    renderQuestions();
+    document.getElementById("export-state").addEventListener("click", exportInterviewState);
+    resetStateButton.addEventListener("click", resetInterviewState);
+  }());
+  </script>
+</body>
+</html>

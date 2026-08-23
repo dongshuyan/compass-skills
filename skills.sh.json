@@ -26,6 +26,13 @@
       "skills": [
         "academic-humanizer"
       ]
+    },
+    {
+      "title": "Hiring Support",
+      "description": "Local-first, evidence-bounded candidate assessment and structured interview preparation for human recruiters.",
+      "skills": [
+        "assess-interview-candidate"
+      ]
     }
   ]
 }

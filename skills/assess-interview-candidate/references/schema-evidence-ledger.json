@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.skills.example/assess-interview-candidate/schema-evidence-ledger.json",
+  "title": "Candidate Evidence Ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "items"],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "case_id": {"$ref": "#/$defs/nonEmptyString"},
+    "items": {"type": "array", "items": {"$ref": "#/$defs/evidenceItem"}},
+    "metadata": {"type": "object", "additionalProperties": true}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "confidence": {"enum": ["low", "medium", "high", "unknown"]},
+    "starovField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "status"],
+      "properties": {
+        "value": {"type": ["string", "null"]},
+        "status": {"enum": ["explicit", "inferred", "missing"]}
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document", "locator"],
+      "properties": {
+        "document": {"$ref": "#/$defs/nonEmptyString"},
+        "locator": {"$ref": "#/$defs/nonEmptyString"},
+        "page": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "confidenceSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extraction", "mapping", "ability"],
+      "properties": {
+        "extraction": {"$ref": "#/$defs/confidence"},
+        "mapping": {"$ref": "#/$defs/confidence"},
+        "ability": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "claim", "claim_type", "excerpt", "location", "capability_ids",
+        "importance_tier", "evidence_origin", "evidence_status", "truth_status", "starov", "confidence",
+        "alternative_explanations", "remaining_gaps", "verification_questions",
+        "high_impact", "human_confirmed", "scoring_eligible"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "claim": {"$ref": "#/$defs/nonEmptyString"},
+        "claim_type": {"enum": ["achievement", "responsibility", "skill", "credential", "timeline", "publication", "patent", "open_source", "other"]},
+        "excerpt": {"$ref": "#/$defs/nonEmptyString"},
+        "location": {"$ref": "#/$defs/location"},
+        "capability_ids": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "importance_tier": {"enum": ["gate", "critical", "supporting", "differentiator"]},
+        "evidence_origin": {"enum": ["resume", "public_professional", "public_social", "interview", "work_sample"]},
+        "evidence_status": {"enum": ["externally_corroborated", "strong_self_report", "partially_specified", "claim_only", "contradicted", "indeterminate"]},
+        "truth_status": {"enum": ["verified", "self_report", "contradicted", "indeterminate"]},
+        "starov": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["situation", "task", "action", "result", "ownership", "verification"],
+          "properties": {
+            "situation": {"$ref": "#/$defs/starovField"},
+            "task": {"$ref": "#/$defs/starovField"},
+            "action": {"$ref": "#/$defs/starovField"},
+            "result": {"$ref": "#/$defs/starovField"},
+            "ownership": {"$ref": "#/$defs/starovField"},
+            "verification": {"$ref": "#/$defs/starovField"}
+          }
+        },
+        "method_or_artifact": {"type": ["string", "null"]},
+        "metric_context": {"type": ["string", "null"]},
+        "scale_and_constraints": {"type": ["string", "null"]},
+        "source_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "confidence": {"$ref": "#/$defs/confidenceSet"},
+        "alternative_explanations": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "remaining_gaps": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "verification_questions": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "high_impact": {"type": "boolean"},
+        "human_confirmed": {"type": "boolean"},
+        "scoring_eligible": {"type": "boolean", "description": "Public social-media evidence must be false."},
+        "notes": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"scoring_eligible": {"const": true}}, "required": ["scoring_eligible"]},
+          "then": {
+            "properties": {
+              "evidence_origin": {"enum": ["interview", "work_sample"]},
+              "human_confirmed": {"const": true}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"evidence_origin": {"const": "public_social"}}, "required": ["evidence_origin"]},
+          "then": {"properties": {"scoring_eligible": {"const": false}}}
+        },
+        {
+          "if": {"properties": {"evidence_origin": {"enum": ["public_professional", "public_social"]}}, "required": ["evidence_origin"]},
+          "then": {"required": ["source_ids"], "properties": {"source_ids": {"minItems": 1}}}
+        },
+        {
+          "if": {"not": {"properties": {"truth_status": {"const": "verified"}}, "required": ["truth_status"]}},
+          "then": {"properties": {"verification_questions": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"high_impact": {"const": true}}, "required": ["high_impact"]},
+          "then": {
+            "properties": {
+              "alternative_explanations": {"minItems": 2},
+              "verification_questions": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"evidence_status": {"const": "externally_corroborated"}}, "required": ["evidence_status"]},
+          "then": {
+            "required": ["source_ids"],
+            "properties": {
+              "truth_status": {"const": "verified"},
+              "source_ids": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"evidence_status": {"const": "contradicted"}}, "required": ["evidence_status"]},
+          "then": {"properties": {"truth_status": {"const": "contradicted"}}}
+        }
+      ]
+    }
+  }
+}

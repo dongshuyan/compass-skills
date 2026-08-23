@@ -23,7 +23,7 @@
 >
 > 从使用 `SKILL.md` 到搭建本地 Skill 系统，讲清楚最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
 
-COMPASS 当前公开 7 个本地 skills：4 个运行时协作 skills、2 个 run-history skill 工程 skills，以及 1 个用于避免和去除学术论文 AI 语气的学术润色 skill。核心协作层围绕用户画像、任务图谱、AI 对话续接和需求对齐；`run-history` 双 skill 负责把真实运行经验沉淀成新 skill，或根据 session 证据推动已有 skill 受控自我进化；`academic-humanizer` 负责在不改变事实、证据强度和论证关系的前提下，使中英文学术文本呈现更自然、可信的作者声音。
+COMPASS 当前公开 8 个本地 skills：4 个运行时协作 skills、2 个 run-history skill 工程 skills、1 个学术润色 skill，以及 1 个本地招聘辅助 skill。核心协作层围绕用户画像、任务图谱、AI 对话续接和需求对齐；`run-history` 双 skill 负责沉淀和升级 skill；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
 
 当前公开版技能一览：
 
@@ -36,6 +36,7 @@ COMPASS 当前公开 7 个本地 skills：4 个运行时协作 skills、2 个 ru
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | 把已经跑通或反复打磨过的真实流程，打包成新的可复用 skill 或可审查设计方案。 |
 | [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | 自动根据真实执行、遇到困难、解决困难、验证结果和用户反馈等 session 信息，为已有 skill 先产出升级方案，并把这个过程组织成最简单的 skill 受控自我进化闭环；只有在明确批准后才执行修改。 |
 | [`academic-humanizer`](skills/academic-humanizer/) | 帮助撰写或修改中英文学术论文，去除公式化、空泛、机械重复和暴露生成过程的 AI 式表达，在保留事实、证据强度和论证逻辑的同时恢复自然的学术作者声音。 |
+| [`assess-interview-candidate`](skills/assess-interview-candidate/) | 根据获准处理的简历与岗位要求，保留后台证据审计，并生成只有候选人简介、简历疑点和面试提问三个模块的离线 HTML。 |
 
 多 skill 仓库建议按需安装；`run-history` 双 skill 面向其他 skills 的设计和维护，`academic-humanizer` 面向学术论文撰写过程中 AI 语气的预防，以及已有学术文本中 AI 语气的去除。
 
@@ -142,6 +143,9 @@ COMPASS 当前公开 7 个本地 skills：4 个运行时协作 skills、2 个 ru
 **场景 7：避免或去除学术论文中的 AI 语气。**
 用 `$academic-humanizer` 撰写、审计或最小修改中英文学术文本。它识别公式化、空泛、机械重复、无来源拔高和暴露生成过程的 AI 式表达，同时保护命题、数字、引文、证据强度、否定、因果关系、比较对象和范围。目标是恢复自然、可信、符合学术共同体习惯的作者声音，显著降低读者将文本判断为 AI 生成的可能性；它不承诺所有读者都会作出相同的作者身份判断。
 
+**场景 8：为招聘面试准备候选人评估和结构化问题。**
+用 `$assess-interview-candidate` 完整读取获准处理的简历和岗位要求，保留可追溯的后台证据，同时给面试官生成简洁的三模块离线 HTML。页面支持把问题标成“可能要问”“一定要问”或“备选”，但不会自动录用、淘汰或给候选人排名。
+
 `$task-forest` 导出的任务关系树和对话更新流程：
 
 ![task-forest tree demo](assets/task-forest-demo.gif)
@@ -171,7 +175,7 @@ DAG 关系视图：
 
 COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作画像，再查看任务森林，需要换 AI 对话时生成续接 prompt，在行动前完成目标对齐；当某条流程已经跑通、值得沉淀，或某个现有 skill 需要根据真实 session 证据受控自我进化时，再进入 `run-history` 双 skill。
 
-## 四层协作模型 + 三个扩展 skills
+## 四层协作模型 + 四个扩展 skills
 
 | 层 | Skill | 解决的问题 |
 | --- | --- | --- |
@@ -182,6 +186,7 @@ COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作�
 | **造技** | [`$run-history-skill-builder`](skills/run-history-skill-builder/) | 把已经跑通或反复打磨过的真实流程，抽成新的可复用 skill 包，或先生成不落文件的设计方案。 |
 | **修技** | [`$run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | 自动根据真实执行、遇到困难、解决困难、验证结果和用户反馈等 session 信息，为已有 skill 先产出结构化升级方案，并把这个过程组织成最简单的 skill 受控自我进化闭环；只有在明确批准后才执行修改。 |
 | **润文** | [`$academic-humanizer`](skills/academic-humanizer/) | 在保留事实、证据强度、逻辑关系和学术语域的前提下，避免或去除中英文学术论文中的 AI 语气，恢复自然的学术作者声音。 |
+| **识才** | [`$assess-interview-candidate`](skills/assess-interview-candidate/) | 把简历和岗位要求整理成可复核的岗位证据、核心疑点与结构化面试题，供有权限的招聘人员人工判断。 |
 
 一句话理解：
 
@@ -193,6 +198,7 @@ $task-clarifier 让 AI 知道“用户的需求到底是什么”。
 $run-history-skill-builder 让 AI 知道“这条已经跑通的流程怎样被沉淀成新的 skill”。
 $run-history-skill-upgrader 让 AI 知道“现有 skill 怎样根据真实 session 证据受控自我进化”。
 $academic-humanizer 让 AI 知道“怎样在不改变学术命题的前提下避免或去除 AI 语气”。
+$assess-interview-candidate 让 AI 知道“怎样用可核验材料准备一场聚焦岗位的人工面试”。
 ```
 
 ## 生态图
@@ -201,7 +207,7 @@ $academic-humanizer 让 AI 知道“怎样在不改变学术命题的前提下�
 
 ## 安装和 Agent 兼容
 
-这些 skills 使用 Python 标准库和 Markdown 文档，不依赖云服务，不上传用户数据。脚本按本地文件工作，已按 macOS、Windows、Linux 三类环境做路径约束：
+这些 skills 使用 Python 标准库和 Markdown 文档，不依赖云服务，不上传用户数据。脚本按本地文件工作，已按 macOS、Windows、Linux 三类环境做路径约束；`assess-interview-candidate` 需要 Python 3.10 或更高版本：
 
 - macOS / Linux：示例命令使用 `python3`。
 - Windows：可使用 `py -3` 或 `python`。
@@ -213,8 +219,8 @@ COMPASS 是一个 agent-agnostic 的 `SKILL.md` skills 包：凡是支持 `SKILL
 
 | Agent / 环境 | 推荐接入方式 |
 | --- | --- |
-| Codex | 复制 `skills/` 下需要的 released skill 目录到 Codex 可发现的 skills 目录，或作为 repo-local skills 使用；当前公开版共 7 个 skills。 |
-| Claude Code | 复制 `skills/` 下需要的 released skill 目录到 Claude Code 的 custom skills 目录，或放入项目 skills 根目录；当前公开版共 7 个 skills。 |
+| Codex | 复制 `skills/` 下需要的 released skill 目录到 Codex 可发现的 skills 目录，或作为 repo-local skills 使用；当前公开版共 8 个 skills。 |
+| Claude Code | 复制 `skills/` 下需要的 released skill 目录到 Claude Code 的 custom skills 目录，或放入项目 skills 根目录；当前公开版共 8 个 skills。 |
 | OpenClaw | 放入 workspace `skills/`、`.agents/skills` 或个人/托管 skills 目录；按 OpenClaw 的 skill precedence 生效。 |
 | OpenCode | 保留本 repo 的 `skills/` 和 [AGENTS.md](AGENTS.md)，让 agent 通过 AGENTS 规则发现并读取对应 `SKILL.md`。 |
 | 其他 agent | 只要能读取文件并运行本地脚本，就按 [AGENTS.md](AGENTS.md) 的通用协议加载：先读 `SKILL.md`，再按需读 `references/` 和运行 `scripts/`。 |
@@ -239,7 +245,7 @@ Repo: https://github.com/dongshuyan/compass-skills
 6. 最后报告安装位置、已安装 skills、安全检查结果、验证结果，以及如何在 AI 对话中调用。
 ```
 
-手动安装时，把 `skills/` 下需要的 released skill 目录复制到目标 agent 的本地 skills 目录；当前公开版共 7 个 skills。安装后可在 AI 对话中点名使用：
+手动安装时，把 `skills/` 下需要的 released skill 目录复制到目标 agent 的本地 skills 目录；当前公开版共 8 个 skills。安装后可在 AI 对话中点名使用：
 
 ```text
 $user-profile-keeper
@@ -249,6 +255,15 @@ $task-clarifier
 $run-history-skill-builder
 $run-history-skill-upgrader
 $academic-humanizer
+$assess-interview-candidate
+```
+
+候选人评估示例：
+
+```text
+请用 $assess-interview-candidate 根据我提供的候选人简历和岗位要求生成面试报告。
+
+要求：完整读取材料；PDF 同时做文字提取和逐页视觉核对；后台保留证据与校验数据；面试官 HTML 只保留候选人简介、岗位相关简历疑点和 12–18 道可直接照读的问题。候选人主动提供的学校、工作和城市直接显示，缺失信息不推测；年龄、籍贯和婚姻状况不得进入岗位评分或招聘决定。所有文件只保存到我批准的本地目录。
 ```
 
 ## 四个核心协作 skills
@@ -369,6 +384,7 @@ $academic-humanizer
 - 在任务变复杂、变危险、变模糊时，先进入 alignment gate，避免返工和隐私风险。
 - 让用户画像影响“怎么问”，当前上下文始终优先，历史偏好只作为参考。
 - 在不增加事实、引文或作者经历的前提下，避免或去除中英文学术论文中的 AI 语气，并保护原有论证强度。
+- 根据获准处理的简历与岗位要求，生成可审计的后台材料和便于现场使用、可标重点的离线面试报告。
 - 为后续日报、周报、任务排序、习惯系统、多 agent 总控和 skill 升级提供结构化数据。
 
 ## 验证状态
@@ -379,6 +395,9 @@ $academic-humanizer
 - `printf '%s\n' '本研究采用分层抽样。' | python3 skills/academic-humanizer/scripts/metrics.py - --json`：只读检查语言路由、过程残留和对立句式候选，不输出作者身份概率或质量分数。
 - `python3 -m py_compile ...`：验证新增 Python 脚本语法。
 - `skills.sh.json` 和 `evals/trigger-and-quality-cases.json` 已通过 JSON 解析。
+- 使用 `skills@1.5.23` 时，当前本地源码可被识别为 8 个 skills；`assess-interview-candidate` 已成功复制到临时 Codex 与 Claude Code skill 目录。
+- `assess-interview-candidate` 的 26 项单元和公开包测试在 Python 3.11、3.14 上均通过；Skill 结构校验、Ruff、JSON、Python 3.10 语法、JavaScript 语法、离线报告校验和浏览器交互检查也已通过。
+- Windows 与 Linux 兼容性通过路径、启动器、标准库、保留文件名和外壳无关规则约束；本轮没有在真实 Windows 或 Linux 主机上运行。
 
 ## 安全和隐私
 
@@ -390,6 +409,7 @@ COMPASS 的默认安全边界：
 - `$task-forest` 的完整任务图保存在 repo-local 目录，不把节点正文写入全局 registry。
 - `$session-handoff-prompt` 默认只读；本机续接可以保留路径，公开分享前必须使用 shareable 脱敏和校验。
 - `$academic-humanizer` 不增加事实、引文、机制或作者经历；可选指标脚本只读输入并输出描述性候选。
+- `$assess-interview-candidate` 只处理获准材料和经过允许的公开职业信息；候选人资料保存在用户批准的本地案件目录，不上传。电话、邮箱和精确住址不进入面试官 HTML，年龄、出生地、籍贯、婚姻状况和地点信息不进入岗位评分、排序或录用决定。
 - 删除、覆盖、发布、远程写入、credential、全局配置等高风险动作必须确认。
 - HTML 导出是静态离线文件，不直接修改任务图。
 

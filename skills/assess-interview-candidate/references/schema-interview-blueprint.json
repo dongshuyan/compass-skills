@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.skills.example/assess-interview-candidate/schema-interview-blueprint.json",
+  "title": "Structured Interview Blueprint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "blueprint_version", "role_key", "duration_minutes", "sections", "questions", "scoring"],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "case_id": {"$ref": "#/$defs/nonEmptyString"},
+    "blueprint_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "role_key": {"$ref": "#/$defs/nonEmptyString"},
+    "duration_minutes": {"type": "integer", "minimum": 1, "maximum": 480},
+    "sections": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/section"}},
+    "questions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/question"}},
+    "scoring": {"$ref": "#/$defs/scoring"},
+    "transitions": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+    "realistic_job_preview": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+    "candidate_question_prompt": {"type": ["string", "null"]},
+    "metadata": {"type": "object", "additionalProperties": true}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "order", "title", "start_minute", "end_minute", "purpose"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "order": {"type": "integer", "minimum": 1},
+        "title": {"$ref": "#/$defs/nonEmptyString"},
+        "start_minute": {"type": "number", "minimum": 0},
+        "end_minute": {"type": "number", "exclusiveMinimum": 0},
+        "purpose": {"$ref": "#/$defs/nonEmptyString"},
+        "transition": {"type": ["string", "null"]}
+      }
+    },
+    "anchors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["1", "3", "5"],
+      "properties": {
+        "1": {"$ref": "#/$defs/nonEmptyString"},
+        "3": {"$ref": "#/$defs/nonEmptyString"},
+        "5": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asked", "score", "human_confirmed", "notes", "evidence_quote"],
+      "properties": {
+        "asked": {"type": "boolean"},
+        "score": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "human_confirmed": {"type": "boolean"},
+        "notes": {"type": "string"},
+        "evidence_quote": {"type": "string"}
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "order", "section_id", "question_type", "question_text", "purpose",
+        "capability_ids", "target_dimensions", "standardized_probes", "core", "scored",
+        "weight", "gate", "initial_response"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "order": {"type": "integer", "minimum": 1},
+        "section_id": {"$ref": "#/$defs/nonEmptyString"},
+        "question_type": {"enum": ["past_behavior", "work_sample", "situational", "motivation_fit", "resume_verification", "candidate_question", "other"]},
+        "transition": {"type": ["string", "null"]},
+        "question_text": {"$ref": "#/$defs/nonEmptyString"},
+        "purpose": {"$ref": "#/$defs/nonEmptyString"},
+        "capability_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "target_dimensions": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "standardized_probes": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "core": {"type": "boolean"},
+        "scored": {"type": "boolean"},
+        "weight": {"type": "number", "minimum": 0},
+        "gate": {"type": "boolean"},
+        "gate_threshold": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "anchors": {"$ref": "#/$defs/anchors"},
+        "expected_evidence": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "initial_response": {"$ref": "#/$defs/response"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"scored": {"const": true}}, "required": ["scored"]},
+          "then": {"required": ["anchors"], "properties": {"weight": {"exclusiveMinimum": 0}}}
+        },
+        {
+          "if": {"properties": {"gate": {"const": true}}, "required": ["gate"]},
+          "then": {
+            "required": ["gate_threshold"],
+            "properties": {
+              "scored": {"const": true},
+              "core": {"const": true},
+              "weight": {"exclusiveMinimum": 0},
+              "gate_threshold": {"type": "integer", "minimum": 1, "maximum": 5}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"core": {"const": true}}, "required": ["core"]},
+          "then": {"properties": {"scored": {"const": true}, "weight": {"exclusiveMinimum": 0}}}
+        }
+      ]
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scale_min", "scale_max", "requires_human_confirmation", "comparability_core_coverage_min", "composite_comparability_requires_full_coverage"],
+      "properties": {
+        "scale_min": {"const": 1},
+        "scale_max": {"const": 5},
+        "requires_human_confirmation": {"const": true},
+        "comparability_core_coverage_min": {"const": 1},
+        "composite_comparability_requires_full_coverage": {"const": true},
+        "formula_version": {"type": "string", "const": "weighted-linear-1to5-v1"}
+      }
+    }
+  }
+}

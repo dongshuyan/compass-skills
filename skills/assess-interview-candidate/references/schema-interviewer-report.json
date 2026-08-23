@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.skills.example/assess-interview-candidate/schema-interviewer-report.json",
+  "title": "Simplified Interviewer Report Data",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case",
+    "candidate_overview",
+    "resume_risks",
+    "interview_questions",
+    "footer_note"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "case": {"$ref": "#/$defs/case"},
+    "candidate_overview": {"$ref": "#/$defs/candidateOverview"},
+    "resume_risks": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/resumeRisk"}
+    },
+    "interview_questions": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 18,
+      "items": {"$ref": "#/$defs/interviewQuestion"}
+    },
+    "footer_note": {"$ref": "#/$defs/nonEmptyString"}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "stringList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/nonEmptyString"}
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "candidate_name", "role_title", "report_date", "blueprint_version", "human_review_status"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "candidate_name": {"$ref": "#/$defs/nonEmptyString"},
+        "role_title": {"$ref": "#/$defs/nonEmptyString"},
+        "report_date": {"type": "string", "format": "date"},
+        "blueprint_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "human_review_status": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "providedField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source_status", "source_locator"],
+      "properties": {
+        "value": {"$ref": "#/$defs/nonEmptyString"},
+        "source_status": {"enum": ["candidate_provided", "not_provided"]},
+        "source_locator": {"type": ["string", "null"]}
+      }
+    },
+    "age": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "display",
+        "years",
+        "approximate",
+        "as_of",
+        "normalized_birth",
+        "precision",
+        "source_status",
+        "source_locator"
+      ],
+      "properties": {
+        "display": {"$ref": "#/$defs/nonEmptyString"},
+        "years": {"type": ["integer", "null"], "minimum": 0, "maximum": 130},
+        "approximate": {"type": "boolean"},
+        "as_of": {"type": "string", "format": "date"},
+        "normalized_birth": {"type": ["string", "null"]},
+        "precision": {"enum": ["day", "month", "year", "not_provided"]},
+        "source_status": {"enum": ["candidate_provided", "not_provided"]},
+        "source_locator": {"type": ["string", "null"]}
+      }
+    },
+    "personalInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "birth_information",
+        "age",
+        "birthplace",
+        "hometown",
+        "marital_status",
+        "current_city"
+      ],
+      "properties": {
+        "birth_information": {"$ref": "#/$defs/providedField"},
+        "age": {"$ref": "#/$defs/age"},
+        "birthplace": {"$ref": "#/$defs/providedField"},
+        "hometown": {"$ref": "#/$defs/providedField"},
+        "marital_status": {"$ref": "#/$defs/providedField"},
+        "current_city": {"$ref": "#/$defs/providedField"}
+      }
+    },
+    "education": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["school", "degree_or_program", "period", "city", "city_source_status", "source_locator"],
+      "properties": {
+        "school": {"$ref": "#/$defs/nonEmptyString"},
+        "degree_or_program": {"$ref": "#/$defs/nonEmptyString"},
+        "period": {"$ref": "#/$defs/nonEmptyString"},
+        "city": {"$ref": "#/$defs/nonEmptyString"},
+        "city_source_status": {"enum": ["candidate_provided", "not_provided"]},
+        "source_locator": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "employment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["organization", "role", "period", "city", "city_source_status", "source_locator"],
+      "properties": {
+        "organization": {"$ref": "#/$defs/nonEmptyString"},
+        "role": {"$ref": "#/$defs/nonEmptyString"},
+        "period": {"$ref": "#/$defs/nonEmptyString"},
+        "city": {"$ref": "#/$defs/nonEmptyString"},
+        "city_source_status": {"enum": ["candidate_provided", "not_provided"]},
+        "source_locator": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "fitItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "capability", "status", "summary", "interview_focus"],
+      "properties": {
+        "order": {"type": "integer", "minimum": 1},
+        "capability": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"enum": ["match", "foundation_needs_confirmation", "evidence_insufficient"]},
+        "summary": {"$ref": "#/$defs/nonEmptyString"},
+        "interview_focus": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "locationAndAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["company_location", "distance_summary", "questions"],
+      "properties": {
+        "company_location": {"$ref": "#/$defs/nonEmptyString"},
+        "distance_summary": {"$ref": "#/$defs/nonEmptyString"},
+        "questions": {"$ref": "#/$defs/stringList"}
+      }
+    },
+    "candidateOverview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "personal_info",
+        "profile_summary",
+        "education",
+        "employment",
+        "fit_items",
+        "location_and_availability"
+      ],
+      "properties": {
+        "personal_info": {"$ref": "#/$defs/personalInfo"},
+        "profile_summary": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "education": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/education"}
+        },
+        "employment": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {"$ref": "#/$defs/employment"}
+        },
+        "fit_items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/fitItem"}
+        },
+        "location_and_availability": {"$ref": "#/$defs/locationAndAvailability"}
+      }
+    },
+    "resumeRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "order",
+        "importance",
+        "capability",
+        "resume_excerpt",
+        "unclear_point",
+        "why_check",
+        "how_to_verify"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "order": {"type": "integer", "minimum": 1},
+        "importance": {"type": "integer", "minimum": 1, "maximum": 5},
+        "capability": {"$ref": "#/$defs/nonEmptyString"},
+        "resume_excerpt": {"$ref": "#/$defs/nonEmptyString"},
+        "unclear_point": {"$ref": "#/$defs/nonEmptyString"},
+        "why_check": {"$ref": "#/$defs/nonEmptyString"},
+        "how_to_verify": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "interviewQuestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "order", "priority", "kind", "question", "purpose", "evaluation_mode"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "order": {"type": "integer", "minimum": 1},
+        "priority": {"enum": ["must_ask", "recommended", "optional"]},
+        "kind": {"enum": ["job_core", "work_sample", "resume_check", "soft_skill", "logistics", "candidate_choice"]},
+        "question": {"$ref": "#/$defs/nonEmptyString"},
+        "purpose": {"$ref": "#/$defs/nonEmptyString"},
+        "evaluation_mode": {"enum": ["rated", "record_only"]},
+        "good_answer": {"$ref": "#/$defs/nonEmptyString"},
+        "average_answer": {"$ref": "#/$defs/nonEmptyString"},
+        "poor_answer": {"$ref": "#/$defs/nonEmptyString"},
+        "bonus_signals": {"$ref": "#/$defs/stringList"},
+        "penalty_signals": {"$ref": "#/$defs/stringList"},
+        "recording_guidance": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    }
+  }
+}
