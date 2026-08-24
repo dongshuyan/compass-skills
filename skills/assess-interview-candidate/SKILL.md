@@ -87,7 +87,22 @@ HTML 文件名、浏览器标题和页面最上方标题都必须包含候选人
 <python> "<skill-dir>/scripts/create_candidate_case.py" --root "<approved-root>" --role-slug "<role-slug>"
 ```
 
-复制原始输入并记录哈希，不移动或删除用户文件。PDF 必须同时使用当前宿主可用的文字提取能力和逐页视觉检查能力，核对页数、姓名、时间线、表格、图片文字及提取遗漏。为保证完整核对，原件和逐页提取文本可能保留电话、邮箱、证件号或精确住址，因此 `input/` 与 `normalized/` 都按受限候选人资料处理；这些内容不得进入联网查询、面试官数据或 HTML。若无法完成逐页视觉检查，以 `PDF_VISUAL_CHECK_UNAVAILABLE` 停止生成最终报告，并说明缺少的能力。
+复制原始输入并记录哈希，不移动或删除用户文件。PDF 简历在案件目录中使用固定受限副本 `input/resume-original.pdf`，同时在案件清单保留原文件名和哈希。PDF 必须同时使用当前宿主可用的文字提取能力和逐页视觉检查能力，核对页数、姓名、时间线、表格、图片文字及提取遗漏。为保证完整核对，原件和逐页提取文本可能保留电话、邮箱、证件号或精确住址，因此 `input/` 与 `normalized/` 都按受限候选人资料处理；这些内容不得进入联网查询、面试官数据或 HTML。若无法完成逐页视觉检查，以 `PDF_VISUAL_CHECK_UNAVAILABLE` 停止生成最终报告，并说明缺少的能力。
+
+逐页视觉检查时同时记录照片状态：
+
+- 页面上没有候选人个人头像时使用 `not_present`；
+- 有疑似头像但无法可靠确认是候选人本人时使用 `ambiguous`；
+- 已确认页面上有候选人头像、但当前工具无法可靠提取时使用 `extraction_unavailable`；
+- 只有在头像来自原始简历 PDF、已与对应页面视觉核对一致、且能记录页码和提取位置时才使用 `included`。
+
+先检查 PDF 的嵌入图片；若头像不是独立图片，再从对应页面裁切。所有提取结果统一转换为 PNG，并在转换后再次与 PDF 页面视觉比对；JPEG、PPM 等格式不能直接嵌入。不得从公开主页或其他文件补图，不得使用人脸识别、相似度匹配、照片年龄估计或外貌分析。选定图片后运行下列脚本；脚本要求来源为案件内的 `input/resume-original.pdf`，会在解压前检查尺寸、校验 PNG 结构和像素数据、移除非显示所需元数据和文件尾随内容，再以内嵌图片输出：
+
+```text
+<python> "<skill-dir>/scripts/prepare_candidate_photo.py" --input "<visually-confirmed-image>" --resume-pdf "<original-resume-pdf>" --page <one-based-page> --extraction-method embedded_image --image-index <zero-based-image-index>
+```
+
+页面裁切时把最后两个参数改为 `--extraction-method page_crop --crop-box <x,y,width,height>`。脚本只负责校验格式、尺寸、哈希和结构化来源，不能替代视觉身份确认。
 
 ### 2. 建立当前岗位模型
 
@@ -122,10 +137,13 @@ HTML 文件名、浏览器标题和页面最上方标题都必须包含候选人
 #### 候选人简介
 
 - 姓名必须使用候选人材料中的明确姓名。
-- 年龄、出生信息、出生地、老家或籍贯、婚姻状况、现居城市只使用候选人主动提供的材料；没有就显示“未提供”，不得搜索或推测。
+- `personal_info` 只保存候选人主动提供的出生信息、出生地、老家或籍贯、婚姻状况、现居城市；没有就显示“未提供”，不得搜索或补写。
 - 有出生日期时按报告日期计算准确周岁；有出生年月或出生年份时计算近似年龄并标“约”。同时保存原始出生信息、规范日期、换算截止日和来源位置。
+- 照片放在 `candidate_overview.candidate_photo`，不得放进 `personal_info`。只有 `status=included` 时 HTML 才显示本地 `data:` 图片；其他状态不保留空白照片栏。
+- 候选人未提供出生信息时，才可生成独立的 `candidate_overview.timeline_age_estimate`：优先使用简历明确写出的最早本科入学时间；没有入学时间时，只有同时明确写出本科毕业时间和学制，才可反推入学年份。毕业月份或日期不能证明入学月份或日期，因此回推锚点一律降为年份精度。以本科入学年龄 18 岁为中心，固定使用 16–20 岁区间，并把锚点精度造成的日期不确定性计入上下界。
+- 研究生入学、工作开始等后续时间只能做先后关系核对，不能单独作为年龄锚点。时间线冲突或证据不足时不输出数值区间；推算结果必须标明“非候选人自述”。
 - 候选人已经明确提供的学校、学历、专业、工作单位、职位、时间和城市应直接汇总；某个城市没写就显示“未提供”，不根据学校或单位地址推测。
-- 年龄、籍贯和婚姻状况不进入人岗匹配、能力评分或稳定性预测。
+- 照片、年龄（包括履历推算区间）、籍贯和婚姻状况不进入人岗匹配、能力评分、稳定性预测、录用决定或候选人排序。
 - 人岗匹配只用“符合”“有相关基础，需面试确认”“当前证据不足”。
 - 单列现居地、公司地点、实际通勤、搬迁意愿、现场办公、出差和最早到岗问题。出生地或老家不能代替现居地计算距离。
 
@@ -153,17 +171,21 @@ HTML 只嵌入 `interviewer-report-data.json`，不嵌入完整 `assessment-data
 2. 简历疑点与水分排查；
 3. 面试提问。
 
-每道题支持：单击“标记”默认设为黄色“可能要问”；下拉改为红色“一定要问”、蓝色“备选”或取消；记录“好/一般/差/未问”及备注。地点、到岗和其他自述类问题只记录“已记录/不便回答/未问”。重点标记和回答自动保存到当前浏览器本机，并可导出或清空。不得发送网络请求、加载外部资源或保存候选人资料到远程服务。
+头像只在 `candidate_photo.status=included` 时出现在候选人简介中，并注明来自简历 PDF、只展示、不参与评估或排序。履历年龄区间使用独立标签，明确它是推算而非候选人自述。每道题支持：单击“标记”默认设为黄色“可能要问”；下拉改为红色“一定要问”、蓝色“备选”或取消；记录“好/一般/差/未问”及备注。地点、到岗和其他自述类问题只记录“已记录/不便回答/未问”。重点标记和回答自动保存到当前浏览器本机，并可导出或清空。不得发送网络请求、加载外部资源或保存候选人资料到远程服务。
 
 页面不显示简历证据分、综合分、权重、覆盖率、门槛、可比性、来源表、九类行为假设或内部英文状态。这些信息继续留在后台文件。
 
 使用：
 
 ```text
+<python> "<skill-dir>/scripts/derive_timeline_age.py" --report-date "<YYYY-MM-DD>" --undergraduate-start "<YYYY-or-YYYY-MM-or-YYYY-MM-DD>" --source-locator "<resume-page-or-section>"
+<python> "<skill-dir>/scripts/derive_timeline_age.py" --report-date "<YYYY-MM-DD>" --undergraduate-graduation "<YYYY-or-YYYY-MM-or-YYYY-MM-DD>" --degree-duration-years <explicit-duration> --source-locator "<resume-page-or-section>"
 <python> "<skill-dir>/scripts/validate_interviewer_report_data.py" "<interviewer-report-data.json>"
 <python> "<skill-dir>/scripts/render_candidate_report.py" --data "<interviewer-report-data.json>" --output "<candidate-report-file>"
 <python> "<skill-dir>/scripts/validate_candidate_report.py" "<candidate-report-file>"
 ```
+
+如需核对后续时间线，可重复传入 `--consistency-check-json`。每个参数是一个含 `event`、`date` 和 `source_locator` 的 JSON 对象；脚本自动补出日期精度，并在明确矛盾时输出 `timeline_conflict`。
 
 渲染器会拒绝文件名不含候选人姓名的输出。
 
@@ -198,13 +220,14 @@ HTML 只嵌入 `interviewer-report-data.json`，不嵌入完整 `assessment-data
 ## 完成检查
 
 - PDF 已通过文字提取和逐页视觉检查。
+- 照片状态已逐页确认；显示照片时，其规范化字节、尺寸、哈希、原始 PDF 哈希、页码和提取位置可追溯，非显示元数据与尾随内容已移除，且没有使用公开头像或生物识别分析。
 - 后台岗位、证据、来源、蓝图和评分对象可互相追溯。
 - HTML 文件名、浏览器标题和页面主标题都包含候选人姓名。
 - HTML 只有三个主模块，问题数为 12–18。
 - 面试官数据和 HTML 不含邮箱、手机号、证件号或精确住址。
 - 候选人已明确提供的学校、工作单位和城市已汇总；缺失项没有被推测。
-- 出生信息存在时年龄已按报告日期换算；不存在时显示“未提供”。
-- 年龄、籍贯和婚姻没有进入岗位匹配或评分。
+- 出生信息存在时年龄已按报告日期换算，并禁用履历推算；出生信息不存在时，年龄事实显示“未提供”，履历推算对象按明确本科时间锚点生成，或透明记录证据不足/时间冲突。
+- 照片、年龄（含履历推算区间）、籍贯和婚姻没有进入岗位匹配、评分、稳定性判断或排序。
 - 简历疑点按岗位重要性排序，使用中性、通俗中文。
 - 问题可直接照读，判断参考和加减分标准具体。
 - 重点标记、回答、备注、本机恢复、导出和清空均可用。

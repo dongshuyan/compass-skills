@@ -1,6 +1,6 @@
 # Publication Audit
 
-Audit date: 2026-08-24
+Audit date: 2026-08-25
 
 Scope:
 
@@ -27,6 +27,8 @@ Scope:
 - Reviewed every file in `assess-interview-candidate`; no real candidate name, personal contact detail, private workspace name, credential, or machine-specific user path remains.
 - Replaced fixed `python3` and Bash command examples with `<python>` and single-line argument forms. Added capability-based PDF, browser, and research guidance plus Windows, macOS, and Linux path rules.
 - Kept `assess-interview-candidate/agents/openai.yaml` as optional interface metadata. The core `SKILL.md` does not require Codex, Claude Code, OpenAI, or another named host.
+- Added a canonical PNG-only portrait pipeline: extracted rasters must be converted and visually rechecked, dimensions are bounded before decompression, pixel data is validated, and non-display metadata plus trailing bytes are removed. JPEG is rejected instead of being trusted through segment-only parsing; no candidate image is stored in the released package.
+- Added display-only timeline age ranges with fixed assumptions, explicit provenance, and year-only graduation fallback. Structured validators reject explicit age and appearance signals from fit and scoring fields; policy review remains required for indirect semantic paraphrases.
 
 ## Local-First Boundaries
 
@@ -37,7 +39,7 @@ Scope:
 - `run-history-skill-builder` reads only user-authorized workflow history and writes new skill files only to a user-approved local directory.
 - `run-history-skill-upgrader` is plan-only by default and edits existing skills only after explicit approval of a concrete plan.
 - `assess-interview-candidate` writes pseudonymous case data and offline reports only below a user-approved local root. It does not upload resumes, reports, or interview records.
-- Candidate-provided age, birthplace, hometown, marital status, and location can appear in the interviewer overview but cannot enter fit scoring, ranking, hiring, rejection, or stability predictions.
+- Candidate-provided age and separately labeled timeline-age estimates, along with birthplace, hometown, marital status, and location, can appear in the interviewer overview but cannot enter fit scoring, ranking, hiring, rejection, or stability predictions.
 - No released skill uploads profile data, task data, credentials, cookies, or browser sessions.
 
 ## Validation Run
@@ -69,8 +71,9 @@ The existing released skills remain covered by earlier validation notes. This au
 - Codex `quick_validate.py`: both new skills passed.
 - Python compile check: passed.
 - Eval JSON parsing: passed.
-- `assess-interview-candidate`: 26 tests passed on Python 3.11 and Python 3.14.
-- Skill structure, Ruff, Python 3.10 syntax parsing, JSON parsing, JavaScript syntax, offline HTML validation, and local browser interaction checks passed.
+- `assess-interview-candidate`: 77 tests passed on Python 3.11 and Python 3.14.
+- Skill structure, Ruff, Python 3.10 syntax parsing, JSON parsing, JavaScript syntax, and offline HTML contract validation passed.
+- The current portrait-layout update was not independently re-run in a live browser because the available browser rejected local-file navigation; its DOM generation and interactions remain covered by render and contract tests, and live visual verification is still pending.
 - Local install discovery with `skills@1.5.23` found eight released skills. A temporary copy install of `assess-interview-candidate` succeeded for Codex and Claude Code.
 - Windows and Linux support is contract- and test-backed but was not exercised on physical Windows or Linux hosts in this audit.
 - Repository manifests and docs now reflect eight released skills.
@@ -83,6 +86,6 @@ Path/privacy scans were run across Markdown, Python, YAML, and JSON files. Inten
 - `<skill-dir>`-style placeholders in portable command examples;
 - references to Codex or Claude Code as supported hosts, not as mandatory runtime assumptions.
 - synthetic Windows, macOS, Linux, UNC, and WSL path strings inside `tests/test_public_package.py`, used only to verify the privacy scanner.
-- synthetic email, mobile-phone, and identity-number values inside `tests/test_interviewer_report.py`, used only to verify that interviewer-facing data rejects those fields.
+- synthetic email, mobile-phone, identity-number, and image-metadata values inside the test files, used only to verify that interviewer-facing data rejects or strips those fields.
 
 No personal absolute path, real candidate identity, contact detail, credential, browser-session export, remote publish action, or private maintenance record remains in `assess-interview-candidate`.

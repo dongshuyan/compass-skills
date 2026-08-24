@@ -36,7 +36,7 @@ COMPASS 当前公开 8 个本地 skills：4 个运行时协作 skills、2 个 ru
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | 把已经跑通或反复打磨过的真实流程，打包成新的可复用 skill 或可审查设计方案。 |
 | [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | 自动根据真实执行、遇到困难、解决困难、验证结果和用户反馈等 session 信息，为已有 skill 先产出升级方案，并把这个过程组织成最简单的 skill 受控自我进化闭环；只有在明确批准后才执行修改。 |
 | [`academic-humanizer`](skills/academic-humanizer/) | 帮助撰写或修改中英文学术论文，去除公式化、空泛、机械重复和暴露生成过程的 AI 式表达，在保留事实、证据强度和论证逻辑的同时恢复自然的学术作者声音。 |
-| [`assess-interview-candidate`](skills/assess-interview-candidate/) | 根据获准处理的简历与岗位要求，保留后台证据审计，并生成只有候选人简介、简历疑点和面试提问三个模块的离线 HTML。 |
+| [`assess-interview-candidate`](skills/assess-interview-candidate/) | 根据获准处理的简历与岗位要求，保留后台证据审计，并生成只有候选人简介、简历疑点和面试提问三个模块的离线 HTML；可显示经本地规范化的简历头像，并把受限履历年龄推算与评分严格隔离。 |
 
 多 skill 仓库建议按需安装；`run-history` 双 skill 面向其他 skills 的设计和维护，`academic-humanizer` 面向学术论文撰写过程中 AI 语气的预防，以及已有学术文本中 AI 语气的去除。
 
@@ -396,7 +396,7 @@ $assess-interview-candidate
 - `python3 -m py_compile ...`：验证新增 Python 脚本语法。
 - `skills.sh.json` 和 `evals/trigger-and-quality-cases.json` 已通过 JSON 解析。
 - 使用 `skills@1.5.23` 时，当前本地源码可被识别为 8 个 skills；`assess-interview-candidate` 已成功复制到临时 Codex 与 Claude Code skill 目录。
-- `assess-interview-candidate` 的 26 项单元和公开包测试在 Python 3.11、3.14 上均通过；Skill 结构校验、Ruff、JSON、Python 3.10 语法、JavaScript 语法、离线报告校验和浏览器交互检查也已通过。
+- `assess-interview-candidate` 的 77 项单元和公开包测试在 Python 3.11、3.14 上均通过；Skill 结构校验、Ruff、JSON、Python 3.10 语法、JavaScript 语法和离线报告契约校验也已通过。本轮照片布局升级尚未完成独立的真实浏览器视觉复核。
 - Windows 与 Linux 兼容性通过路径、启动器、标准库、保留文件名和外壳无关规则约束；本轮没有在真实 Windows 或 Linux 主机上运行。
 
 ## 安全和隐私

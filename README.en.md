@@ -33,7 +33,7 @@ The project currently ships eight `SKILL.md` skills:
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | Turns completed or repeatedly refined run history into a new reusable skill package or a reviewed skill-design plan. |
 | [`run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | Automatically turns session evidence from real execution, encountered and resolved difficulties, validation results, and user feedback into an upgrade plan for an existing skill, forming the simplest controlled self-evolution loop; it applies changes only after explicit approval. |
 | [`academic-humanizer`](skills/academic-humanizer/) | Helps write or revise English and Chinese academic prose by removing formulaic AI-like patterns and restoring a natural scholarly voice while preserving claims, evidence strength, and logical relations. |
-| [`assess-interview-candidate`](skills/assess-interview-candidate/) | Turns an authorized resume and job description into an auditable evidence layer and a concise three-part offline interviewer report with resume checks and markable structured questions. |
+| [`assess-interview-candidate`](skills/assess-interview-candidate/) | Turns an authorized resume and job description into an auditable evidence layer and a concise three-part offline interviewer report, with locally sanitized resume portraits and bounded timeline-age estimates kept outside scoring. |
 
 For multi-skill repositories, install only the functions you actually need. The `run-history` pair supports skill engineering; `academic-humanizer` helps authors avoid AI-sounding language while drafting and remove it from existing academic prose.
 
@@ -348,7 +348,7 @@ The public install path has been validated with `skills@1.5.11`:
 - `python3 skills/session-handoff-prompt/scripts/smoke_test_handoff.py --skill-dir skills/session-handoff-prompt` validates compacted-event projection, task-forest read-only summaries, local validation, and shareable redaction.
 - `printf '%s\n' 'Samples were randomized.' | python3 skills/academic-humanizer/scripts/metrics.py - --json` provides read-only descriptive diagnostics for language routing, process leaks, and contrast candidates without assigning an authorship or quality score.
 - With `skills@1.5.23`, the current local source is detected as eight skills, and `assess-interview-candidate` copies successfully into temporary Codex and Claude Code skill roots.
-- Its 26 unit and package tests pass on Python 3.11 and 3.14. The package also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, offline report validation, and local browser interaction checks.
+- Its 77 unit and package tests pass on Python 3.11 and 3.14. The package also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, and offline report contract validation. An independent live-browser visual pass for the portrait layout remains pending.
 - Windows and Linux compatibility is enforced through path, launcher, standard-library, reserved-filename, and shell-neutral contracts. This release was not run on physical Windows or Linux hosts.
 
 ## Roadmap

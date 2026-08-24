@@ -122,6 +122,40 @@
     .section-intro { margin-bottom: var(--space-5); color: var(--muted); }
     .subsection + .subsection { margin-top: var(--space-6); }
 
+    .overview-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-4);
+    }
+
+    .overview-header.has-photo {
+      grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+    }
+
+    .candidate-photo {
+      min-width: 0;
+      padding: var(--space-3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .candidate-photo-image {
+      display: block;
+      width: 100%;
+      max-height: 12rem;
+      object-fit: contain;
+      border-radius: 6px;
+      background: var(--surface);
+    }
+
+    .candidate-photo-caption {
+      margin: var(--space-2) 0 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
     .info-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -268,6 +302,8 @@
 
     @media (max-width: 52rem) {
       .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .overview-header.has-photo { grid-template-columns: 1fr; }
+      .candidate-photo { max-width: 12rem; }
       .history-grid, .answer-reference, .signal-grid { grid-template-columns: 1fr; }
       .record-panel { grid-template-columns: 1fr; }
       .question-head { display: grid; }
@@ -314,6 +350,7 @@
         <h2 id="candidate-overview-title">1. 候选人简介</h2>
         <p class="section-intro">快速了解候选人的明确经历、基本信息和岗位匹配情况。</p>
         <div id="candidate-overview-content"></div>
+        <div id="candidate-photo" class="candidate-photo" hidden aria-label="候选人简历照片"></div>
       </section>
 
       <section id="resume-risks" class="report-section" aria-labelledby="resume-risks-title">
@@ -470,11 +507,30 @@
       const root = document.getElementById("candidate-overview-content");
       const overview = data.candidate_overview;
       const personal = overview.personal_info;
+      const photoPanel = document.getElementById("candidate-photo");
+      const photo = overview.candidate_photo;
+      const photoIncluded = Boolean(photo && photo.status === "included");
+      if (photoPanel) {
+        while (photoPanel.firstChild) photoPanel.removeChild(photoPanel.firstChild);
+        if (photoIncluded) {
+          const page = photo.provenance && photo.provenance.page ? photo.provenance.page : "未记录";
+          photoPanel.hidden = false;
+          append(photoPanel,
+            makeElement("img", {
+              className: "candidate-photo-image",
+              attrs: { src: photo.data_uri, alt: "候选人简历中的个人照片", decoding: "async" }
+            }),
+            makeElement("p", { className: "candidate-photo-caption", text: "来源：简历 PDF 第 " + page + " 页。仅展示，不参与评估或排序。" })
+          );
+        } else {
+          photoPanel.hidden = true;
+        }
+      }
       const ageNote = personal.age.source_status === "candidate_provided"
         ? "出生信息：" + personal.birth_information.value + "；截至 " + personal.age.as_of
         : "候选人材料未提供出生信息";
       const infoGrid = makeElement("div", { className: "info-grid" });
-      [
+      const infoRows = [
         ["姓名", data.case.candidate_name, "候选人材料"],
         ["年龄", personal.age.display, ageNote],
         ["出生地", personal.birthplace.value, "只展示候选人明确提供的信息"],
@@ -483,8 +539,22 @@
         ["现居城市", personal.current_city.value, "用于确认实际通勤或搬迁安排"],
         ["目标岗位", data.case.role_title, "本次招聘岗位"],
         ["公司工作地点", overview.location_and_availability.company_location, overview.location_and_availability.distance_summary]
-      ].forEach(function (row) { infoGrid.appendChild(infoItem(row[0], row[1], row[2])); });
-      root.appendChild(infoGrid);
+      ];
+      const timelineEstimate = overview.timeline_age_estimate;
+      if (timelineEstimate && timelineEstimate.status !== "not_needed") {
+        infoRows.splice(2, 0, ["履历推算年龄区间", timelineEstimate.display, "非候选人自述；只作材料展示，不进入岗位匹配、评分或排序"]);
+      }
+      if (photo && photo.status === "ambiguous") {
+        infoRows.push(["简历照片", "未展示", "简历中存在疑似照片，但无法可靠确认是候选人个人头像"]);
+      } else if (photo && photo.status === "extraction_unavailable") {
+        infoRows.push(["简历照片", "未展示", "简历中存在照片线索，但当前无法可靠提取"]);
+      }
+      infoRows.forEach(function (row) { infoGrid.appendChild(infoItem(row[0], row[1], row[2])); });
+      const overviewHeader = makeElement("div", { className: "overview-header" });
+      if (photoIncluded) overviewHeader.classList.add("has-photo");
+      if (photoIncluded) overviewHeader.appendChild(photoPanel);
+      overviewHeader.appendChild(infoGrid);
+      root.appendChild(overviewHeader);
 
       const summary = makeElement("div", { className: "subsection" });
       append(summary, makeElement("h3", { text: "五分钟概览" }), list(overview.profile_summary, "暂无概览。"));

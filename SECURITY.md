@@ -23,7 +23,7 @@ These skills must not save:
 - Raw sensitive or intimate evidence.
 - Unconfirmed sensitive inferences.
 
-Candidate materials may contain personal data. `assess-interview-candidate` keeps phone numbers, email addresses, and precise addresses out of the interviewer report; it does not search for private life, family, health, financial, political, or religious information. Candidate-provided age, birthplace, hometown, marital status, and location details may be displayed for interviewer reference but must not enter job-fit scoring, ranking, hiring, rejection, or stability predictions.
+Candidate materials may contain personal data. `assess-interview-candidate` keeps phone numbers, email addresses, and precise addresses out of the interviewer report; it does not search for private life, family, health, financial, political, or religious information. Candidate-provided age and separately labeled, bounded timeline-age estimates, along with birthplace, hometown, marital status, and location details, may be displayed for interviewer reference but must not enter job-fit scoring, ranking, hiring, rejection, or stability predictions. Resume portraits are accepted only from the canonical local PDF copy, structurally validated, stripped of non-display metadata and trailing bytes, and never used for biometric or appearance analysis.
 
 `user-profile-keeper` may store private background information only when the user explicitly provides or confirms it. Other skills should only read the low-risk `clarification_summary` view.
 

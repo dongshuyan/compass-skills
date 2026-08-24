@@ -26,9 +26,12 @@ REQUIRED_FILES = {
     "evals/evals.json",
     "references/agent-portability.md",
     "scripts/create_candidate_case.py",
+    "scripts/derive_timeline_age.py",
+    "scripts/prepare_candidate_photo.py",
     "scripts/render_candidate_report.py",
     "scripts/validate_candidate_report.py",
     "tests/test_interviewer_report.py",
+    "tests/test_candidate_profile_enrichment.py",
 }
 TEXT_SUFFIXES = {".html", ".json", ".md", ".py", ".yaml", ".yml"}
 MACHINE_PATH_PATTERNS = (
@@ -153,11 +156,24 @@ class PublicPackageTests(unittest.TestCase):
         self.assertEqual("_lpt1", module.safe_filename_component("lpt1"))
 
     def test_package_contains_no_runtime_caches(self) -> None:
+        repo_root = SKILL_DIR.parents[1]
+        skill_relative = SKILL_DIR.relative_to(repo_root)
+        completed = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "--", skill_relative.as_posix()],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
         forbidden = [
-            path.relative_to(SKILL_DIR)
-            for path in SKILL_DIR.rglob("*")
-            if path.name in {".DS_Store", ".ruff_cache", "__pycache__"}
-            and path.parent != SKILL_DIR / "tests"
+            path.relative_to(skill_relative)
+            for line in completed.stdout.splitlines()
+            if (path := Path(line))
+            and (
+                any(part in {".ruff_cache", "__pycache__"} for part in path.parts)
+                or path.name == ".DS_Store"
+                or path.suffix in {".pyc", ".pyo"}
+            )
         ]
         self.assertEqual([], forbidden)
 

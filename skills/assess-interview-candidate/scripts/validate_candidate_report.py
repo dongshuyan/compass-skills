@@ -29,6 +29,7 @@ REQUIRED_IDS = {
     "reset-state",
     "storage-status",
 }
+V11_REQUIRED_IDS = {"candidate-photo"}
 FORBIDDEN_OLD_IDS = {
     "assessment-root",
     "assessment-data",
@@ -64,6 +65,7 @@ class ReportParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.ids: set[str] = set()
         self.non_embedded_dependencies: list[str] = []
+        self.forbidden_data_uris: list[str] = []
         self.meta_refresh = False
         self.executable_scripts: list[str] = []
         self.report_data: list[str] = []
@@ -100,7 +102,10 @@ class ReportParser(HTMLParser):
         attribute = resource_attributes.get(tag)
         if attribute:
             value = attributes.get(attribute, "").strip()
-            if value and not value.startswith("data:"):
+            if value.startswith("data:"):
+                if tag != "img" or not re.match(r"^data:image/png;base64,", value, re.I):
+                    self.forbidden_data_uris.append(f"<{tag} {attribute}={value[:80]!r}>")
+            elif value:
                 self.non_embedded_dependencies.append(f"<{tag} {attribute}={value!r}>")
         if tag == "meta" and attributes.get("http-equiv", "").lower() == "refresh":
             self.meta_refresh = True
@@ -171,6 +176,8 @@ def main() -> int:
                 errors.append(f"missing offline interaction marker: {marker}")
         if parser.non_embedded_dependencies:
             errors.append("non-embedded runtime dependencies found: " + "; ".join(parser.non_embedded_dependencies))
+        if parser.forbidden_data_uris:
+            errors.append("forbidden data URI resources found: " + "; ".join(parser.forbidden_data_uris))
         if parser.meta_refresh:
             errors.append("meta refresh is forbidden")
         if parser.report_data_script_count != 1:
@@ -190,6 +197,12 @@ def main() -> int:
             except (ValueError, json.JSONDecodeError) as exc:
                 errors.append(f"embedded interviewer-report-data is not strict JSON: {exc}")
         if report_data is not None:
+            if report_data.get("schema_version") == "1.1.0":
+                missing_v11_ids = sorted(V11_REQUIRED_IDS - parser.ids)
+                if missing_v11_ids:
+                    errors.append(
+                        "missing schema 1.1 element ids: " + ", ".join(missing_v11_ids)
+                    )
             candidate_name = report_data["case"]["candidate_name"]
             expected_title = f"{candidate_name}｜候选人评估与面试报告"
             title_text = "".join(parser.titles).strip()
@@ -208,11 +221,14 @@ def main() -> int:
         for label, pattern in NETWORK_JS.items():
             if pattern.search(executable_javascript):
                 errors.append(f"network-capable JavaScript is forbidden in offline report: {label}")
+        required_ids = set(REQUIRED_IDS)
+        if report_data is not None and report_data.get("schema_version") == "1.1.0":
+            required_ids.update(V11_REQUIRED_IDS)
         payload: dict[str, Any] = {
             "ok": not errors,
             "report": str(path),
             "bytes": path.stat().st_size,
-            "required_ids": sorted(REQUIRED_IDS),
+            "required_ids": sorted(required_ids),
             "errors": errors,
             "warnings": warnings,
         }

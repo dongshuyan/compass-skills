@@ -3,12 +3,16 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
+import struct
 import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 
@@ -34,6 +38,113 @@ def not_provided() -> dict[str, str | None]:
         "value": "未提供",
         "source_status": "not_provided",
         "source_locator": None,
+    }
+
+
+def png_bytes(width: int = 96, height: int = 128) -> bytes:
+    """Return a small standards-compliant RGB PNG without external libraries."""
+
+    def chunk(kind: bytes, payload: bytes) -> bytes:
+        body = kind + payload
+        return struct.pack(">I", len(payload)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
+
+    signature = b"\x89PNG\r\n\x1a\n"
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    row = b"\x00" + (b"\x80\x80\x80" * width)
+    pixels = zlib.compress(row * height)
+    return signature + chunk(b"IHDR", ihdr) + chunk(b"IDAT", pixels) + chunk(b"IEND", b"")
+
+
+PHOTO_BYTES = png_bytes()
+PHOTO_DATA_URI = "data:image/png;base64," + base64.b64encode(PHOTO_BYTES).decode("ascii")
+
+
+def no_candidate_photo() -> dict[str, object]:
+    return {
+        "status": "not_present",
+        "data_uri": None,
+        "mime_type": None,
+        "byte_length": None,
+        "pixel_width": None,
+        "pixel_height": None,
+        "sha256": None,
+        "provenance": None,
+    }
+
+
+def included_candidate_photo() -> dict[str, object]:
+    return {
+        "status": "included",
+        "data_uri": PHOTO_DATA_URI,
+        "mime_type": "image/png",
+        "byte_length": len(PHOTO_BYTES),
+        "pixel_width": 96,
+        "pixel_height": 128,
+        "sha256": hashlib.sha256(PHOTO_BYTES).hexdigest(),
+        "provenance": {
+            "source_kind": "resume_pdf",
+            "source_document": "input/resume-original.pdf",
+            "source_document_sha256": "a" * 64,
+            "page": 1,
+            "extraction_method": "embedded_image",
+            "image_index": 3,
+            "crop_box": None,
+        },
+    }
+
+
+def no_timeline_estimate() -> dict[str, object]:
+    return {
+        "status": "not_needed",
+        "display": "候选人已提供出生信息，不进行履历年龄推算",
+        "as_of": "2026-08-23",
+        "min_years": None,
+        "max_years": None,
+        "anchor": None,
+        "assumptions": {
+            "undergraduate_start_age_min": 16,
+            "undergraduate_start_age_typical": 18,
+            "undergraduate_start_age_max": 20,
+        },
+        "consistency_status": "not_checked",
+        "consistency_checks": [],
+    }
+
+
+def insufficient_timeline_estimate() -> dict[str, object]:
+    value = no_timeline_estimate()
+    value.update(
+        {
+            "status": "insufficient_evidence",
+            "display": "未找到明确的本科入学时间，也无法由明确的毕业时间与学制可靠反推",
+            "consistency_status": "not_assessable",
+        }
+    )
+    return value
+
+
+def estimated_from_undergraduate_start() -> dict[str, object]:
+    return {
+        "status": "estimated",
+        "display": "约29–34岁（按2012年本科入学、入学年龄18±2岁推算；非候选人自述）",
+        "as_of": "2026-08-23",
+        "min_years": 29,
+        "max_years": 34,
+        "anchor": {
+            "kind": "undergraduate_start",
+            "start": "2012",
+            "precision": "year",
+            "source_locators": ["normalized/resume.md：教育背景"],
+            "graduation_date": None,
+            "degree_duration_years": None,
+        },
+        "assumptions": {
+            "undergraduate_start_age_min": 16,
+            "undergraduate_start_age_typical": 18,
+            "undergraduate_start_age_max": 20,
+        },
+        "consistency_status": "not_checked",
+        "consistency_checks": [],
     }
 
 
@@ -83,7 +194,7 @@ def sample_report_data() -> dict[str, object]:
         }
     )
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "case": {
             "id": "case-synthetic-candidate",
             "candidate_name": "测试候选人",
@@ -110,6 +221,8 @@ def sample_report_data() -> dict[str, object]:
                 "marital_status": provided("已婚"),
                 "current_city": provided("丙市"),
             },
+            "candidate_photo": no_candidate_photo(),
+            "timeline_age_estimate": no_timeline_estimate(),
             "profile_summary": [
                 "医学与计算机双学士。",
                 "目前从事医疗 AI 算法与 Agent 工程。",
@@ -183,6 +296,49 @@ class InterviewerReportDataTests(unittest.TestCase):
         self.assertEqual([], errors)
         self.assertEqual([], warnings)
 
+    def test_clear_resume_photo_can_be_embedded_as_an_offline_data_uri(self) -> None:
+        data = sample_report_data()
+        data["candidate_overview"]["candidate_photo"] = included_candidate_photo()
+        errors, _ = validate_interviewer_report_data(data)
+        self.assertEqual([], errors)
+
+    def test_external_photo_source_is_rejected(self) -> None:
+        data = sample_report_data()
+        photo = included_candidate_photo()
+        photo["data_uri"] = "https://example.com/avatar.png"
+        data["candidate_overview"]["candidate_photo"] = photo
+        errors, _ = validate_interviewer_report_data(data)
+        self.assertTrue(any("candidate_photo" in item and "data URI" in item for item in errors), errors)
+
+    def test_undergraduate_start_year_produces_a_display_only_age_range(self) -> None:
+        data = sample_report_data()
+        data["candidate_overview"]["personal_info"]["birth_information"] = not_provided()
+        data["candidate_overview"]["personal_info"]["age"] = {
+            "display": "未提供",
+            "years": None,
+            "approximate": False,
+            "as_of": "2026-08-23",
+            "normalized_birth": None,
+            "precision": "not_provided",
+            "source_status": "not_provided",
+            "source_locator": None,
+        }
+        data["candidate_overview"]["timeline_age_estimate"] = estimated_from_undergraduate_start()
+        errors, _ = validate_interviewer_report_data(data)
+        self.assertEqual([], errors)
+
+    def test_timeline_estimate_cannot_be_used_for_scoring(self) -> None:
+        data = sample_report_data()
+        data["interview_questions"][0]["good_answer"] = "年龄在29至34岁区间可以加分。"
+        errors, _ = validate_interviewer_report_data(data)
+        self.assertTrue(any("interview_questions[0]" in item and "年龄" in item for item in errors), errors)
+
+    def test_birth_information_takes_precedence_over_timeline_inference(self) -> None:
+        data = sample_report_data()
+        data["candidate_overview"]["timeline_age_estimate"] = estimated_from_undergraduate_start()
+        errors, _ = validate_interviewer_report_data(data)
+        self.assertTrue(any("not_needed" in item or "birth information" in item for item in errors), errors)
+
     def test_exact_birth_date_age_must_match_report_date(self) -> None:
         data = sample_report_data()
         data["candidate_overview"]["personal_info"]["age"]["years"] = 33
@@ -224,6 +380,7 @@ class InterviewerReportDataTests(unittest.TestCase):
             "source_status": "not_provided",
             "source_locator": None,
         }
+        data["candidate_overview"]["timeline_age_estimate"] = insufficient_timeline_estimate()
         errors, _ = validate_interviewer_report_data(data)
         self.assertEqual([], errors)
 
@@ -297,6 +454,78 @@ class InterviewerReportDataTests(unittest.TestCase):
         self.assertTrue(any("marital-status question" in item for item in errors), errors)
 
 
+class CandidatePhotoPreparationTests(unittest.TestCase):
+    def test_selected_image_is_converted_to_a_report_photo_object(self) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        root = Path(temp_dir.name)
+        image_path = root / "selected-photo.png"
+        input_dir = root / "input"
+        input_dir.mkdir()
+        resume_path = input_dir / "resume-original.pdf"
+        image_path.write_bytes(PHOTO_BYTES)
+        resume_path.write_bytes(b"%PDF-1.4\n%%EOF\n")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "prepare_candidate_photo.py"),
+                "--input",
+                str(image_path),
+                "--resume-pdf",
+                str(resume_path),
+                "--page",
+                "1",
+                "--extraction-method",
+                "embedded_image",
+                "--image-index",
+                "0",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+            env=NO_BYTECODE_ENV,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual("included", payload["status"])
+        self.assertEqual("image/png", payload["mime_type"])
+        self.assertTrue(payload["data_uri"].startswith("data:image/png;base64,"))
+        self.assertEqual("resume_pdf", payload["provenance"]["source_kind"])
+
+    def test_non_image_input_is_rejected(self) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        root = Path(temp_dir.name)
+        input_path = root / "not-an-image.bin"
+        input_dir = root / "input"
+        input_dir.mkdir()
+        resume_path = input_dir / "resume-original.pdf"
+        input_path.write_bytes(b"not an image")
+        resume_path.write_bytes(b"%PDF-1.4\n%%EOF\n")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "prepare_candidate_photo.py"),
+                "--input",
+                str(input_path),
+                "--resume-pdf",
+                str(resume_path),
+                "--page",
+                "1",
+                "--extraction-method",
+                "embedded_image",
+                "--image-index",
+                "0",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+            env=NO_BYTECODE_ENV,
+        )
+        self.assertNotEqual(0, completed.returncode)
+        self.assertIn("unsupported image", completed.stderr)
+
+
 class RenderedReportTests(unittest.TestCase):
     def render(self, output_name: str) -> tuple[subprocess.CompletedProcess[str], Path, tempfile.TemporaryDirectory[str]]:
         temp_dir = tempfile.TemporaryDirectory()
@@ -352,6 +581,132 @@ class RenderedReportTests(unittest.TestCase):
             env=NO_BYTECODE_ENV,
         )
         self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+
+    def test_rendered_report_shows_embedded_photo_and_age_inference(self) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        root = Path(temp_dir.name)
+        data = sample_report_data()
+        data["candidate_overview"]["candidate_photo"] = included_candidate_photo()
+        data["candidate_overview"]["personal_info"]["birth_information"] = not_provided()
+        data["candidate_overview"]["personal_info"]["age"] = {
+            "display": "未提供",
+            "years": None,
+            "approximate": False,
+            "as_of": "2026-08-23",
+            "normalized_birth": None,
+            "precision": "not_provided",
+            "source_status": "not_provided",
+            "source_locator": None,
+        }
+        data["candidate_overview"]["timeline_age_estimate"] = estimated_from_undergraduate_start()
+        data_path = root / "interviewer-report-data.json"
+        output = root / "测试候选人-候选人评估与面试报告.html"
+        data_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "render_candidate_report.py"),
+                "--data",
+                str(data_path),
+                "--output",
+                str(output),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        rendered = output.read_text(encoding="utf-8")
+        self.assertIn("candidate-photo", rendered)
+        self.assertIn(PHOTO_DATA_URI, rendered)
+        self.assertIn("履历推算年龄区间", rendered)
+
+    def test_legacy_v10_html_without_photo_placeholder_still_validates(self) -> None:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        root = Path(temp_dir.name)
+        data = sample_report_data()
+        data["schema_version"] = "1.0.0"
+        data["candidate_overview"].pop("candidate_photo")
+        data["candidate_overview"].pop("timeline_age_estimate")
+        data_path = root / "interviewer-report-data.json"
+        output = root / "测试候选人-旧版候选人评估与面试报告.html"
+        data_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        rendered = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "render_candidate_report.py"),
+                "--data",
+                str(data_path),
+                "--output",
+                str(output),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+            env=NO_BYTECODE_ENV,
+        )
+        self.assertEqual(0, rendered.returncode, rendered.stderr)
+        html = output.read_text(encoding="utf-8")
+        legacy_html = html.replace(
+            '<div id="candidate-photo" class="candidate-photo" hidden aria-label="候选人简历照片"></div>',
+            "",
+        )
+        self.assertNotEqual(html, legacy_html)
+        output.write_text(legacy_html, encoding="utf-8")
+        checked = subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "validate_candidate_report.py"), str(output)],
+            text=True,
+            capture_output=True,
+            check=False,
+            env=NO_BYTECODE_ENV,
+        )
+        self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+
+    def test_v11_html_requires_photo_placeholder(self) -> None:
+        completed, output, temp_dir = self.render("测试候选人-候选人评估与面试报告.html")
+        self.addCleanup(temp_dir.cleanup)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        html = output.read_text(encoding="utf-8")
+        output.write_text(
+            html.replace(
+                '<div id="candidate-photo" class="candidate-photo" hidden aria-label="候选人简历照片"></div>',
+                "",
+            ),
+            encoding="utf-8",
+        )
+        checked = subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "validate_candidate_report.py"), str(output)],
+            text=True,
+            capture_output=True,
+            check=False,
+            env=NO_BYTECODE_ENV,
+        )
+        self.assertNotEqual(0, checked.returncode)
+        self.assertIn("candidate-photo", checked.stdout)
+
+    def test_report_validator_rejects_executable_data_uri_resources(self) -> None:
+        completed, output, temp_dir = self.render("测试候选人-候选人评估与面试报告.html")
+        self.addCleanup(temp_dir.cleanup)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        html = output.read_text(encoding="utf-8")
+        output.write_text(
+            html.replace(
+                "</body>",
+                '<script src="data:text/javascript,alert(1)"></script></body>',
+            ),
+            encoding="utf-8",
+        )
+        checked = subprocess.run(
+            [sys.executable, str(SCRIPTS_DIR / "validate_candidate_report.py"), str(output)],
+            text=True,
+            capture_output=True,
+            check=False,
+            env=NO_BYTECODE_ENV,
+        )
+        self.assertNotEqual(0, checked.returncode)
+        self.assertIn("forbidden data URI", checked.stdout)
 
 
 if __name__ == "__main__":
