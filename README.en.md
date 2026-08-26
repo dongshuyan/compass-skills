@@ -20,14 +20,15 @@
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```
 
-COMPASS Skills gives AI agents eight local skills: four runtime collaboration skills, two run-history skill-engineering skills, one academic humanization skill, and one local hiring-support skill.
+COMPASS Skills gives AI agents nine local skills: five runtime collaboration skills, two run-history skill-engineering skills, one academic humanization skill, and one local hiring-support skill.
 
-The project currently ships eight `SKILL.md` skills:
+The project currently ships nine `SKILL.md` skills:
 
 | Skill | Purpose |
 | --- | --- |
 | [`task-clarifier`](skills/task-clarifier/) | Aligns goals, scope, evidence, acceptance criteria, and risk boundaries before ambiguous, costly, or externally visible work. |
 | [`task-forest`](skills/task-forest/) | Maintains a repo-local task forest / DAG with goals, subtasks, dependencies, progress, deviations, todos, decisions, and conversation history. |
+| [`pause-and-resume`](skills/pause-and-resume/) | Cooperatively pauses unfinished work at a safe boundary and resumes it from a precise checkpoint in the same AI conversation. |
 | [`session-handoff-prompt`](skills/session-handoff-prompt/) | Compresses the current AI conversation's goal, progress, constraints, and next steps into a paste-ready prompt for a new AI conversation. |
 | [`user-profile-keeper`](skills/user-profile-keeper/) | Maintains a local, auditable, correctable collaboration profile for communication preferences, risk style, and recurring working context. |
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | Turns completed or repeatedly refined run history into a new reusable skill package or a reviewed skill-design plan. |
@@ -35,7 +36,7 @@ The project currently ships eight `SKILL.md` skills:
 | [`academic-humanizer`](skills/academic-humanizer/) | Helps write or revise English and Chinese academic prose by removing formulaic AI-like patterns and restoring a natural scholarly voice while preserving claims, evidence strength, and logical relations. |
 | [`assess-interview-candidate`](skills/assess-interview-candidate/) | Turns an authorized resume and job description into an auditable evidence layer and a concise three-part offline interviewer report, with locally sanitized resume portraits and bounded timeline-age estimates kept outside scoring. |
 
-For multi-skill repositories, install only the functions you actually need. The `run-history` pair supports skill engineering; `academic-humanizer` helps authors avoid AI-sounding language while drafting and remove it from existing academic prose.
+For multi-skill repositories, install only the functions you actually need. Use `pause-and-resume` when the same AI conversation will remain available; use `session-handoff-prompt` when work must move to a fresh conversation. The `run-history` pair supports skill engineering, and `academic-humanizer` improves academic prose without changing its claims.
 
 ## Quick Start
 
@@ -62,6 +63,7 @@ After installation, invoke the skills directly in an AI conversation:
 ```text
 $task-clarifier
 $task-forest
+$pause-and-resume
 $session-handoff-prompt
 $user-profile-keeper
 $run-history-skill-builder
@@ -70,29 +72,33 @@ $academic-humanizer
 $assess-interview-candidate
 ```
 
-For manual installation, copy the eight folders under [`skills/`](skills/) into the agent's local skills directory and keep their `references/`, `scripts/`, `assets/`, `evals/`, and `agents/` subdirectories intact.
+For manual installation, copy the nine folders under [`skills/`](skills/) into the agent's local skills directory and keep their `references/`, `scripts/`, `assets/`, `evals/`, and `agents/` subdirectories intact.
 
 ## Why COMPASS Exists
 
-Long-running agent work needs four kinds of state:
+Long-running agent work needs five kinds of state:
 
 - User context: communication preferences, risk boundaries, recurring omissions, and collaboration style.
 - Project context: where the current request fits, what it depends on, and how far it has progressed.
 - Goal context: how the current task contributes to the original objective and whether it still matches it.
+- Pause context: the safe stopping point, remaining work, non-repeatable effects, and first action when the same AI conversation resumes.
 - Handoff context: what a new AI conversation needs to continue the current task without replaying the whole transcript.
 
-COMPASS organizes that state into four local workflows:
+COMPASS organizes that state into five local workflows:
 
 1. A local profile that the user can inspect and correct.
 2. A repo-local task graph that survives AI conversation boundaries.
-3. A paste-ready continuation prompt for a new AI conversation.
-4. A clarification gate before ambiguous or risky execution.
+3. A cooperative pause checkpoint for continuing in the same AI conversation.
+4. A paste-ready continuation prompt for a new AI conversation.
+5. A clarification gate before ambiguous or risky execution.
 
 ## How The Core And Meta Skills Work Together
 
 `task-clarifier` is the entry point for ambiguous, high-cost, high-risk, evidence-sensitive, or externally visible work. It first identifies the user-owned decisions that must be made, asks 1-3 focused questions with recommended answers, confirms shared understanding, and only then searches or executes.
 
 `task-forest` records long-running work structure: why a task exists, where it fits, how far it progressed, what changed, and what remains unresolved.
+
+`pause-and-resume` stops an unfinished task at the nearest safe boundary, records what must and must not be repeated, and continues from that checkpoint when the user returns to the same AI conversation. It creates no file solely for pausing.
 
 `session-handoff-prompt` turns the current AI conversation, explicit transcripts, workspace evidence, and optional task-forest exports into a concise prompt for the next AI conversation. It reads task-forest as structured context but never modifies it.
 
@@ -109,6 +115,7 @@ COMPASS organizes that state into four local workflows:
 ```text
 user-profile-keeper    -> who is the user and how should we collaborate?
 task-forest            -> where does this task fit and is it still aligned?
+pause-and-resume       -> where should this AI conversation stop and continue later?
 session-handoff-prompt -> what should the next AI conversation know to continue now?
 task-clarifier         -> what should the agent do now?
 run-history-skill-builder  -> how do we package this proven workflow as a new skill?
@@ -226,6 +233,10 @@ COMPASS works across agent runtimes as a `SKILL.md` package with Markdown instru
 | Codex | Use the `skills` CLI with `-a codex` when supported by your environment, or use the repo as a local skills source. |
 | OpenCode / OpenClaw / other agents | Keep [`AGENTS.md`](AGENTS.md) and load the matching `SKILL.md` first, then use `references/` and `scripts/` as needed. |
 
+The invocation examples use `$skill-name` as a portable explicit reference. Hosts may also use their native syntax, such as `$pause-and-resume` in Codex or `/pause-and-resume` in Claude Code. Agents without native skill routing can follow [`AGENTS.md`](AGENTS.md) and read [`skills/pause-and-resume/SKILL.md`](skills/pause-and-resume/SKILL.md) directly.
+
+`pause-and-resume` is instruction-only: it has no OS path, shell, network, filesystem, or external-tool dependency. It requires the host to retain the current AI conversation across turns, so it does not recover a killed process, a closed conversation whose history is unavailable, or work moved to another conversation.
+
 The scripts use Python standard-library components and run locally. `assess-interview-candidate` requires Python 3.10 or later and uses capability-based instructions instead of fixed Agent tools or installation paths.
 
 ## Safety Model
@@ -235,6 +246,7 @@ COMPASS keeps runtime data local:
 - No upload of task data or user-profile data.
 - No browser cookie, token, private key, credential, or session extraction.
 - `task-forest` stores task data under the current workspace, usually `.agent-workbench/task-forest/`.
+- `pause-and-resume` keeps its checkpoint in the current AI conversation and creates no file solely for pausing. It records non-sensitive continuation facts and must not expose secrets.
 - `session-handoff-prompt` is read-only by default. It can validate local handoffs with real workspace paths or redact them for shareable handoffs.
 - `user-profile-keeper` stores local profile data under `.compass-skills/user-profiles/v1` by default, or a user-selected `COMPASS_USER_PROFILE_HOME`.
 - `run-history-skill-builder` reads only user-authorized workflow history and writes new skill files only to a user-approved local directory.
@@ -286,6 +298,14 @@ Requirements:
 4. Use privacy=local for this machine. If I ask for a public/shareable handoff, redact local paths and credential-like strings first.
 5. Put the paste-ready prompt first, then briefly state mode, sources, and limitations.
 ```
+
+Pause unfinished work in the current AI conversation:
+
+```text
+Use $pause-and-resume to pause this unfinished task at the nearest safe boundary. Record a compact continuation checkpoint in this conversation, do not create a checkpoint file, and stop after telling me to say "continue" when I return.
+```
+
+When you return to the same AI conversation, say `continue` or an equivalent phrase. The agent should reconcile mutable state and resume from the recorded first action without repeating completed side effects.
 
 Representative output shape:
 
@@ -347,7 +367,8 @@ The public install path has been validated with `skills@1.5.11`:
 - `npx skills add dongshuyan/compass-skills --skill '*' -a claude-code --copy -y` installs the released skills into a temporary project's `.claude/skills/` directory.
 - `python3 skills/session-handoff-prompt/scripts/smoke_test_handoff.py --skill-dir skills/session-handoff-prompt` validates compacted-event projection, task-forest read-only summaries, local validation, and shareable redaction.
 - `printf '%s\n' 'Samples were randomized.' | python3 skills/academic-humanizer/scripts/metrics.py - --json` provides read-only descriptive diagnostics for language routing, process leaks, and contrast candidates without assigning an authorship or quality score.
-- With `skills@1.5.23`, the current local source is detected as eight skills, and `assess-interview-candidate` copies successfully into temporary Codex and Claude Code skill roots.
+- With `skills@1.5.23`, the current local source is detected as nine skills; `pause-and-resume` copies successfully into temporary Codex and Claude Code skill roots with byte-identical `SKILL.md` files.
+- `pause-and-resume` passes the Skill validator. Its published file is byte-identical to the source used for the completed Codex pause/resume behavior tests.
 - Its 77 unit and package tests pass on Python 3.11 and 3.14. The package also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, and offline report contract validation. An independent live-browser visual pass for the portrait layout remains pending.
 - Windows and Linux compatibility is enforced through path, launcher, standard-library, reserved-filename, and shell-neutral contracts. This release was not run on physical Windows or Linux hosts.
 

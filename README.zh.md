@@ -23,7 +23,7 @@
 >
 > 从使用 `SKILL.md` 到搭建本地 Skill 系统，讲清楚最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
 
-COMPASS 当前公开 8 个本地 skills：4 个运行时协作 skills、2 个 run-history skill 工程 skills、1 个学术润色 skill，以及 1 个本地招聘辅助 skill。核心协作层围绕用户画像、任务图谱、AI 对话续接和需求对齐；`run-history` 双 skill 负责沉淀和升级 skill；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
+COMPASS 当前公开 9 个本地 skills：5 个运行时协作 skills、2 个 run-history skill 工程 skills、1 个学术润色 skill，以及 1 个本地招聘辅助 skill。核心协作层围绕用户画像、任务图谱、同一 AI 对话内暂停续跑、跨对话续接和需求对齐；`run-history` 双 skill 负责沉淀和升级 skill；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
 
 当前公开版技能一览：
 
@@ -31,6 +31,7 @@ COMPASS 当前公开 8 个本地 skills：4 个运行时协作 skills、2 个 ru
 | --- | --- |
 | [`task-clarifier`](skills/task-clarifier/) | 在高成本、高歧义或高风险任务前，把目标、范围、证据、验收标准和风险边界对齐清楚。 |
 | [`task-forest`](skills/task-forest/) | 在当前 repo 内维护任务森林 / DAG，记录长期目标、依赖、进度、偏差、todo 和历史。 |
+| [`pause-and-resume`](skills/pause-and-resume/) | 在最近的安全节点协作式暂停未完成任务，并在同一 AI 对话中根据精确检查点继续执行。 |
 | [`session-handoff-prompt`](skills/session-handoff-prompt/) | 把当前 AI 对话压缩成可直接贴给新 AI 对话的续接 prompt。 |
 | [`user-profile-keeper`](skills/user-profile-keeper/) | 在本地维护可审计、可纠错、可撤回的协作画像。 |
 | [`run-history-skill-builder`](skills/run-history-skill-builder/) | 把已经跑通或反复打磨过的真实流程，打包成新的可复用 skill 或可审查设计方案。 |
@@ -38,7 +39,7 @@ COMPASS 当前公开 8 个本地 skills：4 个运行时协作 skills、2 个 ru
 | [`academic-humanizer`](skills/academic-humanizer/) | 帮助撰写或修改中英文学术论文，去除公式化、空泛、机械重复和暴露生成过程的 AI 式表达，在保留事实、证据强度和论证逻辑的同时恢复自然的学术作者声音。 |
 | [`assess-interview-candidate`](skills/assess-interview-candidate/) | 根据获准处理的简历与岗位要求，保留后台证据审计，并生成只有候选人简介、简历疑点和面试提问三个模块的离线 HTML；可显示经本地规范化的简历头像，并把受限履历年龄推算与评分严格隔离。 |
 
-多 skill 仓库建议按需安装；`run-history` 双 skill 面向其他 skills 的设计和维护，`academic-humanizer` 面向学术论文撰写过程中 AI 语气的预防，以及已有学术文本中 AI 语气的去除。
+多 skill 仓库建议按需安装。同一 AI 对话保留时使用 `pause-and-resume`；需要切换到新 AI 对话时使用 `session-handoff-prompt`。`run-history` 双 skill 面向其他 skills 的设计和维护，`academic-humanizer` 面向学术论文撰写过程中 AI 语气的预防，以及已有学术文本中 AI 语气的去除。
 
 ## 快速理解
 
@@ -128,22 +129,25 @@ COMPASS 当前公开 8 个本地 skills：4 个运行时协作 skills、2 个 ru
 **场景 2：任务进行中和结束后，维护任务树 / 任务森林。**
 用 `$task-forest` 把当前对话分解成各个任务，并把每个任务的目标、进度、偏差、依赖、待办和决策写成 proposal。确认后生成树视图、DAG 视图、任务详情卡和推荐队列，让下一个 agent 或新 AI 对话继续时知道“这件事为什么做、做到哪、下一步做什么”。
 
-**场景 3：上下文变长时，生成新 AI 对话续接 prompt。**
+**场景 3：临时离开时，在当前 AI 对话内暂停续跑。**
+用 `$pause-and-resume` 让 agent 停在最近的安全节点，在当前对话中记录已完成内容、剩余工作、不可重复的副作用、运行中任务和恢复后的第一个动作，然后结束本轮。回来后只需在同一对话说“继续”；agent 会先核对可能变化的状态，再从检查点续跑。
+
+**场景 4：上下文变长时，生成新 AI 对话续接 prompt。**
 用 `$session-handoff-prompt` 把当前这轮对话里真正需要延续的目标、进展、约束和下一步，压缩成一段可直接复制给新 AI 对话的提示词，让新对话像接着原来的对话继续做事。它可以结合显式 transcript、workspace 证据和 `$task-forest` 导出；它只读任务森林，不改任务图。
 
-**场景 4：长期协作中，保存本地协作画像。**
+**场景 5：长期协作中，保存本地协作画像。**
 用 `$user-profile-keeper` 在本地保存可审计、可纠错、可撤回的协作画像。画像只记录用户确认或低敏的协作信号；secret、token、密码、私钥和验证码不进入画像。`$task-clarifier` 可读取低敏摘要来调整提问方式；没有画像时，它依然按当前上下文工作。
 
-**场景 5：把已经跑通的流程沉淀成新 skill。**
+**场景 6：把已经跑通的流程沉淀成新 skill。**
 用 `$run-history-skill-builder` 从真实对话、日志、文件、截图、artifact 和浏览器流程中提炼不变量、状态门、验证门和资源拆分，生成新的可复用 skill，或先给一个不落文件的设计方案。
 
-**场景 6：根据真实运行反馈推动已有 skill 受控自我进化。**
+**场景 7：根据真实运行反馈推动已有 skill 受控自我进化。**
 用 `$run-history-skill-upgrader` 自动读取目标 skill 在真实执行中暴露出的困难、解决过程、验证结果和用户反馈等 session 信息，先给出结构化升级方案并停下；只有你明确批准该具体方案后，它才会修改已有 skill 文件。换句话说，只要周期性运行某个需要进化的 skill，持续积累这些真实 session 证据，再把它们交给 upgrader，就能形成一个最简单的 skill 受控自我进化闭环。
 
-**场景 7：避免或去除学术论文中的 AI 语气。**
+**场景 8：避免或去除学术论文中的 AI 语气。**
 用 `$academic-humanizer` 撰写、审计或最小修改中英文学术文本。它识别公式化、空泛、机械重复、无来源拔高和暴露生成过程的 AI 式表达，同时保护命题、数字、引文、证据强度、否定、因果关系、比较对象和范围。目标是恢复自然、可信、符合学术共同体习惯的作者声音，显著降低读者将文本判断为 AI 生成的可能性；它不承诺所有读者都会作出相同的作者身份判断。
 
-**场景 8：为招聘面试准备候选人评估和结构化问题。**
+**场景 9：为招聘面试准备候选人评估和结构化问题。**
 用 `$assess-interview-candidate` 完整读取获准处理的简历和岗位要求，保留可追溯的后台证据，同时给面试官生成简洁的三模块离线 HTML。页面支持把问题标成“可能要问”“一定要问”或“备选”，但不会自动录用、淘汰或给候选人排名。
 
 `$task-forest` 导出的任务关系树和对话更新流程：
@@ -166,21 +170,23 @@ DAG 关系视图：
 
 ## 为什么需要 COMPASS
 
-长任务需要持续保存四类信息：
+长任务需要持续保存五类信息：
 
 - **用户信息**：沟通偏好、风险边界、常见遗漏和长期协作方式。
 - **任务全局**：当前动作属于哪个长期目标、依赖什么、推进到哪里。
 - **目标关系**：当前任务和原始目的之间的贡献关系，以及是否出现偏移。
+- **暂停检查点**：同一 AI 对话暂停时的安全停止位置、剩余工作、不可重复副作用和恢复后的第一个动作。
 - **续接上下文**：新 AI 对话需要知道什么，才能不重放完整聊天记录也能继续推进。
 
-COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作画像，再查看任务森林，需要换 AI 对话时生成续接 prompt，在行动前完成目标对齐；当某条流程已经跑通、值得沉淀，或某个现有 skill 需要根据真实 session 证据受控自我进化时，再进入 `run-history` 双 skill。
+COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作画像，再查看任务森林；临时离开但保留当前 AI 对话时留下暂停检查点，需要换 AI 对话时生成续接 prompt，在行动前完成目标对齐；当某条流程已经跑通、值得沉淀，或某个现有 skill 需要根据真实 session 证据受控自我进化时，再进入 `run-history` 双 skill。
 
-## 四层协作模型 + 四个扩展 skills
+## 五个核心协作 skills + 四个扩展 skills
 
 | 层 | Skill | 解决的问题 |
 | --- | --- | --- |
 | **知人** | [`$user-profile-keeper`](skills/user-profile-keeper/) | 本地维护可审计、可纠错、可撤回的用户画像，让 agent 了解用户偏好、风险确认方式和协作边界。 |
 | **知事** | [`$task-forest`](skills/task-forest/) | 在 repo 内维护任务森林 / DAG，记录长期目标、子任务、依赖、进度、偏差、todo 和历史快照。 |
+| **知停** | [`$pause-and-resume`](skills/pause-and-resume/) | 在同一 AI 对话中安全暂停未完成任务，保存精确检查点，并在用户回来后直接续跑。 |
 | **知续** | [`$session-handoff-prompt`](skills/session-handoff-prompt/) | 把当前对话里真正需要延续的目标、进展、约束和下一步，压缩成可直接复制给新 AI 对话的提示词。 |
 | **知向** | [`$task-clarifier`](skills/task-clarifier/) | 把模糊需求对齐成三方一致的执行契约：用户想清楚、agent 听准确、用户能确认没跑偏。 |
 | **造技** | [`$run-history-skill-builder`](skills/run-history-skill-builder/) | 把已经跑通或反复打磨过的真实流程，抽成新的可复用 skill 包，或先生成不落文件的设计方案。 |
@@ -193,6 +199,7 @@ COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作�
 ```text
 $user-profile-keeper 让 AI 知道“你是谁、怎么协作”。
 $task-forest 让 AI 知道“任务在哪里、做到哪里、为什么做，以及有没有偏离总的目标”。
+$pause-and-resume 让 AI 知道“当前对话停在哪里、回来后从哪里继续，以及哪些动作不能重复”。
 $session-handoff-prompt 让 AI 知道“新对话怎样像接着原来的对话继续做事”。
 $task-clarifier 让 AI 知道“用户的需求到底是什么”。
 $run-history-skill-builder 让 AI 知道“这条已经跑通的流程怎样被沉淀成新的 skill”。
@@ -207,7 +214,7 @@ $assess-interview-candidate 让 AI 知道“怎样用可核验材料准备一场
 
 ## 安装和 Agent 兼容
 
-这些 skills 使用 Python 标准库和 Markdown 文档，不依赖云服务，不上传用户数据。脚本按本地文件工作，已按 macOS、Windows、Linux 三类环境做路径约束；`assess-interview-candidate` 需要 Python 3.10 或更高版本：
+这些 skills 以 Markdown instructions 和 YAML frontmatter 为共同契约，不依赖云服务，也不上传用户数据。带脚本的 skills 使用 Python 标准库并按本地文件工作；`pause-and-resume` 只有一个 `SKILL.md`，不依赖操作系统路径、shell、网络、文件系统或外部工具。`assess-interview-candidate` 需要 Python 3.10 或更高版本：
 
 - macOS / Linux：示例命令使用 `python3`。
 - Windows：可使用 `py -3` 或 `python`。
@@ -217,10 +224,12 @@ $assess-interview-candidate 让 AI 知道“怎样用可核验材料准备一场
 
 COMPASS 是一个 agent-agnostic 的 `SKILL.md` skills 包：凡是支持 `SKILL.md`、YAML frontmatter、Markdown instructions、可选 `scripts/` / `references/` 的 agent，都可以原生或近原生使用；暂不原生支持 skills 的 agent，可以通过根目录 [AGENTS.md](AGENTS.md) 做轻量适配。
 
+README 统一用 `$skill-name` 表示显式点名。实际使用时可以采用宿主原生语法，例如 Codex 中的 `$pause-and-resume`、Claude Code 中的 `/pause-and-resume`；没有原生 skills 路由的 agent 可以按 [AGENTS.md](AGENTS.md) 直接读取 [`skills/pause-and-resume/SKILL.md`](skills/pause-and-resume/SKILL.md)。这个 skill 依赖宿主在多轮交互间保留当前 AI 对话，因此不能恢复已被杀死的进程、不可访问的对话历史或另一段新对话。
+
 | Agent / 环境 | 推荐接入方式 |
 | --- | --- |
-| Codex | 复制 `skills/` 下需要的 released skill 目录到 Codex 可发现的 skills 目录，或作为 repo-local skills 使用；当前公开版共 8 个 skills。 |
-| Claude Code | 复制 `skills/` 下需要的 released skill 目录到 Claude Code 的 custom skills 目录，或放入项目 skills 根目录；当前公开版共 8 个 skills。 |
+| Codex | 复制 `skills/` 下需要的 released skill 目录到 Codex 可发现的 skills 目录，或作为 repo-local skills 使用；当前公开版共 9 个 skills。 |
+| Claude Code | 复制 `skills/` 下需要的 released skill 目录到 Claude Code 的 custom skills 目录，或放入项目 skills 根目录；当前公开版共 9 个 skills。 |
 | OpenClaw | 放入 workspace `skills/`、`.agents/skills` 或个人/托管 skills 目录；按 OpenClaw 的 skill precedence 生效。 |
 | OpenCode | 保留本 repo 的 `skills/` 和 [AGENTS.md](AGENTS.md)，让 agent 通过 AGENTS 规则发现并读取对应 `SKILL.md`。 |
 | 其他 agent | 只要能读取文件并运行本地脚本，就按 [AGENTS.md](AGENTS.md) 的通用协议加载：先读 `SKILL.md`，再按需读 `references/` 和运行 `scripts/`。 |
@@ -245,11 +254,12 @@ Repo: https://github.com/dongshuyan/compass-skills
 6. 最后报告安装位置、已安装 skills、安全检查结果、验证结果，以及如何在 AI 对话中调用。
 ```
 
-手动安装时，把 `skills/` 下需要的 released skill 目录复制到目标 agent 的本地 skills 目录；当前公开版共 8 个 skills。安装后可在 AI 对话中点名使用：
+手动安装时，把 `skills/` 下需要的 released skill 目录复制到目标 agent 的本地 skills 目录；当前公开版共 9 个 skills。安装后可在 AI 对话中点名使用：
 
 ```text
 $user-profile-keeper
 $task-forest
+$pause-and-resume
 $session-handoff-prompt
 $task-clarifier
 $run-history-skill-builder
@@ -266,7 +276,7 @@ $assess-interview-candidate
 要求：完整读取材料；PDF 同时做文字提取和逐页视觉核对；后台保留证据与校验数据；面试官 HTML 只保留候选人简介、岗位相关简历疑点和 12–18 道可直接照读的问题。候选人主动提供的学校、工作和城市直接显示，缺失信息不推测；年龄、籍贯和婚姻状况不得进入岗位评分或招聘决定。所有文件只保存到我批准的本地目录。
 ```
 
-## 四个核心协作 skills
+## 五个核心协作 skills
 
 ### $user-profile-keeper：本地用户画像
 
@@ -314,6 +324,18 @@ $assess-interview-candidate
 4. 只保存 proposal，展示准备改什么；等我确认后再 apply。
 5. apply 后运行 validate 和 export，并给出 HTML 路径。
 ```
+
+### $pause-and-resume：当前 AI 对话内暂停续跑
+
+`$pause-and-resume` 适用于用户主动告诉 agent“我要暂时离开，先暂停”的场景。它会停在最近的安全节点，把目标、已完成内容、当前停止位置、剩余工作、恢复后的第一个动作、不可重复动作和需要重新核对的运行状态写进当前对话，然后结束本轮。它不会为了暂停创建文件、commit 或新任务。
+
+**暂停 prompt**
+
+```text
+请用 $pause-and-resume 在最近的安全节点暂停当前未完成任务。把精确续跑检查点留在当前对话中，不要创建 checkpoint 文件；告诉我回来后说“继续”，然后停止。
+```
+
+回来后在同一 AI 对话中直接说“继续”即可。agent 应先核对可能变化的文件、工作树、运行任务和外部副作用，再从检查点记录的第一个动作继续，避免重复已经完成的副作用。
 
 ### $session-handoff-prompt：新 AI 对话续接 prompt
 
@@ -379,6 +401,7 @@ $assess-interview-candidate
 ## 能做什么
 
 - 新 AI 对话结束时，把进度、偏差、决策和待办归入全局任务图。（用户可以自行做成 hook）
+- 临时离开但保留当前 AI 对话时，在安全节点暂停；回来后只说“继续”，从检查点恢复并避免重复副作用。
 - 上下文变长或需要切换 agent 时，生成可复制续接 prompt，让新 AI 对话带着目标、证据、状态和下一步继续。
 - 当一个新任务找不到父节点或贡献关系时，也就是不知道当前对话为什么要做时，提醒用户重新确认目标，确保当前对话符合全局目标、不偏离。
 - 在任务变复杂、变危险、变模糊时，先进入 alignment gate，避免返工和隐私风险。
@@ -395,7 +418,8 @@ $assess-interview-candidate
 - `printf '%s\n' '本研究采用分层抽样。' | python3 skills/academic-humanizer/scripts/metrics.py - --json`：只读检查语言路由、过程残留和对立句式候选，不输出作者身份概率或质量分数。
 - `python3 -m py_compile ...`：验证新增 Python 脚本语法。
 - `skills.sh.json` 和 `evals/trigger-and-quality-cases.json` 已通过 JSON 解析。
-- 使用 `skills@1.5.23` 时，当前本地源码可被识别为 8 个 skills；`assess-interview-candidate` 已成功复制到临时 Codex 与 Claude Code skill 目录。
+- 使用 `skills@1.5.23` 时，当前本地源码可被识别为 9 个 skills；`pause-and-resume` 已成功复制到临时 Codex 与 Claude Code skill 目录，两个 `SKILL.md` 副本与发布源逐字节一致。
+- `pause-and-resume` 已通过 Skill 结构校验；公开文件与完成 Codex 暂停续跑行为测试时使用的源文件逐字节一致。
 - `assess-interview-candidate` 的 77 项单元和公开包测试在 Python 3.11、3.14 上均通过；Skill 结构校验、Ruff、JSON、Python 3.10 语法、JavaScript 语法和离线报告契约校验也已通过。本轮照片布局升级尚未完成独立的真实浏览器视觉复核。
 - Windows 与 Linux 兼容性通过路径、启动器、标准库、保留文件名和外壳无关规则约束；本轮没有在真实 Windows 或 Linux 主机上运行。
 
@@ -407,6 +431,7 @@ COMPASS 的默认安全边界：
 - `$user-profile-keeper` 默认是本地明文存储；它的边界是本地保存、可审计、可删除。它没有加密防护层，用户需要自行判断是否安装使用。
 - 不把完整用户画像提供给普通 skill；只允许读取低敏 `clarification_summary`。
 - `$task-forest` 的完整任务图保存在 repo-local 目录，不把节点正文写入全局 registry。
+- `$pause-and-resume` 只把检查点留在当前 AI 对话，不为暂停单独创建文件；检查点只记录续跑所需的非敏感事实，不得暴露 secret。
 - `$session-handoff-prompt` 默认只读；本机续接可以保留路径，公开分享前必须使用 shareable 脱敏和校验。
 - `$academic-humanizer` 不增加事实、引文、机制或作者经历；可选指标脚本只读输入并输出描述性候选。
 - `$assess-interview-candidate` 只处理获准材料和经过允许的公开职业信息；候选人资料保存在用户批准的本地案件目录，不上传。电话、邮箱和精确住址不进入面试官 HTML，年龄、出生地、籍贯、婚姻状况和地点信息不进入岗位评分、排序或录用决定。

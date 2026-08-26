@@ -6,7 +6,7 @@ This repository contains agent-agnostic `SKILL.md` skills. Use this file when yo
 
 - Available skills live under `skills/<skill-name>/SKILL.md`.
 - Read each skill's YAML frontmatter `name` and `description` to decide whether it applies.
-- Prefer explicit user invocation such as `$task-clarifier`, `$task-forest`, `$session-handoff-prompt`, `$user-profile-keeper`, `$run-history-skill-builder`, `$run-history-skill-upgrader`, or `$assess-interview-candidate`.
+- Prefer explicit user invocation such as `$task-clarifier`, `$task-forest`, `$pause-and-resume`, `$session-handoff-prompt`, `$user-profile-keeper`, `$run-history-skill-builder`, `$run-history-skill-upgrader`, or `$assess-interview-candidate`.
 - If no skill clearly applies, continue normally; do not force a skill.
 
 ## Loading Protocol
@@ -24,6 +24,7 @@ When a skill applies:
 ```text
 Use $task-clarifier to align this task before implementation.
 Use $task-forest to update the task graph for this workspace.
+Use $pause-and-resume to pause this unfinished task in the current conversation; later, continue it from the checkpoint.
 Use $session-handoff-prompt to create a continuation prompt for a fresh session.
 Use $user-profile-keeper to initialize or update my local profile.
 Use $run-history-skill-builder to turn this completed workflow into a new skill package.
@@ -34,6 +35,7 @@ Use $assess-interview-candidate to turn an authorized resume and job description
 ## Local Paths
 
 - `task-forest` writes task data under the current workspace: `.agent-workbench/task-forest/`.
+- `pause-and-resume` keeps its checkpoint in the current conversation and creates no files solely for pausing.
 - `session-handoff-prompt` is read-only by default. It may validate local handoffs with real workspace paths or redact shareable handoffs.
 - `user-profile-keeper` writes profile data under the local user home: `.compass-skills/user-profiles/v1/`.
 - `run-history-skill-builder` writes new skill packages only to a user-approved local directory.
