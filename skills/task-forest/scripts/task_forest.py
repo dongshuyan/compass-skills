@@ -140,7 +140,9 @@ def sha256_path(path: Path) -> str | None:
 def update_global_registry(
     workspace: Path, command: str, error: str | None = None
 ) -> None:
-    if os.environ.get("TASK_FOREST_DISABLE_GLOBAL_REGISTRY") in {"1", "true", "yes"}:
+    enabled = os.environ.get("TASK_FOREST_ENABLE_GLOBAL_REGISTRY", "").lower()
+    disabled = os.environ.get("TASK_FOREST_DISABLE_GLOBAL_REGISTRY", "").lower()
+    if enabled not in {"1", "true", "yes"} or disabled in {"1", "true", "yes"}:
         return
     db_path = Path(
         os.environ.get("AGENT_WORKBENCH_DB") or DEFAULT_AGENT_WORKBENCH_DB

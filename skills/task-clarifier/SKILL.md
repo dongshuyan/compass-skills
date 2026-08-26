@@ -1,13 +1,11 @@
 ---
 name: task-clarifier
 description: >-
-  Deep need-clarification skill. Activates only on explicit invocation: direct
-  reference to $task-clarifier, or trigger phrases "帮我理清需求" / "需求澄清" /
-  "clarify" / "clarify my needs" / "help me clarify". Once activated, keeps
-  asking until all three goals are met: the user fully understands their own
-  needs, the AI fully understands the user's needs, and the user confirms the
-  AI's understanding is correct. Does not auto-activate; does not intervene in
-  task execution unless explicitly invoked.
+  Deep need-clarification skill. Use only when the user explicitly invokes
+  $task-clarifier. Once activated, keep asking until all three goals are met:
+  the user fully understands their own needs, the AI fully understands the
+  user's needs, and the user confirms the AI's understanding is correct. Do
+  not intervene in task execution unless explicitly invoked.
 ---
 
 # Task Clarifier

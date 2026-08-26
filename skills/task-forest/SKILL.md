@@ -26,6 +26,7 @@ Use an available Python 3 launcher on the host (`python3`, `python`, or `py -3`)
 5. Write visible task titles and purposes in plain language. A reader must understand what the task delivers, why it exists, and what has been completed without knowing internal codes such as `P04` or reading another file.
 6. Export one HTML surface: `exports/task-forest.html`. It shows `done`, `in_progress`, and their necessary `child_of` ancestors, with history playback. Do not expose internal discussions, evidence, queues, filesystem paths, sessions, or proposal content in the HTML.
 7. Keep HTML interactions read-only. Formal changes always return through the proposal workflow.
+8. Keep task data and discovery metadata repo-local by default. Cross-workspace discovery is optional: enable it only after the user explicitly opts in by setting `TASK_FOREST_ENABLE_GLOBAL_REGISTRY=1`. This writes lightweight workspace paths and health summaries to `AGENT_WORKBENCH_DB`, or to `~/.agent-workbench/agent-workbench.sqlite3` when that variable is unset; it never stores task content.
 
 ## Main Workflow
 
@@ -57,6 +58,8 @@ python3 <skill-dir>/scripts/task_forest.py export
 ```
 
 The default workspace is the current directory. Use `--workspace` only when another workspace is explicit. Use `--root` only when the caller explicitly selected a non-default task-forest root.
+
+Global registry integration is off by default. `TASK_FOREST_DISABLE_GLOBAL_REGISTRY=1` remains an explicit override when a host sets the enable flag globally.
 
 ## Outputs
 

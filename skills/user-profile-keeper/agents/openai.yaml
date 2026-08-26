@@ -2,3 +2,5 @@ interface:
   display_name: "User Profile Keeper"
   short_description: "Maintain auditable local user profiles"
   default_prompt: "Use $user-profile-keeper to update my local user profile from this session and show any pending confirmations."
+policy:
+  allow_implicit_invocation: false

@@ -11,6 +11,7 @@ import socket
 import sys
 import threading
 import webbrowser
+from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -519,37 +520,37 @@ class Handler(BaseHTTPRequestHandler):
         }
         profile_store.init_user(user_id, display_name)
         if candidates or redactions:
-            conn = profile_store.connect(user_id)
-            with conn:
-                for redaction in redactions:
-                    profile_store.insert_redaction(
-                        conn,
-                        user_id,
-                        {
-                            "category": "privacy_boundary",
-                            "claim": "onboarding_questionnaire_secret_redacted",
-                            "value": {"summary": redaction["summary"]},
-                            "scope": "user-profile-keeper",
-                            "source_type": "self_report",
-                            "confidence": 0.9,
-                            "sensitivity": "secret",
-                            "evidence": {
-                                "summary": redaction["summary"],
-                                "context": "local onboarding questionnaire",
-                                "privacy_tags": ["secret", "redacted"],
+            with closing(profile_store.connect(user_id)) as conn:
+                with conn:
+                    for redaction in redactions:
+                        profile_store.insert_redaction(
+                            conn,
+                            user_id,
+                            {
+                                "category": "privacy_boundary",
+                                "claim": "onboarding_questionnaire_secret_redacted",
+                                "value": {"summary": redaction["summary"]},
+                                "scope": "user-profile-keeper",
+                                "source_type": "self_report",
+                                "confidence": 0.9,
+                                "sensitivity": "secret",
+                                "evidence": {
+                                    "summary": redaction["summary"],
+                                    "context": "local onboarding questionnaire",
+                                    "privacy_tags": ["secret", "redacted"],
+                                },
                             },
-                        },
-                        "potential credential omitted from onboarding questionnaire",
-                    )
-                if not candidates:
-                    self.respond_html(page(user_id, result))
-                    return
-                conflicts: list[str] = []
-                for candidate in candidates:
-                    normalized = profile_store.normalize_candidate(candidate, "local onboarding questionnaire")
-                    conflicts.extend(profile_store.conflicts_for(conn, user_id, normalized))
-                proposal_id = profile_store.create_proposal(conn, user_id, candidates, "local onboarding questionnaire", sorted(set(conflicts)))
-                result["proposal_id"] = proposal_id
+                            "potential credential omitted from onboarding questionnaire",
+                        )
+                    if not candidates:
+                        self.respond_html(page(user_id, result))
+                        return
+                    conflicts: list[str] = []
+                    for candidate in candidates:
+                        normalized = profile_store.normalize_candidate(candidate, "local onboarding questionnaire")
+                        conflicts.extend(profile_store.conflicts_for(conn, user_id, normalized))
+                    proposal_id = profile_store.create_proposal(conn, user_id, candidates, "local onboarding questionnaire", sorted(set(conflicts)))
+                    result["proposal_id"] = proposal_id
         self.respond_html(page(user_id, result))
 
     def log_message(self, fmt: str, *args: object) -> None:

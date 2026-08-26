@@ -4,13 +4,15 @@ Read this file after the user approves the plan and before claiming the upgrade 
 
 ## Baseline Checks
 
-Run at least:
+These checks establish structural legality and deterministic correctness only. A passing validator does not execute the eval definitions or prove behavioral improvement; that requires the relevant trigger, route, case, or comparison regression below.
 
-- the target skill's own validator, if it has one;
+Run only the checks that apply to the changed surface:
+
 - this skill's `validate_upgrade_artifacts.py`;
-- `python -m py_compile` on modified Python scripts;
-- `python -m json.tool` on modified JSON files;
-- reference-path existence checks.
+- the target skill's own validator, if it has one;
+- `python -m py_compile` when Python scripts changed;
+- `python -m json.tool` when JSON files changed;
+- reference-path checks when references changed and no existing validator covers them.
 
 ## Regression Levels
 
@@ -37,9 +39,11 @@ When relevant, test these slices:
 
 If the target skill's `description` changed, review:
 
-- 3 should-trigger prompts;
-- 3 should-not-trigger prompts;
-- 2 boundary prompts.
+- one representative should-trigger prompt;
+- one nearby should-not-trigger prompt;
+- one boundary prompt.
+
+Expand this set only when the trigger remains unstable, covers many neighboring tasks, or carries high-cost failure modes.
 
 ## Route Regression
 

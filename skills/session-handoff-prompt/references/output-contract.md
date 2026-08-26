@@ -49,6 +49,23 @@ Next actions:
 
 Omit `Task-forest state` when no exports were read, or state that task-forest exports were not found.
 
+The validator recognizes the English and Chinese headings above. For another language, pass the exact translated headings with `--labels-json <labels.json>`:
+
+```json
+{
+  "workspace": "Espacio de trabajo:",
+  "goal": "Objetivo del usuario:",
+  "requirements": "Requisitos obligatorios:",
+  "completed": "Completado:",
+  "pending": "Pendiente / por verificar:",
+  "next": "Próximas acciones:",
+  "fact_labels": ["[verificado]", "[inferido]", "[no verificado]"],
+  "task_forest": "Estado de task-forest:"
+}
+```
+
+The six section keys are required. `fact_labels` and `task_forest` are optional.
+
 ## Fact Labels
 
 - `[verified]`: user explicitly stated it, or it came from files, tool output, test output, task-forest exports, or another concrete source.

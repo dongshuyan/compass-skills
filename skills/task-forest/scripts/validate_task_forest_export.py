@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 import re
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -433,6 +434,38 @@ def validation_env(**overrides: str) -> dict[str, str]:
     env["TASK_FOREST_DISABLE_GLOBAL_REGISTRY"] = "1"
     env.update(overrides)
     return env
+
+
+def validate_global_registry_opt_in(script: Path, temp_root: Path) -> None:
+    default_db = temp_root / "default-registry.sqlite3"
+    default_env = os.environ.copy()
+    default_env.pop("TASK_FOREST_DISABLE_GLOBAL_REGISTRY", None)
+    default_env.pop("TASK_FOREST_ENABLE_GLOBAL_REGISTRY", None)
+    default_env["AGENT_WORKBENCH_DB"] = str(default_db)
+    cli(
+        script,
+        temp_root / "default-registry-workspace",
+        "init",
+        env=default_env,
+    )
+    if default_db.exists():
+        raise AssertionError("未显式 opt-in 时不得创建或更新全局 registry")
+
+    opted_in_db = temp_root / "opted-in-registry.sqlite3"
+    opted_in_env = default_env.copy()
+    opted_in_env["AGENT_WORKBENCH_DB"] = str(opted_in_db)
+    opted_in_env["TASK_FOREST_ENABLE_GLOBAL_REGISTRY"] = "1"
+    opted_in_workspace = temp_root / "opted-in-registry-workspace"
+    cli(script, opted_in_workspace, "init", env=opted_in_env)
+    if not opted_in_db.exists():
+        raise AssertionError("显式 opt-in 后应更新全局 registry")
+    with sqlite3.connect(opted_in_db) as conn:
+        registered = conn.execute(
+            "SELECT COUNT(*) FROM aw_task_forests WHERE workspace_path=?",
+            (str(opted_in_workspace.resolve()),),
+        ).fetchone()[0]
+    if registered != 1:
+        raise AssertionError("显式 opt-in 后应登记当前 workspace")
 
 
 def cli(
@@ -1076,6 +1109,7 @@ def main() -> int:
     try:
         validate_ordering_regressions()
         validate_process_probe_portability(script)
+        validate_global_registry_opt_in(script, Path(temp.name))
         validate_actor_portability(script, Path(temp.name) / "actor-workspace")
         validate_legacy_mixed_export(script, Path(temp.name) / "legacy-workspace")
         build_sample_graph(script, workspace)

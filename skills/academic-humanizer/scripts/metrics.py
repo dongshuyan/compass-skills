@@ -635,7 +635,6 @@ def leak_scan(text):
                     "status": "candidate_only",
                     "match": text[match.start():match.end()],
                     "context": _context(text, match.start(), match.end()),
-                    "status": "candidate_only",
                 }
             )
     return sorted(hits, key=lambda item: text.find(item["match"]))

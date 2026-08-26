@@ -1,6 +1,6 @@
 ---
 name: user-profile-keeper
-description: Local user-profile maintenance skill for Codex, Claude Code, OpenClaw, OpenCode, and other agent harnesses. Use only when the user explicitly invokes this skill or asks to create, initialize, update, query, correct, delete, export, or audit a local persistent user profile. Also use to extract durable collaboration preferences, requirement-expression habits, capability boundaries, recurring omissions, risk preferences, privacy boundaries, and typical events from the current session into auditable, confirmable, retractable local profile data. Do not auto-invoke, upload profile data, or replace task-clarifier's normal clarification flow.
+description: Local user-profile maintenance skill for Codex, Claude Code, OpenClaw, OpenCode, and other agent harnesses. Use only when the user explicitly invokes $user-profile-keeper to create, initialize, update, query, correct, delete, export, or audit a local persistent user profile. It can extract durable collaboration preferences, requirement-expression habits, capability boundaries, recurring omissions, risk preferences, privacy boundaries, and typical events from the current session into auditable, confirmable, retractable local profile data. Do not auto-invoke, upload profile data, or replace task-clarifier's normal clarification flow.
 ---
 
 # User Profile Keeper
@@ -19,7 +19,7 @@ This skill is agent-agnostic. Resolve paths from the directory that contains thi
 
 ## Core Contract
 
-- Use this skill only when the user explicitly invokes `$user-profile-keeper` or asks to maintain a profile.
+- Use this skill only when the user explicitly invokes `$user-profile-keeper`.
 - Store profile data in the host user's local home directory under `.compass-skills/user-profiles/v1` by default. Use `COMPASS_USER_PROFILE_HOME` to set another local directory.
 - Do not upload profile data. Do not read browser cookies, tokens, passwords, private keys, verification codes, or credentials.
 - Treat the store as local plaintext. Before first initialization, tell the user that local files can be read by local processes, users, or backups with sufficient permission.
@@ -69,7 +69,10 @@ The main store is managed by `scripts/profile_store.py`:
 - `update-from-session`: update from agent-extracted candidate JSON or create proposals.
 - `proposal-list` / `proposal-apply` / `proposal-reject`: review and apply pending updates.
 - `assertion-add` / `correct` / `delete` / `search` / `export`: manual CRUD and export.
-- `validate`: check schema, permissions, WAL mode, orphan evidence, and pending conflicts.
+- `validate`: read-only check of an initialized store's integrity, permissions, WAL mode, and orphan evidence references. It reports a missing profile without initializing one.
+
+`validate` does not change profile data or the registry. On a WAL-mode store, SQLite may still create or update a temporary `-shm` coordination file while opening the database read-only.
+On POSIX systems, unexpected directory or database modes make validation fail; on Windows, `permission_ok` is `null` because POSIX mode bits are not a reliable permission check there.
 
 Key usage examples:
 

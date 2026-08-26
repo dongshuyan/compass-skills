@@ -13,7 +13,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from local_paths import contains_local_path
+from local_paths import contains_local_path  # noqa: E402
 
 
 REQUIRED_GROUPS = {
@@ -25,6 +25,8 @@ REQUIRED_GROUPS = {
     "next": ["Next actions:", "【下一步】"],
 }
 LABELS = ["[verified]", "[inferred]", "[unverified]", "[已验证]", "[推断]", "[未验证]"]
+CUSTOM_REQUIRED_KEYS = tuple(REQUIRED_GROUPS)
+CUSTOM_OPTIONAL_KEYS = {"fact_labels", "task_forest"}
 SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("openai_style_key", re.compile(r"sk-[A-Za-z0-9_-]{16,}")),
     ("github_style_key", re.compile(r"gh[pousr]_[A-Za-z0-9_]{20,}")),
@@ -49,18 +51,66 @@ def has_any(text: str, options: list[str]) -> bool:
     return any(option in text for option in options)
 
 
-def validate(text: str, mode: str, privacy: str) -> dict[str, object]:
+def resolve_labels(
+    labels: dict[str, object] | None,
+) -> tuple[dict[str, list[str]], list[str], list[str], list[str], str]:
+    if labels is None:
+        return REQUIRED_GROUPS, LABELS, ["Task-forest state:", "【任务森林状态】"], [], "built_in"
+
+    errors: list[str] = []
+    unknown = set(labels) - set(CUSTOM_REQUIRED_KEYS) - CUSTOM_OPTIONAL_KEYS
+    if unknown:
+        errors.append(f"invalid_labels_config:unknown_keys:{','.join(sorted(unknown))}")
+
+    groups: dict[str, list[str]] = {}
+    for key in CUSTOM_REQUIRED_KEYS:
+        value = labels.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"invalid_labels_config:{key}_must_be_nonempty_string")
+            groups[key] = []
+        else:
+            groups[key] = [value.strip()]
+
+    custom_fact_labels = labels.get("fact_labels", LABELS)
+    if not isinstance(custom_fact_labels, list) or not all(
+        isinstance(item, str) and item.strip() for item in custom_fact_labels
+    ):
+        errors.append("invalid_labels_config:fact_labels_must_be_string_array")
+        fact_labels: list[str] = []
+    else:
+        fact_labels = [item.strip() for item in custom_fact_labels]
+
+    task_forest = labels.get("task_forest")
+    if task_forest is None:
+        task_forest_markers: list[str] = []
+    elif isinstance(task_forest, str) and task_forest.strip():
+        task_forest_markers = [task_forest.strip()]
+    else:
+        errors.append("invalid_labels_config:task_forest_must_be_nonempty_string")
+        task_forest_markers = []
+
+    return groups, fact_labels, task_forest_markers, errors, "custom"
+
+
+def validate(
+    text: str,
+    mode: str,
+    privacy: str,
+    labels: dict[str, object] | None = None,
+) -> dict[str, object]:
     hard: list[str] = []
     warnings: list[str] = []
+    required_groups, fact_labels, task_forest_markers, label_errors, label_mode = resolve_labels(labels)
+    hard.extend(label_errors)
 
-    for group, options in REQUIRED_GROUPS.items():
+    for group, options in required_groups.items():
         if not has_any(text, options):
             hard.append(f"missing_section:{group}")
 
-    if not any(label in text for label in LABELS):
+    if fact_labels and not any(label in text for label in fact_labels):
         warnings.append("missing_fact_labels")
 
-    next_markers = ["Next actions:", "【下一步】"]
+    next_markers = required_groups["next"]
     for marker in next_markers:
         if marker in text:
             after_next = text.split(marker, 1)[1].strip()
@@ -87,10 +137,27 @@ def validate(text: str, mode: str, privacy: str) -> dict[str, object]:
         warnings.append(f"long_for_mode:{length}>{high}")
 
     lower = text.lower()
-    if "task-forest" in lower and "Task-forest state:" not in text and "【任务森林状态】" not in text:
+    if "task-forest" in lower and task_forest_markers and not has_any(text, task_forest_markers):
         warnings.append("mentions_task_forest_without_section")
 
-    return {"ok": not hard, "mode": mode, "privacy": privacy, "length": length, "hard": hard, "warnings": warnings}
+    return {
+        "ok": not hard,
+        "mode": mode,
+        "privacy": privacy,
+        "label_mode": label_mode,
+        "length": length,
+        "hard": hard,
+        "warnings": warnings,
+    }
+
+
+def load_labels(path: str | None) -> dict[str, object] | None:
+    if path is None:
+        return None
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("labels JSON must contain an object")
+    return payload
 
 
 def main() -> int:
@@ -98,10 +165,15 @@ def main() -> int:
     parser.add_argument("path", nargs="?", help="Draft path, or omit/use '-' for stdin.")
     parser.add_argument("--mode", choices=sorted(MODE_LIMITS), default="balanced")
     parser.add_argument("--privacy", choices=("local", "shareable"), default="local")
+    parser.add_argument("--labels-json", help="JSON file containing translated section labels")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
-    result = validate(read_text(args.path), args.mode, args.privacy)
+    try:
+        labels = load_labels(args.labels_json)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        parser.error(f"could not read --labels-json: {exc}")
+    result = validate(read_text(args.path), args.mode, args.privacy, labels=labels)
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:

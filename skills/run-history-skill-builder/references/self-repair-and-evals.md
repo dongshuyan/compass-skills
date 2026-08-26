@@ -12,13 +12,17 @@ Run the bundled validator:
 
 Then run the platform validator if the current host provides one.
 
+A structural pass proves only that the package is well formed and its deterministic artifact checks succeeded. It does not execute `evals/evals.json` or establish that the skill behaves better than a baseline; use the trigger review and comparison evaluation below for those claims.
+
 ## Trigger Review
 
-Prepare at least:
+Start with the smallest useful set:
 
-- 3 should-trigger prompts;
-- 3 should-not-trigger prompts;
-- 2 boundary prompts.
+- one representative should-trigger prompt;
+- one nearby should-not-trigger prompt;
+- one boundary prompt.
+
+Add cases only when the result is unstable, the trigger is broad, or mistakes are expensive.
 
 If the samples reveal false positives or false negatives, fix the frontmatter `description` first, then the body.
 

@@ -1,4 +1,6 @@
 interface:
   display_name: "Task Clarifier"
-  short_description: "显式触发的需求深度澄清"
+  short_description: "仅在显式调用时持续澄清需求并在实际执行前取得用户确认"
   default_prompt: "Use $task-clarifier: 用我的语言持续提问，帮我完全理解自己的需求、让你完全理解我的需求，并在执行前用完整理解摘要和推断列表请我确认。"
+policy:
+  allow_implicit_invocation: false

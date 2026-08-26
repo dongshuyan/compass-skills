@@ -8,10 +8,10 @@ import hashlib
 import json
 import os
 import sqlite3
-import sys
 import tempfile
 import time
 import uuid
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -190,6 +190,22 @@ def connect(user_id: str) -> sqlite3.Connection:
     return conn
 
 
+def connect_readonly(user_id: str) -> sqlite3.Connection:
+    """Open an existing profile without creating or updating local state."""
+
+    path = db_file(safe_user_id(user_id)).resolve()
+    conn = sqlite3.connect(
+        f"{path.as_uri()}?mode=ro",
+        uri=True,
+        timeout=30,
+        isolation_level=None,
+    )
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 10000")
+    return conn
+
+
 def create_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
@@ -297,19 +313,22 @@ def audit(conn: sqlite3.Connection, user_id: str, action: str, target_type: str,
 def init_user(user_id: str, display_name: str | None = None) -> dict[str, Any]:
     user_id = safe_user_id(user_id)
     conn = connect(user_id)
-    with conn:
-        row = conn.execute("SELECT user_id FROM users WHERE user_id=?", (user_id,)).fetchone()
-        ts = now()
-        if row:
-            conn.execute("UPDATE users SET display_name=?, updated_at=? WHERE user_id=?", (display_name or user_id, ts, user_id))
-            created = False
-        else:
-            conn.execute(
-                "INSERT INTO users(user_id,display_name,created_at,updated_at) VALUES(?,?,?,?)",
-                (user_id, display_name or user_id, ts, ts),
-            )
-            created = True
-        audit(conn, user_id, "init", "user", user_id, {"created": created, "display_name": display_name or user_id})
+    try:
+        with conn:
+            row = conn.execute("SELECT user_id FROM users WHERE user_id=?", (user_id,)).fetchone()
+            ts = now()
+            if row:
+                conn.execute("UPDATE users SET display_name=?, updated_at=? WHERE user_id=?", (display_name or user_id, ts, user_id))
+                created = False
+            else:
+                conn.execute(
+                    "INSERT INTO users(user_id,display_name,created_at,updated_at) VALUES(?,?,?,?)",
+                    (user_id, display_name or user_id, ts, ts),
+                )
+                created = True
+            audit(conn, user_id, "init", "user", user_id, {"created": created, "display_name": display_name or user_id})
+    finally:
+        conn.close()
     update_registry(user_id, display_name)
     return {"ok": True, "user_id": user_id, "created": created, "db": str(db_file(user_id))}
 
@@ -526,27 +545,28 @@ def command_update_from_session(args: argparse.Namespace) -> dict[str, Any]:
     candidates_raw = parse_json_arg(args.candidate_json, args.candidate_file, [])
     if not isinstance(candidates_raw, list):
         fail("candidate-json must be a JSON array.")
-    conn = connect(user_id)
     applied: list[str] = []
     proposed: list[str] = []
     redacted: list[str] = []
     skipped: list[str] = []
-    with conn:
-        for raw in candidates_raw:
-            candidate = normalize_candidate(raw, args.session_summary or "")
-            if candidate["sensitivity"] == "secret":
-                redacted.append(insert_redaction(conn, user_id, candidate, "secret content is never stored"))
-                continue
-            conflicts = conflicts_for(conn, user_id, candidate)
-            if args.auto_apply_safe and is_safe_auto_apply(candidate, conflicts):
-                applied.append(insert_assertion(conn, user_id, candidate, "active"))
-            elif args.propose:
-                proposed.append(create_proposal(conn, user_id, [candidate], args.reason or "requires confirmation", conflicts))
-            else:
-                skipped.append(f"{candidate['category']}:{candidate['claim']}")
-        audit(conn, user_id, "update_from_session", "user", user_id, {"applied": applied, "proposed": proposed, "redacted": redacted, "skipped": skipped})
-    update_registry(user_id, args.display_name)
-    return {"ok": True, "user_id": user_id, "applied": applied, "proposals": proposed, "redactions": redacted, "skipped": skipped, "profile_hash": profile_hash(conn, user_id)}
+    with closing(connect(user_id)) as conn:
+        with conn:
+            for raw in candidates_raw:
+                candidate = normalize_candidate(raw, args.session_summary or "")
+                if candidate["sensitivity"] == "secret":
+                    redacted.append(insert_redaction(conn, user_id, candidate, "secret content is never stored"))
+                    continue
+                conflicts = conflicts_for(conn, user_id, candidate)
+                if args.auto_apply_safe and is_safe_auto_apply(candidate, conflicts):
+                    applied.append(insert_assertion(conn, user_id, candidate, "active"))
+                elif args.propose:
+                    proposed.append(create_proposal(conn, user_id, [candidate], args.reason or "requires confirmation", conflicts))
+                else:
+                    skipped.append(f"{candidate['category']}:{candidate['claim']}")
+            audit(conn, user_id, "update_from_session", "user", user_id, {"applied": applied, "proposed": proposed, "redacted": redacted, "skipped": skipped})
+        update_registry(user_id, args.display_name)
+        result = {"ok": True, "user_id": user_id, "applied": applied, "proposals": proposed, "redactions": redacted, "skipped": skipped, "profile_hash": profile_hash(conn, user_id)}
+    return result
 
 
 def row_to_assertion(row: sqlite3.Row) -> dict[str, Any]:
@@ -585,93 +605,94 @@ def read_view(args: argparse.Namespace) -> dict[str, Any]:
                 "重大或不可逆动作仍需确认。",
             ] if args.view == "clarification_summary" else [],
         }
-    conn = connect(user_id)
     view = args.view
-    if view == "clarification_summary":
-        rows = conn.execute(
-            """
-            SELECT * FROM profile_assertions
-            WHERE user_id=? AND status='active' AND sensitivity='low'
-            ORDER BY category, updated_at DESC, claim
-            """,
-            (user_id,),
-        ).fetchall()
-        items = [row_to_assertion(row) for row in rows if row["category"] in SUMMARY_CATEGORIES]
-        return {
-            "ok": True,
-            "user_id": user_id,
-            "view": view,
-            "profile_hash": profile_hash(conn, user_id),
-            "items": items,
-            "anti_bubble": [
-                "当前 session 明确要求优先于历史画像。",
-                "重大或不可逆动作仍需确认。",
-                "至少检查一个不符合既有画像的可能解释。",
-            ],
-        }
-    if view == "profile_overview":
-        rows = conn.execute(
-            """
-            SELECT * FROM profile_assertions
-            WHERE user_id=? AND status='active' AND sensitivity IN ('low','private')
-            ORDER BY category, updated_at DESC, claim
-            """,
-            (user_id,),
-        ).fetchall()
-        items = []
-        for row in rows:
-            item = row_to_assertion(row)
-            item.pop("evidence_ids", None)
-            items.append(item)
-        return {
-            "ok": True,
-            "user_id": user_id,
-            "view": view,
-            "profile_hash": profile_hash(conn, user_id),
-            "items": items,
-            "omitted": {
-                "sensitivities": sorted(VALID_SENSITIVITY - PROFILE_OVERVIEW_SENSITIVITIES),
-                "reason": "profile_overview 只展示 low/private active 断言，避免日常查看时扩散更敏感内容。",
-            },
-        }
-    if view == "full":
-        rows = conn.execute(
-            "SELECT * FROM profile_assertions WHERE user_id=? ORDER BY status, category, updated_at DESC",
-            (user_id,),
-        ).fetchall()
-        return {"ok": True, "user_id": user_id, "view": view, "profile_hash": profile_hash(conn, user_id), "items": [row_to_assertion(row) for row in rows]}
     if view == "pending":
         return proposal_list(args)
-    fail(f"Unknown view: {view}")
+    with closing(connect(user_id)) as conn:
+        if view == "clarification_summary":
+            rows = conn.execute(
+                """
+                SELECT * FROM profile_assertions
+                WHERE user_id=? AND status='active' AND sensitivity='low'
+                ORDER BY category, updated_at DESC, claim
+                """,
+                (user_id,),
+            ).fetchall()
+            items = [row_to_assertion(row) for row in rows if row["category"] in SUMMARY_CATEGORIES]
+            return {
+                "ok": True,
+                "user_id": user_id,
+                "view": view,
+                "profile_hash": profile_hash(conn, user_id),
+                "items": items,
+                "anti_bubble": [
+                    "当前 session 明确要求优先于历史画像。",
+                    "重大或不可逆动作仍需确认。",
+                    "至少检查一个不符合既有画像的可能解释。",
+                ],
+            }
+        if view == "profile_overview":
+            rows = conn.execute(
+                """
+                SELECT * FROM profile_assertions
+                WHERE user_id=? AND status='active' AND sensitivity IN ('low','private')
+                ORDER BY category, updated_at DESC, claim
+                """,
+                (user_id,),
+            ).fetchall()
+            items = []
+            for row in rows:
+                item = row_to_assertion(row)
+                item.pop("evidence_ids", None)
+                items.append(item)
+            return {
+                "ok": True,
+                "user_id": user_id,
+                "view": view,
+                "profile_hash": profile_hash(conn, user_id),
+                "items": items,
+                "omitted": {
+                    "sensitivities": sorted(VALID_SENSITIVITY - PROFILE_OVERVIEW_SENSITIVITIES),
+                    "reason": "profile_overview 只展示 low/private active 断言，避免日常查看时扩散更敏感内容。",
+                },
+            }
+        if view == "full":
+            rows = conn.execute(
+                "SELECT * FROM profile_assertions WHERE user_id=? ORDER BY status, category, updated_at DESC",
+                (user_id,),
+            ).fetchall()
+            return {"ok": True, "user_id": user_id, "view": view, "profile_hash": profile_hash(conn, user_id), "items": [row_to_assertion(row) for row in rows]}
+        fail(f"Unknown view: {view}")
 
 
 def proposal_list(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         return {"ok": True, "user_id": user_id, "profile_exists": False, "proposals": []}
-    conn = connect(user_id)
     statuses = getattr(args, "status", None) or ["pending", "conflicted"]
     placeholders = ",".join("?" for _ in statuses)
-    rows = conn.execute(
-        f"SELECT * FROM update_proposals WHERE user_id=? AND status IN ({placeholders}) ORDER BY created_at DESC",
-        [user_id, *statuses],
-    ).fetchall()
-    proposals = []
-    for row in rows:
-        proposals.append(
-            {
-                "proposal_id": row["proposal_id"],
-                "status": row["status"],
-                "base_profile_hash": row["base_profile_hash"],
-                "current_profile_hash": profile_hash(conn, user_id),
-                "candidates": json.loads(row["candidate_json"]),
-                "reason": row["reason"],
-                "conflict_assertion_ids": json.loads(row["conflict_assertion_ids_json"]),
-                "created_at": row["created_at"],
-                "updated_at": row["updated_at"],
-                "applied_at": row["applied_at"],
-            }
-        )
+    with closing(connect(user_id)) as conn:
+        rows = conn.execute(
+            f"SELECT * FROM update_proposals WHERE user_id=? AND status IN ({placeholders}) ORDER BY created_at DESC",
+            [user_id, *statuses],
+        ).fetchall()
+        current_hash = profile_hash(conn, user_id)
+        proposals = []
+        for row in rows:
+            proposals.append(
+                {
+                    "proposal_id": row["proposal_id"],
+                    "status": row["status"],
+                    "base_profile_hash": row["base_profile_hash"],
+                    "current_profile_hash": current_hash,
+                    "candidates": json.loads(row["candidate_json"]),
+                    "reason": row["reason"],
+                    "conflict_assertion_ids": json.loads(row["conflict_assertion_ids_json"]),
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                    "applied_at": row["applied_at"],
+                }
+            )
     return {"ok": True, "user_id": user_id, "proposals": proposals}
 
 
@@ -679,53 +700,54 @@ def proposal_apply(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         fail("Profile does not exist.", 4)
-    conn = connect(user_id)
-    with conn:
-        row = conn.execute(
-            "SELECT * FROM update_proposals WHERE user_id=? AND proposal_id=?",
-            (user_id, args.proposal_id),
-        ).fetchone()
-        if not row:
-            fail("Proposal not found.", 4)
-        if row["status"] not in {"pending", "conflicted"}:
-            fail(f"Proposal is not applicable: {row['status']}", 4)
-        current_hash = profile_hash(conn, user_id)
-        if row["base_profile_hash"] != current_hash and not args.allow_stale:
-            conn.execute("UPDATE update_proposals SET status='conflicted', updated_at=? WHERE proposal_id=?", (now(), args.proposal_id))
-            audit(conn, user_id, "proposal_conflict", "proposal", args.proposal_id, {"base_profile_hash": row["base_profile_hash"], "current_profile_hash": current_hash})
-            return {"ok": False, "user_id": user_id, "proposal_id": args.proposal_id, "status": "conflicted", "error": "Profile changed since proposal was created. Re-review or pass --allow-stale."}
-        conflict_ids = json.loads(row["conflict_assertion_ids_json"])
-        for assertion_id in conflict_ids:
+    with closing(connect(user_id)) as conn:
+        with conn:
+            row = conn.execute(
+                "SELECT * FROM update_proposals WHERE user_id=? AND proposal_id=?",
+                (user_id, args.proposal_id),
+            ).fetchone()
+            if not row:
+                fail("Proposal not found.", 4)
+            if row["status"] not in {"pending", "conflicted"}:
+                fail(f"Proposal is not applicable: {row['status']}", 4)
+            current_hash = profile_hash(conn, user_id)
+            if row["base_profile_hash"] != current_hash and not args.allow_stale:
+                conn.execute("UPDATE update_proposals SET status='conflicted', updated_at=? WHERE proposal_id=?", (now(), args.proposal_id))
+                audit(conn, user_id, "proposal_conflict", "proposal", args.proposal_id, {"base_profile_hash": row["base_profile_hash"], "current_profile_hash": current_hash})
+                return {"ok": False, "user_id": user_id, "proposal_id": args.proposal_id, "status": "conflicted", "error": "Profile changed since proposal was created. Re-review or pass --allow-stale."}
+            conflict_ids = json.loads(row["conflict_assertion_ids_json"])
+            for assertion_id in conflict_ids:
+                conn.execute(
+                    "UPDATE profile_assertions SET status='superseded', updated_at=?, valid_to=? WHERE user_id=? AND assertion_id=? AND status='active'",
+                    (now(), now(), user_id, assertion_id),
+                )
+            assertion_ids = []
+            for raw in json.loads(row["candidate_json"]):
+                candidate = normalize_candidate(raw)
+                if candidate["sensitivity"] == "secret":
+                    insert_redaction(conn, user_id, candidate, "secret content is never stored")
+                    continue
+                assertion_ids.append(insert_assertion(conn, user_id, candidate, "active"))
             conn.execute(
-                "UPDATE profile_assertions SET status='superseded', updated_at=?, valid_to=? WHERE user_id=? AND assertion_id=? AND status='active'",
-                (now(), now(), user_id, assertion_id),
+                "UPDATE update_proposals SET status='applied', updated_at=?, applied_at=? WHERE proposal_id=?",
+                (now(), now(), args.proposal_id),
             )
-        assertion_ids = []
-        for raw in json.loads(row["candidate_json"]):
-            candidate = normalize_candidate(raw)
-            if candidate["sensitivity"] == "secret":
-                insert_redaction(conn, user_id, candidate, "secret content is never stored")
-                continue
-            assertion_ids.append(insert_assertion(conn, user_id, candidate, "active"))
-        conn.execute(
-            "UPDATE update_proposals SET status='applied', updated_at=?, applied_at=? WHERE proposal_id=?",
-            (now(), now(), args.proposal_id),
-        )
-        audit(conn, user_id, "proposal_apply", "proposal", args.proposal_id, {"assertion_ids": assertion_ids, "superseded": conflict_ids})
-    return {"ok": True, "user_id": user_id, "proposal_id": args.proposal_id, "assertion_ids": assertion_ids, "profile_hash": profile_hash(conn, user_id)}
+            audit(conn, user_id, "proposal_apply", "proposal", args.proposal_id, {"assertion_ids": assertion_ids, "superseded": conflict_ids})
+        result = {"ok": True, "user_id": user_id, "proposal_id": args.proposal_id, "assertion_ids": assertion_ids, "profile_hash": profile_hash(conn, user_id)}
+    return result
 
 
 def proposal_reject(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         fail("Profile does not exist.", 4)
-    conn = connect(user_id)
-    with conn:
-        conn.execute(
-            "UPDATE update_proposals SET status='rejected', updated_at=? WHERE user_id=? AND proposal_id=? AND status IN ('pending','conflicted')",
-            (now(), user_id, args.proposal_id),
-        )
-        audit(conn, user_id, "proposal_reject", "proposal", args.proposal_id, {"note": args.note or ""})
+    with closing(connect(user_id)) as conn:
+        with conn:
+            conn.execute(
+                "UPDATE update_proposals SET status='rejected', updated_at=? WHERE user_id=? AND proposal_id=? AND status IN ('pending','conflicted')",
+                (now(), user_id, args.proposal_id),
+            )
+            audit(conn, user_id, "proposal_reject", "proposal", args.proposal_id, {"note": args.note or ""})
     return {"ok": True, "user_id": user_id, "proposal_id": args.proposal_id}
 
 
@@ -745,12 +767,12 @@ def assertion_add(args: argparse.Namespace) -> dict[str, Any]:
             "evidence": {"summary": args.evidence_summary or "manual assertion", "context": args.context or "manual"},
         }
     )
-    conn = connect(user_id)
-    with conn:
-        if candidate["sensitivity"] == "secret":
-            rid = insert_redaction(conn, user_id, candidate, "secret content is never stored")
-            return {"ok": True, "user_id": user_id, "redaction_id": rid}
-        assertion_id = insert_assertion(conn, user_id, candidate, args.status)
+    with closing(connect(user_id)) as conn:
+        with conn:
+            if candidate["sensitivity"] == "secret":
+                rid = insert_redaction(conn, user_id, candidate, "secret content is never stored")
+                return {"ok": True, "user_id": user_id, "redaction_id": rid}
+            assertion_id = insert_assertion(conn, user_id, candidate, args.status)
     return {"ok": True, "user_id": user_id, "assertion_id": assertion_id}
 
 
@@ -758,32 +780,32 @@ def correct(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         fail("Profile does not exist.", 4)
-    conn = connect(user_id)
     replacement = parse_json_arg(args.replacement_json, args.replacement_file, None)
-    with conn:
-        row = conn.execute("SELECT * FROM profile_assertions WHERE user_id=? AND assertion_id=?", (user_id, args.assertion_id)).fetchone()
-        if not row:
-            fail("Assertion not found.", 4)
-        conn.execute(
-            "UPDATE profile_assertions SET status='retracted', updated_at=?, valid_to=? WHERE user_id=? AND assertion_id=?",
-            (now(), now(), user_id, args.assertion_id),
-        )
-        new_assertion_id = None
-        if replacement is not None:
-            candidate = normalize_candidate(
-                {
-                    "category": row["category"],
-                    "claim": row["claim"],
-                    "value": replacement,
-                    "scope": row["scope"],
-                    "source_type": "correction",
-                    "confidence": 1.0,
-                    "sensitivity": row["sensitivity"],
-                    "evidence": {"summary": args.note, "context": "user correction"},
-                }
+    with closing(connect(user_id)) as conn:
+        with conn:
+            row = conn.execute("SELECT * FROM profile_assertions WHERE user_id=? AND assertion_id=?", (user_id, args.assertion_id)).fetchone()
+            if not row:
+                fail("Assertion not found.", 4)
+            conn.execute(
+                "UPDATE profile_assertions SET status='retracted', updated_at=?, valid_to=? WHERE user_id=? AND assertion_id=?",
+                (now(), now(), user_id, args.assertion_id),
             )
-            new_assertion_id = insert_assertion(conn, user_id, candidate, "active")
-        audit(conn, user_id, "assertion_correct", "assertion", args.assertion_id, {"note": args.note, "replacement_assertion_id": new_assertion_id})
+            new_assertion_id = None
+            if replacement is not None:
+                candidate = normalize_candidate(
+                    {
+                        "category": row["category"],
+                        "claim": row["claim"],
+                        "value": replacement,
+                        "scope": row["scope"],
+                        "source_type": "correction",
+                        "confidence": 1.0,
+                        "sensitivity": row["sensitivity"],
+                        "evidence": {"summary": args.note, "context": "user correction"},
+                    }
+                )
+                new_assertion_id = insert_assertion(conn, user_id, candidate, "active")
+            audit(conn, user_id, "assertion_correct", "assertion", args.assertion_id, {"note": args.note, "replacement_assertion_id": new_assertion_id})
     return {"ok": True, "user_id": user_id, "retracted": args.assertion_id, "replacement_assertion_id": new_assertion_id}
 
 
@@ -791,24 +813,24 @@ def delete_assertion(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         fail("Profile does not exist.", 4)
-    conn = connect(user_id)
-    with conn:
-        row = conn.execute("SELECT evidence_ids_json FROM profile_assertions WHERE user_id=? AND assertion_id=?", (user_id, args.assertion_id)).fetchone()
-        if not row:
-            fail("Assertion not found.", 4)
-        evidence_ids = json.loads(row["evidence_ids_json"])
-        if args.hard:
-            conn.execute("DELETE FROM profile_assertions WHERE user_id=? AND assertion_id=?", (user_id, args.assertion_id))
-            for event_id in evidence_ids:
-                conn.execute("DELETE FROM evidence_events WHERE user_id=? AND event_id=?", (user_id, event_id))
-            action = "assertion_hard_delete"
-        else:
-            conn.execute(
-                "UPDATE profile_assertions SET status='retracted', updated_at=?, valid_to=? WHERE user_id=? AND assertion_id=?",
-                (now(), now(), user_id, args.assertion_id),
-            )
-            action = "assertion_retract"
-        audit(conn, user_id, action, "assertion", args.assertion_id, {"hard": args.hard, "note": args.note or ""})
+    with closing(connect(user_id)) as conn:
+        with conn:
+            row = conn.execute("SELECT evidence_ids_json FROM profile_assertions WHERE user_id=? AND assertion_id=?", (user_id, args.assertion_id)).fetchone()
+            if not row:
+                fail("Assertion not found.", 4)
+            evidence_ids = json.loads(row["evidence_ids_json"])
+            if args.hard:
+                conn.execute("DELETE FROM profile_assertions WHERE user_id=? AND assertion_id=?", (user_id, args.assertion_id))
+                for event_id in evidence_ids:
+                    conn.execute("DELETE FROM evidence_events WHERE user_id=? AND event_id=?", (user_id, event_id))
+                action = "assertion_hard_delete"
+            else:
+                conn.execute(
+                    "UPDATE profile_assertions SET status='retracted', updated_at=?, valid_to=? WHERE user_id=? AND assertion_id=?",
+                    (now(), now(), user_id, args.assertion_id),
+                )
+                action = "assertion_retract"
+            audit(conn, user_id, action, "assertion", args.assertion_id, {"hard": args.hard, "note": args.note or ""})
     return {"ok": True, "user_id": user_id, "assertion_id": args.assertion_id, "hard": args.hard}
 
 
@@ -816,39 +838,40 @@ def search(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         return {"ok": True, "user_id": user_id, "profile_exists": False, "query": args.query, "items": []}
-    conn = connect(user_id)
     like = f"%{args.query}%"
-    rows = conn.execute(
-        """
-        SELECT * FROM profile_assertions
-        WHERE user_id=? AND (category LIKE ? OR claim LIKE ? OR value_json LIKE ? OR scope LIKE ?)
-        ORDER BY updated_at DESC
-        LIMIT ?
-        """,
-        (user_id, like, like, like, like, args.limit),
-    ).fetchall()
-    return {"ok": True, "user_id": user_id, "query": args.query, "items": [row_to_assertion(row) for row in rows]}
+    with closing(connect(user_id)) as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM profile_assertions
+            WHERE user_id=? AND (category LIKE ? OR claim LIKE ? OR value_json LIKE ? OR scope LIKE ?)
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            (user_id, like, like, like, like, args.limit),
+        ).fetchall()
+        items = [row_to_assertion(row) for row in rows]
+    return {"ok": True, "user_id": user_id, "query": args.query, "items": items}
 
 
 def export_profile(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
     if not profile_exists(user_id):
         fail("Profile does not exist.", 4)
-    conn = connect(user_id)
-    if args.redacted:
-        rows = conn.execute(
-            "SELECT * FROM profile_assertions WHERE user_id=? AND sensitivity='low' ORDER BY category, claim",
-            (user_id,),
-        ).fetchall()
-    else:
-        rows = conn.execute("SELECT * FROM profile_assertions WHERE user_id=? ORDER BY category, claim", (user_id,)).fetchall()
-    payload = {
-        "user_id": user_id,
-        "exported_at": now(),
-        "redacted": args.redacted,
-        "profile_hash": profile_hash(conn, user_id),
-        "items": [row_to_assertion(row) for row in rows],
-    }
+    with closing(connect(user_id)) as conn:
+        if args.redacted:
+            rows = conn.execute(
+                "SELECT * FROM profile_assertions WHERE user_id=? AND sensitivity='low' ORDER BY category, claim",
+                (user_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM profile_assertions WHERE user_id=? ORDER BY category, claim", (user_id,)).fetchall()
+        payload = {
+            "user_id": user_id,
+            "exported_at": now(),
+            "redacted": args.redacted,
+            "profile_hash": profile_hash(conn, user_id),
+            "items": [row_to_assertion(row) for row in rows],
+        }
     out = Path(args.output).expanduser() if args.output else user_dir(user_id) / "exports" / f"profile-{int(time.time())}.json"
     atomic_write_json(out, payload)
     return {"ok": True, "user_id": user_id, "output": str(out), "redacted": args.redacted, "count": len(payload["items"])}
@@ -856,32 +879,87 @@ def export_profile(args: argparse.Namespace) -> dict[str, Any]:
 
 def validate(args: argparse.Namespace) -> dict[str, Any]:
     user_id = safe_user_id(args.user)
-    init_user(user_id, None)
-    conn = connect(user_id)
-    integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
-    mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
     db = db_file(user_id)
-    base_mode = oct(BASE_DIR.stat().st_mode & 0o777)
-    db_mode = oct(db.stat().st_mode & 0o777)
-    rows = conn.execute("SELECT assertion_id,evidence_ids_json FROM profile_assertions WHERE user_id=?", (user_id,)).fetchall()
-    orphan_refs: list[dict[str, str]] = []
-    for row in rows:
-        for event_id in json.loads(row["evidence_ids_json"]):
-            found = conn.execute("SELECT 1 FROM evidence_events WHERE user_id=? AND event_id=?", (user_id, event_id)).fetchone()
-            if not found:
-                orphan_refs.append({"assertion_id": row["assertion_id"], "event_id": event_id})
-    return {
-        "ok": integrity == "ok" and not orphan_refs,
-        "user_id": user_id,
-        "integrity_check": integrity,
-        "journal_mode": mode,
-        "base_dir": str(BASE_DIR),
-        "base_mode": base_mode,
-        "db": str(db),
-        "db_mode": db_mode,
-        "orphan_evidence_refs": orphan_refs,
-        "profile_hash": profile_hash(conn, user_id),
-    }
+    if not db.exists():
+        return {
+            "ok": False,
+            "user_id": user_id,
+            "profile_exists": False,
+            "error": "Profile does not exist. Run init before validate.",
+            "base_dir": str(BASE_DIR),
+            "db": str(db),
+        }
+    try:
+        conn = connect_readonly(user_id)
+    except sqlite3.Error as exc:
+        return {
+            "ok": False,
+            "user_id": user_id,
+            "profile_exists": True,
+            "error": f"Profile database could not be opened read-only: {exc}",
+            "base_dir": str(BASE_DIR),
+            "db": str(db),
+        }
+    try:
+        integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
+        mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        base_mode_bits = BASE_DIR.stat().st_mode & 0o777
+        db_mode_bits = db.stat().st_mode & 0o777
+        base_mode = oct(base_mode_bits)
+        db_mode = oct(db_mode_bits)
+        rows = conn.execute("SELECT assertion_id,evidence_ids_json FROM profile_assertions WHERE user_id=?", (user_id,)).fetchall()
+        orphan_refs: list[dict[str, str]] = []
+        for row in rows:
+            for event_id in json.loads(row["evidence_ids_json"]):
+                found = conn.execute("SELECT 1 FROM evidence_events WHERE user_id=? AND event_id=?", (user_id, event_id)).fetchone()
+                if not found:
+                    orphan_refs.append({"assertion_id": row["assertion_id"], "event_id": event_id})
+        issues: list[str] = []
+        if integrity != "ok":
+            issues.append("integrity_check_failed")
+        if orphan_refs:
+            issues.append("orphan_evidence_refs_present")
+
+        journal_mode_ok = str(mode).lower() == "wal"
+        if not journal_mode_ok:
+            issues.append(f"journal_mode_not_wal:{str(mode).lower()}")
+
+        permission_ok: bool | None = None
+        if os.name != "nt":
+            permission_ok = base_mode_bits == 0o700 and db_mode_bits == 0o600
+            if base_mode_bits != 0o700:
+                issue = "base_permissions_too_open" if base_mode_bits & 0o077 else "base_permissions_not_0700"
+                issues.append(f"{issue}:{base_mode}")
+            if db_mode_bits != 0o600:
+                issue = "db_permissions_too_open" if db_mode_bits & 0o077 else "db_permissions_not_0600"
+                issues.append(f"{issue}:{db_mode}")
+        return {
+            "ok": not issues,
+            "user_id": user_id,
+            "profile_exists": True,
+            "issues": issues,
+            "integrity_check": integrity,
+            "journal_mode": mode,
+            "journal_mode_ok": journal_mode_ok,
+            "base_dir": str(BASE_DIR),
+            "base_mode": base_mode,
+            "db": str(db),
+            "db_mode": db_mode,
+            "permission_ok": permission_ok,
+            "orphan_evidence_refs": orphan_refs,
+            "profile_hash": profile_hash(conn, user_id),
+        }
+    except (OSError, sqlite3.Error, json.JSONDecodeError) as exc:
+        return {
+            "ok": False,
+            "user_id": user_id,
+            "profile_exists": True,
+            "error": f"Profile validation failed: {exc}",
+            "base_dir": str(BASE_DIR),
+            "db": str(db),
+        }
+    finally:
+        conn.close()
 
 
 def build_parser() -> argparse.ArgumentParser:

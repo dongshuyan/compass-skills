@@ -7,7 +7,7 @@ description: Create a concise continuation prompt that a fresh agent session can
 
 ## Language Policy
 
-**All output directed at the user — the continuation prompt itself, mode explanations, questions, and confirmations — must be written in the user's language.** Detect the user's language from their message. Default to Chinese when unknown. Skill instructions are written in English; that does not affect the language of user-facing output. The continuation prompt structure uses Chinese section headers (【工作目录】 etc.) regardless of language, because that format is the established contract for new sessions.
+**All output directed at the user — the continuation prompt itself, mode explanations, questions, and confirmations — must be written in the user's language.** Detect the user's language from their message. Default to Chinese when unknown. Skill instructions are written in English; that does not affect the language of user-facing output. Keep the continuation prompt structure stable across languages. Section headers in the continuation prompt must also use the user's language. The Chinese headers below are examples for Chinese prompts; translate them for other languages.
 
 ## Role
 
@@ -71,6 +71,8 @@ Validate a local-only prompt:
 ```bash
 python3 <skill-dir>/scripts/validate_handoff_prompt.py <draft.txt> --mode balanced --privacy local
 ```
+
+The validator recognizes English and Chinese headings directly. For any other language, put the six translated required headings and optional fact labels in a temporary JSON file, then pass `--labels-json <labels.json>`. Use the schema in `references/output-contract.md`; this keeps translated output machine-checkable without forcing English headings into the user's prompt.
 
 Validate a shareable prompt:
 

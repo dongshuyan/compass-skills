@@ -162,6 +162,8 @@ aw_task_forests
 aw_task_forest_runs
 ```
 
-`task_forest.py` 会在 `init`、`export`、`validate`、`proposal-save`、`proposal-apply` 后尽力更新该 registry。`gap-router` 和 `local-agent-control-room` 也可以在读取某个 workspace 的导出文件时刷新该 registry，以便下一次能够发现这个 workspace。
+全局 registry 默认关闭。只有用户明确同意跨 workspace 发现，并设置 `TASK_FOREST_ENABLE_GLOBAL_REGISTRY=1` 后，`task_forest.py` 才会在 `init`、`export`、`validate`、`proposal-save`、`proposal-apply` 后尽力更新该 registry。数据库路径由 `AGENT_WORKBENCH_DB` 指定；未指定时使用 `~/.agent-workbench/agent-workbench.sqlite3`。`TASK_FOREST_DISABLE_GLOBAL_REGISTRY=1` 可强制关闭已有的全局启用配置。
+
+`gap-router` 和 `local-agent-control-room` 也只能在用户同意这一集成后刷新 registry，以便下一次发现该 workspace。
 
 不要把节点、边、事件、快照、HTML、proposal 内容或完整对话摘要保存到全局 SQLite。完整数据必须留在 repo-local task-forest 目录。全局 registry 只是发现入口和健康状态摘要，不是任务事实源。

@@ -99,6 +99,8 @@ Run the bundled validator for this upgrader skill:
 <python> <skill-dir>/scripts/validate_upgrade_artifacts.py --skill <skill-dir>
 ```
 
+This bundled validator checks package structure, the portable Agent Skills frontmatter field set, referenced paths, JSON shape, Python syntax, common private-path leaks, and the upgrader's required approval terms. Its dependency-free frontmatter preflight accepts scalar fields, block text, and one-level string metadata; it rejects other YAML forms instead of guessing. A specific host may accept different syntax or a narrower field set, so its canonical validator remains authoritative for installation there. Neither structural check runs the eval cases or proves that an upgrade improves behavior.
+
 Then run the target skill's own validator and the smallest relevant technical checks:
 
 - `python -m py_compile` for modified Python scripts;

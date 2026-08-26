@@ -1,4 +1,4 @@
 interface:
   display_name: "Session Handoff Prompt"
-  short_description: "Create a paste-ready continuation prompt for a fresh agent session"
+  short_description: "Create a paste-ready continuation prompt for a fresh session"
   default_prompt: "Use $session-handoff-prompt to create a balanced continuation prompt for a fresh session."

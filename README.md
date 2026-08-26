@@ -314,22 +314,22 @@ When you return to the same AI conversation, say `continue` or an equivalent phr
 Representative output shape:
 
 ```text
-你正在接手一个已经进行过多轮的 AI 对话。请按以下上下文恢复任务状态；如果当前文件或可验证证据与这里冲突，以当前证据为准。
+You are taking over an AI conversation that has already gone through several rounds. Resume from the context below. If current files or verifiable evidence conflict with this handoff, trust the current evidence.
 
-【工作目录】
+[Working directory]
 <workspace>
 
-【用户目标】
-把 session-handoff-prompt 作为 COMPASS 的正式 skill 接入，支持 macOS、Linux、Windows 和主流 agent。
+[User goal]
+Add session-handoff-prompt to COMPASS as an official skill that works on macOS, Linux, Windows, and major agent hosts.
 
-【必须遵守的要求】
-- [已验证] 内部说明用英文；交互和输出使用用户语言，默认中文。
-- [已验证] 不读取 credential、cookie、浏览器 session 或无关私有日志。
+[Required constraints]
+- [Verified] Internal instructions are in English; interaction and output use the user's language, defaulting to Chinese when unknown.
+- [Verified] Do not read credentials, cookies, browser sessions, or unrelated private logs.
 
-【下一步】
-1. 更新 README 和 manifest。
-2. 运行 smoke test 和安全扫描。
-3. 报告验证结果和剩余风险。
+[Next step]
+1. Update the README and manifest.
+2. Run the smoke test and security scan.
+3. Report validation results and remaining risks.
 ```
 
 Initialize a local user profile:
@@ -373,7 +373,7 @@ The public install path has been validated with `skills@1.5.11`:
 - `printf '%s\n' 'Samples were randomized.' | python3 skills/academic-humanizer/scripts/metrics.py - --json` provides read-only descriptive diagnostics for language routing, process leaks, and contrast candidates without assigning an authorship or quality score.
 - With `skills@1.5.23`, the current local source is detected as nine skills; `pause-and-resume` copies successfully into temporary Codex and Claude Code skill roots with byte-identical `SKILL.md` files.
 - `pause-and-resume` passes the Skill validator. Its published file is byte-identical to the source used for the completed Codex pause/resume behavior tests.
-- Its 77 unit and package tests pass on Python 3.11 and 3.14. The package also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, and offline report contract validation. An independent live-browser visual pass for the portrait layout remains pending.
+- `assess-interview-candidate` has 77 passing unit and public-package tests on Python 3.11 and 3.14. It also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, and offline report contract validation. An independent live-browser visual pass for the portrait layout remains pending.
 - Windows and Linux compatibility is enforced through path, launcher, standard-library, reserved-filename, and shell-neutral contracts. This release was not run on physical Windows or Linux hosts.
 
 ## Roadmap

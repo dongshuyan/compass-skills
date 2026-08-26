@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import re
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -55,6 +56,38 @@ SAMPLE_PROMPT = """你正在接手一个已经进行过多轮的 agent session�
 3. 报告结果和剩余风险。
 """
 
+SPANISH_PROMPT = """Retoma esta sesión usando el contexto verificado que aparece abajo.
+
+Espacio de trabajo:
+Un repositorio local de ejemplo.
+
+Objetivo del usuario:
+Continuar el trabajo sin repetir decisiones ya confirmadas.
+
+Requisitos obligatorios:
+- [verificado] Conservar el alcance y revisar la evidencia actual.
+
+Completado:
+- Se preparó el contexto principal y se comprobó su origen.
+
+Pendiente / por verificar:
+- Confirmar el estado de los archivos antes de editar.
+
+Próximas acciones:
+1. Revisar los archivos actuales.
+2. Ejecutar la comprobación necesaria.
+"""
+
+SPANISH_LABELS = {
+    "workspace": "Espacio de trabajo:",
+    "goal": "Objetivo del usuario:",
+    "requirements": "Requisitos obligatorios:",
+    "completed": "Completado:",
+    "pending": "Pendiente / por verificar:",
+    "next": "Próximas acciones:",
+    "fact_labels": ["[verificado]", "[inferido]", "[no verificado]"],
+}
+
 
 def import_module(path: Path, name: str) -> Any:
     spec = importlib.util.spec_from_file_location(name, path)
@@ -94,12 +127,29 @@ def write_sample_task_forest(workspace: Path) -> None:
     ], ensure_ascii=False), encoding="utf-8")
 
 
+def assert_language_contract(skill_dir: Path) -> None:
+    skill = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+    output_contract = (skill_dir / "references" / "output-contract.md").read_text(encoding="utf-8")
+    metadata = (skill_dir / "agents" / "openai.yaml").read_text(encoding="utf-8")
+
+    assert "Section headers in the continuation prompt must also use the user's language." in skill
+    assert "regardless of language" not in skill
+    assert "section labels may be translated" in output_contract
+    assert "--labels-json" in skill
+    assert "--labels-json" in output_contract
+    short_description = re.search(r'^  short_description: "(.*)"$', metadata, re.MULTILINE)
+    assert short_description is not None
+    assert 25 <= len(short_description.group(1)) <= 64
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke test session-handoff-prompt scripts.")
     parser.add_argument("--skill-dir", default=str(Path(__file__).resolve().parents[1]))
     args = parser.parse_args()
     skill_dir = Path(args.skill_dir).resolve()
     scripts = skill_dir / "scripts"
+
+    assert_language_contract(skill_dir)
 
     project = import_module(scripts / "project_session_events.py", "project_session_events")
     task_forest = import_module(scripts / "read_task_forest_exports.py", "read_task_forest_exports")
@@ -124,6 +174,16 @@ def main() -> int:
 
         local_result = validate.validate(SAMPLE_PROMPT, mode="balanced", privacy="local")
         assert local_result["ok"], local_result
+        spanish_without_labels = validate.validate(SPANISH_PROMPT, mode="minimal", privacy="local")
+        assert not spanish_without_labels["ok"], spanish_without_labels
+        spanish_with_labels = validate.validate(
+            SPANISH_PROMPT,
+            mode="minimal",
+            privacy="local",
+            labels=SPANISH_LABELS,
+        )
+        assert spanish_with_labels["ok"], spanish_with_labels
+        assert spanish_with_labels["label_mode"] == "custom", spanish_with_labels
         shareable_fail = validate.validate(SAMPLE_PROMPT + "\n/Volumes/work/demo\n", mode="balanced", privacy="shareable")
         assert not shareable_fail["ok"] and "local_path_in_shareable_prompt" in shareable_fail["hard"], shareable_fail
         path_blob = "\n".join(

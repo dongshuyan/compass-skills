@@ -85,13 +85,15 @@ Run the package validator bundled with this skill:
 <python> <skill-dir>/scripts/validate_skill_package.py <target-skill-dir>
 ```
 
+This bundled validator checks package structure, the portable Agent Skills frontmatter field set, referenced paths, JSON shape, Python syntax, and common private-path leaks. Its dependency-free frontmatter preflight accepts scalar fields, block text, and one-level string metadata; it rejects other YAML forms instead of guessing. A specific host may accept different syntax or a narrower field set, so its canonical validator remains authoritative for installation there. Neither structural check runs the eval cases or proves that the skill triggers correctly or improves behavior.
+
 If the current host provides a canonical skill validator, run that too. On Codex-like hosts, this often means a `quick_validate.py` command from the platform's skill tooling.
 
 Also run the smallest relevant technical checks:
 
 - `python -m py_compile` for modified Python scripts;
 - `python -m json.tool` for edited JSON files;
-- trigger review with at least 3 should-trigger, 3 should-not-trigger, and 2 boundary prompts;
+- trigger review with the smallest useful set that includes a should-trigger case, a nearby should-not-trigger case, and a boundary case; add more only when risk or instability warrants it;
 - a leak scan for private absolute paths, credentials, hidden prompts, or environment-specific debris.
 
 Do not claim completion if validation was skipped or failed. Report the gap and the remaining risk.
