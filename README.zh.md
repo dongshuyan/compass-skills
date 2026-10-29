@@ -23,7 +23,7 @@
 >
 > 从使用 `SKILL.md` 到搭建本地 Skill 系统，讲清楚最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
 
-COMPASS 当前公开 10 个本地 skills：5 个运行时协作 skills、2 个 run-history skill 工程 skills、2 个写作与表达 skills，以及 1 个本地招聘辅助 skill。核心协作层围绕用户画像、任务图谱、同一 AI 对话内暂停续跑、跨对话续接和需求对齐；`run-history` 双 skill 负责沉淀和升级 skill；`clear-communication` 负责按读者需要组织解释；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
+COMPASS 当前公开 10 个本地 skills：5 个运行时协作 skills、2 个 run-history skill 工程 skills、2 个写作与表达 skills，以及 1 个本地招聘辅助 skill。仓库还包含一个可选的 Codex 会话标题插件，使用独立安装器。核心协作层围绕用户画像、任务图谱、同一 AI 对话内暂停续跑、跨对话续接和需求对齐；`run-history` 双 skill 负责沉淀和升级 skill；`clear-communication` 负责按读者需要组织解释；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
 
 当前公开版技能一览：
 
@@ -365,6 +365,24 @@ Skill 正文面向能够读取并遵循 `SKILL.md` 的 Harness，没有绑定特
 
 发布包只含通用规则、假设示例和来源说明，没有携带个人材料或本机用户路径。运行时输入材料仍按宿主的权限和数据规则处理。结构校验和安装检查能说明包是否有效、能否被发现，不能证明理解率改善或所有 Harness 下的行为效果。
 
+## 本机会话标题：Agent Clarity
+
+可选的 `clarity-session-titles` 插件随对话进展维护 `状态｜初始需求｜当前进展` 标题，并保留用户手动修改过的段。它包含 Skill、`UserPromptSubmit` 与 `Stop` 两条 Hooks，以及独立的范围安装器。某轮漏做标题核对时，Stop 最多要求补做一次。
+
+在本仓库的本地副本中，选择一种范围：
+
+```sh
+# 当前 Codex home 下的所有目录
+python3 scripts/title_plugin.py install --global
+
+# 或一个已获 Codex 信任的 Git 项目
+python3 scripts/title_plugin.py install --project /absolute/path/to/project
+```
+
+需要 Python 3.11+、Git 和兼容的本地 Codex。本插件已在 macOS 实测；根据使用的 POSIX 接口，预期兼容 Linux，但尚未在 Linux 运行验证，Windows 不支持。首次安装通常需要在同一 Codex home 的 `/hooks` 中审查插件的两条定义；检查 `status` 返回 `runtime_ready: true` 后才算入口就绪。前面的 `npx skills add` 用于安装 10 个通用 Skill，不会安装此插件或其 Hooks；插件内部的管理 Skill 依赖完整配套文件，不能单独复制安装。
+
+[完整说明](docs/session-titles.md)包含安装、Codex/Harbor 共享设置、更新、卸载、来源和限制。共享模式需要显式绑定稳定的状态根，并让指定的 Codex home 加载同一插件市场、信任 Hooks；安装器不会自动发现或迁移账户。标题内容仍依赖 Agent 执行指令，API 回读成功也不能证明桌面侧栏立即刷新。
+
 ## 五个核心协作 skills
 
 ### $user-profile-keeper：本地用户画像
@@ -507,6 +525,7 @@ Skill 正文面向能够读取并遵循 `SKILL.md` 的 Harness，没有绑定特
 - `printf '%s\n' '本研究采用分层抽样。' | python3 skills/academic-humanizer/scripts/metrics.py - --json`：只读检查语言路由、过程残留和对立句式候选，不输出作者身份概率或质量分数。
 - `python3 -m py_compile ...`：验证新增 Python 脚本语法。
 - `skills.sh.json` 与各 Skill 的 `evals/evals.json` 均可解析为 JSON。
+- `clarity-session-titles` 0.5.0 的 116 项标题、RPC、安装器与目录搬迁测试在 Python 3.11、3.14 上通过；Codex `0.165.0-alpha.1.2` 的隔离 home 中通过 22 项真实插件生命周期检查。`skills@1.5.25` 在默认和 full-depth 模式下仍识别 10 个通用 Skill，Codex 与 Claude Code 的通配符复制安装逐文件一致，未单独安装内部标题 Skill。这些检查未调用模型，也未验收桌面侧栏刷新，见[本次检查记录](PUBLICATION_AUDIT.md#2026-10-30-addition)。
 - 使用 `skills@1.5.23` 时，当前本地源码可被识别为 10 个 skills；`pause-and-resume` 已成功复制到临时 Codex 与 Claude Code skill 目录，两个 `SKILL.md` 副本与发布源逐字节一致。
 - `clear-communication` 已通过包结构和 Skill 结构校验。临时安装到 Codex、Claude Code 项目目录后，6 个发布文件均与源码逐字节一致；Codex `0.163.0-alpha.10.2` 与 Claude Code `2.1.296` 的原生接口均能发现该项目 Skill。这项检查没有向模型发送实际任务。
 - `pause-and-resume` 已通过 Skill 结构校验；公开文件与完成 Codex 暂停续跑行为测试时使用的源文件逐字节一致。
@@ -543,6 +562,10 @@ COMPASS 的默认安全边界：
 - 健康习惯和节奏系统：用任务森林观察长期负载，帮助用户安排更可持续的工作节奏。
 
 ## 致谢
+
+Agent Clarity 很大程度上参考并复用了 [panda-z519/agent-session-titles](https://github.com/panda-z519/agent-session-titles)，参考版本固定为 [2d931a54a736a57c23a3e9a7fcfca56031dfd5f3](https://github.com/panda-z519/agent-session-titles/tree/2d931a54a736a57c23a3e9a7fcfca56031dfd5f3)。我们复制了上游的三段解析、保护段选择与合并函数，改编了手动改名协调逻辑和 Skill 指导；三段式格式、分段保护与生命周期提醒模式均源自上游。
+
+Agent Clarity 在此基础上增加了项目/全局范围的安装、更新与卸载，通过 Codex API 写入并回读，每轮核对与最多一次补做，范围切换与并发协调，以及显式的 Codex/Harbor 共享状态。COMPASS 接入补充了公开分发文档与验证，并让默认的通用 Skill 安装跳过内部管理 Skill。具体对应关系见[来源说明](docs/session-titles.md#sources-and-contribution)，插件内保留了[上游 MIT 许可原文](plugins/clarity-session-titles/LICENSES/agent-session-titles.txt)。
 
 `clear-communication` 的设计参考了以下工作：
 

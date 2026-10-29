@@ -1,0 +1,12 @@
+{
+  "name": "clarity-session-titles",
+  "version": "0.5.0",
+  "description": "在共享用户安装、当前 Codex 账户或指定项目中维护 状态｜初始需求｜当前进展 三段式会话标题。",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "清晰会话标题",
+    "shortDescription": "全局或项目三段式标题与手动改名保护",
+    "category": "Productivity"
+  }
+}

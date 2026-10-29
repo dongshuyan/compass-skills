@@ -1,6 +1,6 @@
 # COMPASS Agent Adapter
 
-This repository contains agent-agnostic `SKILL.md` skills. Use this file when your agent does not have native skills support, or when it needs explicit rules for discovering and applying the skills in `skills/`.
+This repository contains agent-agnostic `SKILL.md` skills and an optional Codex session-title plugin. Use this file when your agent does not have native skills support, or when it needs explicit rules for discovering and applying the skills in `skills/`. The plugin has a separate installation contract in `docs/session-titles.md`.
 
 ## Discovery
 
@@ -8,6 +8,7 @@ This repository contains agent-agnostic `SKILL.md` skills. Use this file when yo
 - Read each skill's YAML frontmatter `name` and `description` to decide whether it applies.
 - Prefer explicit user invocation such as `$task-clarifier`, `$task-forest`, `$pause-and-resume`, `$session-handoff-prompt`, `$user-profile-keeper`, `$run-history-skill-builder`, `$run-history-skill-upgrader`, `$clear-communication`, or `$assess-interview-candidate`.
 - If no skill clearly applies, continue normally; do not force a skill.
+- `plugins/clarity-session-titles/skills/manage-title/` belongs to the full Codex plugin. Do not copy it into a portable skill root or enable the plugin merely because this repository was opened. Use `scripts/title_plugin.py` only when the user requests installation in a specific scope; hook trust is a separate Codex review step.
 
 ## Loading Protocol
 
@@ -42,6 +43,7 @@ Use $assess-interview-candidate to turn an authorized resume and job description
 - `run-history-skill-builder` writes new skill packages only to a user-approved local directory.
 - `run-history-skill-upgrader` is plan-only by default and edits existing skills only after explicit approval.
 - `clear-communication` provides writing instructions and references; it has no runtime script or fixed output directory. Follow the current task's authorization when reading material or writing a document.
+- The optional title plugin stores installation and title-protection records under the selected project's `.local/` or the selected Codex home's `agent-clarity/`. Portable mode binds a shared state root inside the deployed package; never commit that generated binding or copy account credentials.
 - `assess-interview-candidate` writes case data and reports only below a user-approved local case root; generated candidate records stay outside this repository.
 - Set `COMPASS_USER_PROFILE_HOME` to override the profile directory.
 - Set `COMPASS_AGENT_NAME` to label task-forest changes by agent, for example `codex`, `claude-code`, `opencode`, or `openclaw`.

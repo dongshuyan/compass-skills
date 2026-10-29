@@ -1,5 +1,16 @@
 # Third-party notices
 
+## Agent Clarity session titles
+
+The optional `clarity-session-titles` Codex plugin derives substantially from [panda-z519/agent-session-titles](https://github.com/panda-z519/agent-session-titles), pinned to revision [2d931a54a736a57c23a3e9a7fcfca56031dfd5f3](https://github.com/panda-z519/agent-session-titles/tree/2d931a54a736a57c23a3e9a7fcfca56031dfd5f3), MIT, Copyright (c) 2026 panda-z519.
+
+- Copied: `parse_three_part_title`, `protected_segments`, and `merge_protected_title` in [title_segments.py](plugins/clarity-session-titles/scripts/title_segments.py). Their function bodies and signatures match the pinned source.
+- Adapted: manual-edit reconciliation in `title_runtime.py` and the plugin's `manage-title` Skill guidance. The three-part title format, per-segment manual-edit protection, and lifecycle prompting pattern originate upstream.
+- Added in Agent Clarity: project/global installation and removal, API-only title writes with readback, per-turn verification with at most one repair, scope handover and concurrent-write coordination, and an explicit shared-state installation mode for configured Codex/Harbor homes.
+- Added for this repository: public packaging, separation from portable Skill installation, relocation verification, and installation/source documentation.
+
+The original MIT notice is retained verbatim in [LICENSES/agent-session-titles.txt](plugins/clarity-session-titles/LICENSES/agent-session-titles.txt). The plugin bundle also includes a [copy of the COMPASS MIT license](plugins/clarity-session-titles/LICENSE) for its original contributions. The upstream project is credited for the reused design and code; this package does not imply upstream endorsement. See [installation and source notes](docs/session-titles.md).
+
 ## Clear Communication
 
 The writing guidance in Clear Communication was informed by and adapted from principles in:

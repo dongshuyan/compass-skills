@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [{
+      "hooks": [{"type": "command", "command": "python3 \"${PLUGIN_ROOT}/scripts/title_guard.py\"", "timeout": 20}]
+    }],
+    "Stop": [{
+      "hooks": [{"type": "command", "command": "python3 \"${PLUGIN_ROOT}/scripts/title_guard.py\"", "timeout": 20}]
+    }]
+  }
+}

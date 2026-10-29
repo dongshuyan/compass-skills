@@ -1,6 +1,6 @@
 # Publication Audit
 
-Initial audit date: 2026-08-25. The [2026-10-19 addition](#2026-10-19-addition) records the current publication checks without rewriting the earlier results below.
+Initial audit date: 2026-08-25. The [2026-10-30 addition](#2026-10-30-addition) records the latest integration checks; the [2026-10-19 addition](#2026-10-19-addition) and earlier results below retain their original scope.
 
 Scope:
 
@@ -118,3 +118,19 @@ No personal absolute path, real candidate identity, contact detail, credential, 
 These checks establish package structure, installation, native discovery, and the tested candidate-report behavior. They do not measure reader comprehension, test automatic skill selection on real model tasks, or establish behavior across all Harnesses.
 
 No physical Windows or Linux host was used. The previously pending independent browser visual review of the candidate portrait layout remains pending; this update checked its template syntax and existing render and offline contracts.
+
+## 2026-10-30 addition
+
+Scope: the optional Agent Clarity 0.5.0 Codex title plugin under `plugins/clarity-session-titles/`, its installer and compatibility imports under `scripts/`, the title-specific `tests/`, `docs/session-titles.md`, and repository documentation. The existing ten portable skills are unchanged. The earlier portability statements in this audit apply to those skills; the title plugin uses POSIX interfaces, is tested on macOS, is expected but not exercised on Linux, and does not support Windows.
+
+The plugin runtime and installer were copied from the existing 0.5.0 implementation without importing local account state or development logs. Distribution changes add the COMPASS MIT license to the bundle, mark the plugin-only Skill as internal for the generic skills CLI, and explain how to recover from an incomplete standalone Skill installation. The real lifecycle test derives its upgrade version from the manifest. Opening this repository or installing its portable skills does not activate the plugin.
+
+Checks performed on macOS:
+
+- The source implementation's 114 title-specific tests passed before integration. The copied suite plus relocation and bound-source safety regressions passes 116 tests on Python 3.11 and Python 3.14. The relocation test deploys from a checkout with spaces in its path and starts the deployed runtime after the original checkout path changes. A bound-source regression first reproduced a lifecycle test creating state outside its disposable Codex home (inside a temporary sentinel fixture); the lifecycle script now rejects a generated source binding before creating any state, and unit fixtures explicitly isolate runtime bindings.
+- `python3 tests/live_plugin_lifecycle.py --execute` passed 22 checks with Codex `0.165.0-alpha.1.2`. It uses a disposable, unauthenticated home and real local plugin discovery. Checks cover project separation, same-version refresh, manifest-derived version upgrade, preservation of activation time and user configuration, removal/reinstallation, global discovery across two Git projects and a non-Git directory, untrusted-hook readiness, and project-to-global handover. It does not bypass hook trust or call a model.
+- `skills@1.5.25` lists ten portable skills in ordinary, full-depth, and wildcard/full-depth modes. The internal plugin Skill is excluded in each case. `INSTALL_INTERNAL_SKILLS=1` explicitly exposes it; the plugin Skill contains guidance for a missing full package. A wildcard/full-depth copy install into disposable Codex and Claude Code project roots preserves all tracked files of the ten skills byte for byte and does not install hooks.
+- Ruff's fatal/undefined-name checks (`E9,F63,F7,F82`) pass for the title scripts, plugin, and tests. All new Python files parse with Python 3.11 syntax, and plugin/hook JSON plus `skills.sh.json` parse successfully. This is not a full style cleanup of the imported implementation.
+- The three copied helpers are AST-identical to the pinned upstream functions. The retained upstream MIT notice is byte-identical to that revision's `LICENSE`. Attribution describes the three-part format, segment protection and prompting pattern as upstream work, distinguishes copied/adapted code from Agent Clarity additions, and does not imply endorsement.
+
+This integration does not reinstall the live title plugin or migrate real accounts. The runtime's shared-state behavior remains covered by the imported unit tests; no new live multi-account/model run or desktop-sidebar visual acceptance was performed for this snapshot. Local lifecycle evidence stays in ignored `.local/plugin-integration/`, outside the public source files. A successful local check does not establish remote publication.

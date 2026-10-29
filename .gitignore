@@ -23,6 +23,9 @@ review/
 /.compass-skills/
 /task-forest/
 /user-profiles/
+/.local/
+# Generated title-plugin bindings contain the installer's machine-specific state root
+/plugins/clarity-session-titles/global-installation.json
 *.sqlite
 *.sqlite3
 *.sqlite3-*

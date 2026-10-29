@@ -24,7 +24,7 @@
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```
 
-COMPASS Skills gives AI agents ten local skills: five runtime collaboration skills, two run-history skill-engineering skills, two writing and communication skills, and one local hiring-support skill.
+COMPASS Skills gives AI agents ten local skills: five runtime collaboration skills, two run-history skill-engineering skills, two writing and communication skills, and one local hiring-support skill. It also includes an optional Codex session-title plugin, installed separately.
 
 The project currently ships ten `SKILL.md` skills:
 
@@ -40,6 +40,8 @@ The project currently ships ten `SKILL.md` skills:
 | [`clear-communication`](skills/clear-communication/) | Organizes explanations, reports, comparisons, and instructions around the reader’s task while preserving facts, conditions, uncertainty, and verification state. |
 | [`academic-humanizer`](skills/academic-humanizer/) | Helps write or revise English and Chinese academic prose by removing formulaic AI-like patterns and restoring a natural scholarly voice while preserving claims, evidence strength, and logical relations. |
 | [`assess-interview-candidate`](skills/assess-interview-candidate/) | Turns an authorized resume and job description into an auditable evidence layer and a concise three-part offline interviewer report, with locally sanitized resume portraits and bounded timeline-age estimates kept outside scoring. |
+
+The optional [Agent Clarity title plugin](docs/session-titles.md) lives under `plugins/clarity-session-titles/`; it has a separate installer and is not one of these ten portable skills.
 
 For multi-skill repositories, install only the functions you actually need. Use `pause-and-resume` when the same AI conversation will remain available; use `session-handoff-prompt` when work must move to a fresh conversation. The `run-history` pair supports skill engineering. Use `clear-communication` to organize explanations for the reader, and `academic-humanizer` to improve academic prose without changing its claims.
 
@@ -214,6 +216,24 @@ The core skill is intended for Harnesses that can read and follow `SKILL.md`. It
 
 The release package contains generic instructions and hypothetical examples, with no personal source material or machine-specific user paths. Material supplied at runtime is handled under the host's permissions and data policies. Structure checks and installation checks establish package validity and availability; they do not establish a comprehension improvement or universal behavior across Harnesses.
 
+## Agent Clarity: Codex session titles
+
+The optional `clarity-session-titles` plugin maintains `状态｜初始需求｜当前进展` titles as a conversation progresses and preserves manually edited segments. It combines a bundled Skill, `UserPromptSubmit` and `Stop` hooks, and a scoped installer. If a turn misses its title check, the Stop hook requests at most one repair.
+
+From a checkout of this repository, choose the scope you want:
+
+```sh
+# All directories in the current Codex home
+python3 scripts/title_plugin.py install --global
+
+# Or one trusted Git project
+python3 scripts/title_plugin.py install --project /absolute/path/to/project
+```
+
+Requires Python 3.11+, Git, and a compatible local Codex. This plugin is tested on macOS; Linux is expected to work but has not been exercised, and Windows is unsupported. The first install normally requires reviewing the plugin's two definitions in Codex `/hooks`; `status` must report `runtime_ready: true` before treating the hooks as ready. The generic `npx skills add` commands above install the ten portable skills; this plugin uses its own installer. Its internal Skill must stay with the complete package.
+
+See [installation, shared Codex/Harbor setup, updates, removal, sources, and limits](docs/session-titles.md). Shared mode is explicit: it binds a stable state root and requires the intended homes to load the same marketplace and trust the hooks. It does not discover or migrate accounts automatically. Title generation still depends on the Agent following instructions; API readback does not establish immediate desktop-sidebar refresh.
+
 ## Task Clarifier Example
 
 A vague request is turned into a checked requirement before the agent recommends anything.
@@ -316,6 +336,8 @@ Ecosystem map:
 ![COMPASS skills ecosystem DAG](assets/compass-system-map.en.svg)
 
 ## Compatibility
+
+This section covers the ten portable skills. The optional [session-title plugin](docs/session-titles.md) requires a compatible local Codex. It is tested on macOS; Linux is expected but untested, and Windows is unsupported.
 
 COMPASS works across agent runtimes as a `SKILL.md` package with Markdown instructions, YAML frontmatter, optional `references/`, optional `scripts/`, and optional agent metadata.
 
@@ -459,6 +481,7 @@ The public install path has been validated with `skills@1.5.11`:
 - `npx skills add dongshuyan/compass-skills --skill '*' -a claude-code --copy -y` installs the released skills into a temporary project's `.claude/skills/` directory.
 - `python3 skills/session-handoff-prompt/scripts/smoke_test_handoff.py --skill-dir skills/session-handoff-prompt` validates compacted-event projection, task-forest read-only summaries, local validation, and shareable redaction.
 - `printf '%s\n' 'Samples were randomized.' | python3 skills/academic-humanizer/scripts/metrics.py - --json` provides read-only descriptive diagnostics for language routing, process leaks, and contrast candidates without assigning an authorship or quality score.
+- `clarity-session-titles` 0.5.0 passes 116 title/RPC/installer/relocation tests on Python 3.11 and 3.14, plus 22 real plugin-lifecycle checks in a disposable home using Codex `0.165.0-alpha.1.2`. With `skills@1.5.25`, default and full-depth discovery still list ten portable skills; wildcard copy installation for Codex and Claude Code preserves their tracked files and excludes the internal title Skill. These checks do not run a model or verify desktop-sidebar refresh. See [the dated audit](PUBLICATION_AUDIT.md#2026-10-30-addition).
 - With `skills@1.5.23`, the current local source is detected as ten skills; `pause-and-resume` copies successfully into temporary Codex and Claude Code skill roots with byte-identical `SKILL.md` files.
 - `clear-communication` passes the package and Skill structure validators. A temporary copy installation for Codex and Claude Code preserves all six package files byte for byte. Codex `0.163.0-alpha.10.2` and Claude Code `2.1.296` both discover that temporary project skill through their native interfaces; this check sends no model task.
 - `pause-and-resume` passes the Skill validator. Its published file is byte-identical to the source used for the completed Codex pause/resume behavior tests.
@@ -475,6 +498,10 @@ Planned additions:
 - Recommend low-switching-cost follow-up tasks from the task graph.
 
 ## Acknowledgements
+
+Agent Clarity substantially reuses [panda-z519/agent-session-titles](https://github.com/panda-z519/agent-session-titles), pinned to [2d931a54a736a57c23a3e9a7fcfca56031dfd5f3](https://github.com/panda-z519/agent-session-titles/tree/2d931a54a736a57c23a3e9a7fcfca56031dfd5f3). We copied its three-part parser and protected-segment selection/merge helpers, and adapted its manual-edit reconciliation and Skill guidance. The three-part format, segment protection, and lifecycle prompting pattern originate upstream.
+
+Agent Clarity adds scoped installation, updates and removal; API-only writes with readback; per-turn verification with at most one repair; scope and concurrency coordination; and explicit shared Codex/Harbor state. COMPASS adds the public distribution and excludes the plugin's internal Skill from default standalone Skill installation. The [source notes](docs/session-titles.md#sources-and-contribution) describe that boundary; the [original MIT notice](plugins/clarity-session-titles/LICENSES/agent-session-titles.txt) is retained in the plugin bundle.
 
 Clear Communication draws on the following work:
 
