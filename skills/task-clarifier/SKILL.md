@@ -21,10 +21,12 @@ Write user-facing output (questions, options, recommendations, alignment materia
 All three must be met before this skill ends:
 
 1. **The user understands their own needs**, including considerations they have not raised, latent contradictions, and implicit premises that would change the outcome.
-2. **The AI understands the user's needs** completely and specifically. No user-owned decision is filled with a default.
+2. **The AI understands the user's needs** completely and specifically, with sufficient support for understandings that affect the outcome. Identify both missing information and interpretations that already exist but lack support. No user-owned decision is filled with a default.
 3. **The user can verify the AI's understanding.** It is stated in checkable form, and each inference is listed for confirmation or correction.
 
-Judge completion by these goals and the user's explicit confirmation. Do not use a numeric clarity score or a required number of questions.
+Focus on understandings that affect the goal, scope and non-goals, constraints, priorities, acceptance criteria, or execution direction; do not ask extra questions about irrelevant details. Sufficient support comes from the user's explicit statements about intent and choices, inspected materials that directly support the relevant facts, or valid inferences whose necessary premises are supported. User-owned decisions still require the user's statement or confirmation. For objective facts only the user can supply, use their explicit report to align the request and label it in the summary as "user-provided, not independently verified." This establishes the source and the understood requirement, not the truth of the fact. Continue clarifying if conflicts or remaining uncertainty could change the understanding of the request.
+
+Treat outcome-relevant open decisions and low-confidence understandings as unresolved alignment items. End only when these items are resolved and the user explicitly confirms the overall understanding. The AI's own feeling of confidence is not a substitute for evidence. Do not use a numeric clarity score or a required number of questions.
 
 ## Startup Reads
 
@@ -41,9 +43,9 @@ Do not read the full profile, pending profile entries, private background, raw e
 
 Each round:
 
-1. **Look up before asking.** Facts that the current conversation, provided materials, workspace files, or the task forest can answer are not questions.
-2. **Find the open decisions that most affect the outcome.** These are choices, priorities, risk tolerances, acceptance criteria, and facts that cannot be looked up. Raise contradictions and infeasible parts in the current round as soon as you identify them.
-3. **Ask the fewest questions that resolve those decisions, at most three per round.** Ask questions that depend on earlier answers in later rounds. Combine only independent questions.
+1. **Look up before asking.** Check available information in the current conversation, provided materials, workspace files, or the task forest first; do not ask the user for answers these sources reliably establish. The conversation can establish the user's intent and choices. For objective facts, distinguish "the user reported this" from "this fact was verified"; retain unverified status when verification is unavailable.
+2. **Find the unresolved alignment items that most affect the outcome.** Include missing information, undecided choices, priorities, risk tolerances, and acceptance criteria, as well as existing interpretations that lack support, depend on unsupported or contradicted premises, or still have plausible alternatives that would change the outcome. Treat the user's explicit choices, including exact requested text or values, as settled unless a concrete conflict with another stated requirement is identified. An optional alternative wording is not an unresolved alignment item. Raise contradictions and infeasible parts as soon as the evidence establishes them; keep an unsupported premise provisional and ask what would resolve it.
+3. **Ask the fewest questions that resolve those items, at most three per round.** Before combining questions, check whether one answer could change another question's premise, options, or recommendation. If it could, ask the prerequisite first and defer the dependent question to a later round. Combine only independent questions.
 4. **For each question, state the result it changes, offer distinguishable options, and give a recommended answer.** Always keep a free-form option.
 
 Questions may cover anything that still affects the outcome: the goal and why it matters now; what counts as done and done well; scope and non-goals; time, budget, technology, format, region, permissions, risk, and external effects; which goal wins when goals conflict; and premises the user has not recognized. Ask about audience only under the Audience Impact Test below.
@@ -52,6 +54,7 @@ Lay out each question with the reason first, options second, and the recommendat
 
 ```
 **Q1. [One sentence: why this answer changes the outcome]**
+[If an existing understanding has low confidence: I currently understand X, based on Y; Z is still uncertain. Please confirm or correct it.]
 
 A) [option]  B) [option]  C) [option]  D) Tell me your own view
 
@@ -62,7 +65,7 @@ Separate multiple questions in one round with a blank line and `---`. Keep quest
 
 If the user says "up to you", "whatever", "your call", "你看着办", "随便", or "你来定", give a recommended option and ask them to confirm it. Do not proceed on your own.
 
-**Zero-question branch.** If local lookup leaves no open user-owned decision, ask no questions and go straight to the Confirmation Stage. Zero questions never means zero confirmation: the user still confirms before execution.
+**Zero-question branch.** If lookup leaves no unresolved alignment items that affect the outcome, ask no questions and go straight to the Confirmation Stage. Zero questions never means zero confirmation: the user still explicitly confirms before execution.
 
 ## Audience Impact Test
 
@@ -112,14 +115,14 @@ A medium is evidence for correction, not proof of shared understanding. Keep goa
 
 ## Confirmation Stage
 
-Enter this stage when all three goals are met, including the zero-question case. Use the user's language:
+Enter this stage when lookup or clarification has resolved the outcome-relevant alignment items and a complete, checkable understanding can be summarized. This includes the zero-question case. The user still needs to check the summary; only their explicit confirmation closes the stage. Use the user's language:
 
 ```
 我的理解如下：
 [3-5 行：目标、范围、非目标、受众或角色、关键约束、可观察的验收标准]
 
-我的推断（请逐条确认）：
-- 我推断 [X]，因为 [依据]；如果错误，会改变 [范围 / 验收 / 风险 / 交互 / 实现] — 如有偏差请直接纠正
+我的推断（如有，请逐条确认；没有则写“无”）：
+- 我推断 [X]，因为 [用户原话、来源位置或推理依据]；如果错误，会改变 [范围 / 验收 / 风险 / 交互 / 实现] — 如有偏差请直接纠正
 
 [如有对齐材料：逐项标注"已检查"或"未验证"，说明它展示什么、不决定什么、如何纠正]
 
@@ -127,11 +130,13 @@ Enter this stage when all three goals are met, including the zero-question case.
 有没有我遗漏的？
 ```
 
-If the user corrects an inference, update the understanding, ask at most one follow-up question about that point, and repeat this summary. Only an explicit confirmation closes the stage. A medium, an example, or a silent reply does not. After confirmation, this skill ends and execution may begin, subject to High-Risk Actions below.
+If the user corrects a point, update your understanding and check its consequences with the available evidence. Do not re-ask anything the user has explicitly settled unless a new conflict arises. In the reply immediately after a correction, ask at most one clarification question, chosen by the loop's dependency rule, and only if outcome-relevant alignment items remain. Do not ask about the correction itself once it is clear. After the user answers, resume the normal loop. When no outcome-relevant items remain, update the summary and wait for confirmation.
+
+Only an explicit confirmation closes the stage. A medium, an example, or a silent reply does not. After confirmation, this skill ends and execution may begin, subject to High-Risk Actions below.
 
 ## High-Risk Actions
 
-Delete, overwrite, migrate, publish, send, deploy, install, use credentials, elevate permissions, write to a remote system, or change global configuration require listing the exact actions and waiting for explicit approval before execution. This approval is separate from confirming the understanding. Confirming the understanding does not approve these actions.
+Delete, destructively overwrite, migrate, publish, send, deploy, install, use credentials, elevate permissions, write to a remote system, or change global configuration require explicit approval for the concrete action and scope. Before execution, identify the action and target and obtain only missing approval; approval already given for the same action and scope remains valid. Confirming the understanding alone does not grant new approval for these actions. A scoped edit to an existing file is covered by the user's request after this skill's understanding is confirmed; that edit authorization does not extend to deleting files or discarding content beyond the requested edit. Merely writing an existing file does not by itself make the edit a destructive overwrite. Host permissions and tool availability remain binding.
 
 ## No Bypass
 
@@ -141,23 +146,41 @@ Once this skill is explicitly invoked, do not substitute safe defaults for quest
 
 These examples are illustrative.
 
-### Zero open decisions
+### Zero unresolved alignment items
 
-**User:** `$task-clarifier 把 docs/install.md 里的 Python 版本要求改成 3.11，只改这个文件`
+**User:** `$task-clarifier 把 docs/install.md 中唯一一处 Python 3.10 改成 Python 3.11，其余内容不动`
 
-Suppose local lookup shows the project's packaging file already requires Python 3.11, and the user named both the file and the target. No user decision is open, so the skill goes straight to the confirmation summary:
+Suppose local lookup confirms a single occurrence of that string and that the project's packaging file already requires Python 3.11. The edit is sufficiently specified, so the skill goes straight to the confirmation summary:
 
 ```
 我的理解如下：
-把 docs/install.md 中的 Python 版本要求改为 3.11；只修改这一个文件；与项目打包配置保持一致。
+把 docs/install.md 中唯一一处 Python 3.10 改成 Python 3.11；其余内容不动；与项目打包配置保持一致（本示例假设查阅已确认）。
 
-我的推断（请逐条确认）：
-- 我推断其他文档不需要同步修改，因为你只指定了这一个文件 — 如果需要同步，会改变范围
-- 我推断只改版本号，不调整安装步骤，因为你没有提到其他变化 — 如果错误，会改变实现
+我的推断：
+无。
 
-确认后我会：只修改 docs/install.md 中的版本要求。
+确认后我会：只替换该处版本号。
 有没有我遗漏的？
 ```
+
+If lookup instead finds multiple matches or another conflict affecting the edit, resolve those alignment items first.
+
+### An existing interpretation with insufficient support
+
+**User:** `$task-clarifier 写一份项目进展说明，要适合领导看`
+
+Suppose the available materials still do not establish the report's purpose. The AI tentatively interprets "适合领导看" as "compress it to one page," but the user's words do not support that length requirement; the purpose also changes which information to retain.
+
+```
+Q1. 这份说明的用途会决定应保留哪些信息。
+我目前暂按“一页进度概览”理解，来源是“适合领导看”；它只说明读者，不足以确定篇幅或用途。
+
+A) 快速了解进展  B) 决定是否追加资源  C) 说说你的其他用途
+
+→ 我的推荐：A，先以进度概览作为候选；如果本次需要领导决定资源投入，应选 B。
+```
+
+After the user chooses, update the understanding and check for remaining uncertainty that affects the outcome. Neither the recommended purpose nor "one page" becomes a confirmed requirement without the user's confirmation.
 
 ### Multi-step interaction
 
