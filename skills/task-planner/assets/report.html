@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="__LANG__">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>__TITLE__</title>
+<style>
+:root {
+  --page: #f6f6f0;
+  --paper: #fffefa;
+  --ink: #19382e;
+  --text: #253c34;
+  --muted: #53685d;
+  --line: #cbd5ca;
+  --tint: #edf3e9;
+  --accent: #256043;
+  --alert: #89421e;
+  --warn: #fff0df;
+  --focus: #126b9c;
+  font-family:
+    Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background: var(--page);
+  font-size: 16px;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  line-height: 1.58;
+}
+button, summary {
+  font: inherit;
+  cursor: pointer;
+}
+button {
+  color: inherit;
+}
+button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+button {
+  border: 0;
+  background: none;
+}
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+h1, h2, h3, p, ul, dl, dd {
+  margin: 0;
+}
+h1, h2, h3 {
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+h1 {
+  font-size: clamp(1.85rem, 4vw, 3rem);
+  font-weight: 680;
+  color: var(--ink);
+}
+h2 {
+  font-size: 1.24rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+button, section, article, main, nav, div {
+  min-width: 0;
+}
+body {
+  overflow-wrap: anywhere;
+}
+[hidden] {
+  display: none !important;
+}
+.shell {
+  width: min(1180px, calc(100% - 3rem));
+  margin: auto;
+  padding: 2.2rem 0 4rem;
+}
+.mast {
+  border-top: 4px solid var(--ink);
+  padding: 1.25rem 0 1.6rem;
+}
+.topline, .panel-head, .detail-top, .logline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.topline {
+  margin-bottom: 1.65rem;
+  color: var(--muted);
+  font-size: 0.87rem;
+}
+.topline strong {
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+.goal {
+  font-size: clamp(1rem, 1.65vw, 1.17rem);
+  max-width: 80ch;
+  margin-top: 0.7rem;
+}
+.meter-row {
+  border-top: 1px solid var(--line);
+  margin-top: 1.35rem;
+  padding-top: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.85rem;
+  row-gap: 0.45rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+progress {
+  width: 8.5rem;
+  height: 0.45rem;
+  border: none;
+  border-radius: 1rem;
+  background: var(--line);
+  accent-color: var(--accent);
+}
+progress::-webkit-progress-bar {
+  background: var(--line);
+  border-radius: 1rem;
+}
+progress::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 1rem;
+}
+.clock {
+  margin-left: auto;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.5fr);
+  align-items: start;
+  gap: 1.1rem;
+}
+.box {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+}
+.panel-head {
+  padding: 1.05rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.muted, .micro {
+  color: var(--muted);
+}
+.micro {
+  font-size: 0.82rem;
+}
+.treebody {
+  padding: 0.7rem 0.55rem;
+}
+.treebody ul {
+  list-style: none;
+  padding: 0;
+}
+.treebody ul ul {
+  border-left: 1px solid var(--line);
+  margin-left: 0.92rem;
+  padding-left: 0.35rem;
+}
+.treerow {
+  display: flex;
+  align-items: center;
+  margin: 0.16rem 0;
+  border-radius: 0.35rem;
+}
+.treerow:has([aria-current="true"]) {
+  background: var(--tint);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.twist {
+  width: 1.8rem;
+  align-self: stretch;
+  flex-shrink: 0;
+  font-weight: 650;
+}
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: left;
+  flex: 1;
+  padding: 0.52rem 0.4rem 0.52rem 0.1rem;
+  line-height: 1.36;
+}
+.pick:hover, .twist:hover {
+  color: var(--accent);
+  background: var(--tint);
+}
+.pick[aria-current="true"] {
+  font-weight: 650;
+}
+.dot {
+  width: 0.56rem;
+  height: 0.56rem;
+  flex-shrink: 0;
+  display: inline-block;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+}
+.dot.active {
+  background: #cce1eb;
+  border-color: #266185;
+}
+.dot.passed {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.dot.interrupted, .dot.deviation {
+  background: #e5a363;
+  border-color: var(--alert);
+}
+.ready {
+  font-size: 0.85rem;
+  border-top: 1px solid var(--line);
+  padding: 0.8rem 1.15rem;
+  color: var(--muted);
+}
+.ready button, .deplink {
+  padding: 0.1rem 0.25rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--accent);
+  text-align: left;
+}
+.detail {
+  padding: 1.3rem 1.5rem;
+}
+.detail-top {
+  margin-bottom: 0.7rem;
+}
+.detail h2 {
+  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+  margin-bottom: 0.4rem;
+}
+.status {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 0.17rem 0.62rem;
+  border-radius: 1rem;
+  background: #edf0e9;
+  color: #415748;
+  font-size: 0.83rem;
+  font-weight: 620;
+}
+.status.active {
+  color: #22556e;
+  background: #e2eff3;
+}
+.status.passed {
+  color: var(--accent);
+  background: #e2efe1;
+}
+.status.deviation, .status.interrupted, .status.at_risk {
+  background: var(--warn);
+  color: var(--alert);
+}
+.description {
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.lead {
+  padding: 0.95rem 1.05rem;
+  background: var(--tint);
+  border-left: 3px solid var(--accent);
+  border-radius: 0.2rem;
+}
+.lead h3, .risk h3 {
+  margin-bottom: 0.35rem;
+}
+.fields {
+  margin: 0.75rem 0;
+  display: grid;
+  grid-template-columns: minmax(5em, 24%) minmax(0, 1fr);
+  gap: 0.55rem 0.8rem;
+}
+.fields dt {
+  font-size: 0.88rem;
+  color: var(--muted);
+  padding-top: 0.13rem;
+}
+.fields dd {
+  white-space: pre-line;
+}
+.fold {
+  border-top: 1px solid var(--line);
+  padding: 0.62rem 0;
+}
+.fold summary, .log summary {
+  font-weight: 600;
+}
+.fold > summary:focus-visible, .log > summary:focus-visible {
+  border-radius: 0.15rem;
+}
+.facts {
+  list-style: none;
+  padding: 0;
+}
+.facts li {
+  margin: 0.65rem 0;
+}
+.facts .micro {
+  display: block;
+}
+.risk, .result {
+  margin: 0.9rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+}
+.result {
+  background: #f6f8f3;
+}
+.risk {
+  background: var(--warn);
+  border-color: #e6c19b;
+}
+.risk .micro {
+  color: var(--alert);
+}
+.history {
+  margin-top: 1.25rem;
+}
+.log {
+  padding: 0.8rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.log:last-child {
+  border-bottom: 0;
+}
+.log summary {
+  line-height: 1.5;
+}
+.log summary .micro {
+  margin-right: 0.65rem;
+  font-weight: 450;
+}
+.logbody {
+  margin-top: 0.7rem;
+}
+.change {
+  padding: 0.6rem 0.8rem;
+  margin: 0.5rem 0;
+  border-left: 2px solid var(--line);
+}
+.change p {
+  white-space: pre-line;
+  margin: 0.3rem 0;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.probe {
+  display: none;
+}
+.node-name {
+  flex: 1;
+}
+.node-state {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 480;
+  color: var(--muted);
+}
+@media (max-width: 730px) {
+  .shell {
+    width: calc(100% - 1.5rem);
+    padding-top: 1rem;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .topline {
+    margin-bottom: 1rem;
+  }
+  .clock {
+    margin-left: 0;
+  }
+  .detail {
+    padding: 1rem;
+  }
+  .panel-head, .log {
+    padding: 0.85rem 1rem;
+  }
+  .fields {
+    grid-template-columns: minmax(4.5em, 25%) minmax(0, 1fr);
+  }
+  .treebody ul ul {
+    margin-left: 0.55rem;
+  }
+  .mast {
+    padding-bottom: 0.9rem;
+  }
+}
+@media print {
+  body {
+    background: #fff;
+  }
+  .shell {
+    width: 100%;
+    padding: 0;
+  }
+  .layout {
+    display: block;
+  }
+  .box {
+    margin: 0.5rem 0;
+  }
+  .clock {
+    margin-left: 0;
+  }
+  .probe {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+<main class="shell" id="report"></main>
+<noscript>请启用浏览器的 JavaScript 查看计划。 Enable JavaScript to view this plan.</noscript>
+<script id="task-planner-state" type="application/json" data-checksum="__CHECKSUM__">__STATE__</script>
+<script>
+(() => {
+  "use strict";
+  const s = JSON.parse(document.getElementById("task-planner-state").textContent);
+  const url = new URL(location.href);
+  if (window.parent !== window && url.searchParams.has("_plan_probe")) {
+    parent.postMessage({ type: "task-plan-revision", uid: s.uid, revision: s.revision }, "*");
+    return;
+  }
+  const zh = s.lang.toLowerCase().startsWith("zh");
+  const pairs = {
+    plan: ["任务计划", "Task plan"],
+    tree: ["计划树", "Plan tree"],
+    goal: ["最终目标", "Goal"],
+    updated: ["更新于", "Updated"],
+    nodes: ["个节点", "nodes"],
+    completed: ["可执行任务已通过", "executable tasks accepted"],
+    ready: ["当前可开始", "Ready to start"],
+    planned: ["待开始", "Planned"],
+    active: ["进行中", "In progress"],
+    passed: ["验收通过", "Accepted"],
+    deviation: ["未达验收", "Needs follow-up"],
+    interrupted: ["已中断", "Interrupted"],
+    retired: ["已替换", "Retired"],
+    at_risk: ["目标需讨论", "Goal needs review"],
+    title: ["名称", "Name"],
+    description: ["任务说明", "Task"],
+    constraints: ["要求与限制", "Constraints"],
+    deliverable: ["交付物", "Deliverable"],
+    expected: ["预期效果", "Expected effect"],
+    estimate_minutes: ["预计用时", "Estimated time"],
+    acceptance: ["怎样验收", "Acceptance check"],
+    deps: ["前置依赖", "Prerequisites"],
+    evidenceGate: ["需已取得的证据", "reviewed evidence"],
+    factTitle: ["判断依据", "Why this is expected"],
+    facts: ["事实与出处", "Facts and sources"],
+    rationale: ["判断理由", "Rationale"],
+    high: ["高置信", "High confidence"],
+    medium: ["中置信", "Medium confidence"],
+    low: ["低置信", "Low confidence"],
+    missing: ["待核实出处", "Source unverified"],
+    baseline: ["待实测指标", "Baseline to measure"],
+    metric: ["指标", "Metric"],
+    method: ["测量方法", "Method"],
+    measurement: ["测量节点", "Measurement node"],
+    measured: ["已有实测", "Measured baseline"],
+    none: ["无", "None"],
+    awaiting_input: ["等待外部输入", "Waiting for input"],
+    input_evidence: ["已收到的输入", "Input received"],
+    blocked: ["等待前置结果", "Waiting for prerequisites"],
+    usable_evidence: ["可供后续使用的结果", "Usable result"],
+    result: ["实测与验收", "Observed outcome"],
+    actual: ["实际结果", "Observed"],
+    duration: ["实际用时", "Actual time"],
+    window: ["从记录开始到结束", "Observed start-to-close window"],
+    unknown: ["用时未核实", "Unverified duration"],
+    use: ["怎样使用", "How to use"],
+    test: ["怎样复测", "How to retest"],
+    evidence: ["验收证据", "Evidence"],
+    reason: ["原因与影响", "Reason and impact"],
+    goal_risk: ["需要讨论的目标", "Goal at risk"],
+    history: ["验收与变更记录", "Reviews and changes"],
+    init: ["首次发布完整计划", "Initial plan published"],
+    goal_change: ["用户确认调整目标", "User agreed to change the goal"],
+    confirmation: ["用户决定", "User decision"],
+    before: ["原先", "Before"],
+    after: ["现在", "After"],
+    add: ["新增", "Added"],
+    edit: ["调整", "Revised"],
+    retire: ["替换", "Retired"],
+    forecast: ["开工时的预测和依据", "Forecast at start"],
+    parent: ["所属节点", "Parent"],
+    opened: ["展开或收起", "Expand or collapse"],
+    mins: ["分钟", "min"],
+    hours: ["小时", "h"],
+    seconds: ["秒", "s"],
+    earlier: ["上次验收", "Previous review"],
+    changes: ["后续计划改动", "Plan amendments"],
+    source: ["计时依据", "Timing source"],
+  };
+  const t = (key) => s.labels?.[key] || pairs[key]?.[zh ? 0 : 1] || key;
+  const nodes = new Map(s.nodes.map((n) => [n.id, n]));
+  const live = s.nodes.filter((n) => s.work[n.id].status !== "retired");
+  const children = new Map(live.map((n) => [n.id, []]));
+  live.forEach((n) => {
+    if (n.parent !== null) children.get(n.parent).push(n);
+  });
+  const root = live.find((n) => n.parent === null);
+  const leaves = live.filter((n) => !children.get(n.id).length);
+  const storeKey = "task-planner-view-" + s.uid;
+  let saved = {};
+  try {
+    saved = JSON.parse(sessionStorage.getItem(storeKey) || "{}");
+  } catch {}
+  let selected = live.some((n) => n.id === saved.selected) ? saved.selected : root.id;
+  const expanded = new Set(saved.expanded || [root.id]);
+  const main = document.getElementById("report");
+  function el(tag, cls, txt) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function append(p, ...items) {
+    p.append(...items);
+    return p;
+  }
+  function stamp(iso) {
+    return new Date(iso).toLocaleString(zh ? "zh-CN" : "en-GB", {
+      dateStyle: "short",
+      timeStyle: "medium",
+    });
+  }
+  function duration(sec) {
+    if (sec === null) return t("unknown");
+    const unit = sec < 60 ? ["seconds", 1] : sec < 3600 ? ["mins", 60] : ["hours", 3600];
+    return new Intl.NumberFormat(zh ? "zh" : "en", { maximumFractionDigits: 2 }).format(sec / unit[1]) +
+      " " + t(unit[0]);
+  }
+  function estimated(n) {
+    const [lo, hi] = Array.isArray(n) ? n : [n, n];
+    if (lo === hi) return duration(lo * 60);
+    return lo % 60 === 0 && hi % 60 === 0
+      ? (lo / 60) + "–" + (hi / 60) + " " + t("hours")
+      : lo + "–" + hi + " " + t("mins");
+  }
+  function badge(status) {
+    return el("span", "status " + status, t(status));
+  }
+  function reference(v) {
+    if (/^https?:\/\/[^\s]+$/i.test(v)) {
+      const a = el("a", "", v);
+      a.href = v;
+      a.rel = "noreferrer";
+      return a;
+    }
+    return el("span", "", v);
+  }
+  function row(dl, key, value) {
+    const dd = el("dd");
+    if (value instanceof Node) dd.append(value);
+    else dd.textContent = value;
+    dl.append(el("dt", "", t(key)), dd);
+  }
+  function fold(label, id) {
+    const d = el("details", "fold");
+    d.id = id;
+    d.append(el("summary", "", t(label)));
+    if (saved.folds?.includes(id)) d.open = true;
+    return d;
+  }
+  function nodeLink(id) {
+    const n = nodes.get(id);
+    if (!n || s.work[id].status === "retired") {
+      return el("span", "", (n?.title || id) + " (" + t("retired") + ")");
+    }
+    const b = el("button", "deplink", n.title);
+    b.type = "button";
+    b.onclick = () => choose(id, true);
+    return b;
+  }
+  function references(list) {
+    const box = el("div");
+    list.forEach((x) => box.append(append(el("div"), reference(x))));
+    return box;
+  }
+  function depParts(dep) {
+    return typeof dep === "string" ? [dep, "passed"] : [dep.id, dep.needs];
+  }
+  function dependencies(n) {
+    const all = new Map();
+    for (let p = n; p; p = nodes.get(p.parent)) {
+      for (const d of p.deps) {
+        const [id, needs] = depParts(d);
+        if (!all.has(id) || needs === "passed") all.set(id, needs);
+      }
+      if (p.baseline) {
+        const target = p.baseline.node;
+        const defaultUse = !children.get(p.id).length && target !== p.id ? "input" : "forecast";
+        if ((p.baseline.use || defaultUse) === "input" && !all.has(target)) all.set(target, "evidence");
+      }
+    }
+    return all;
+  }
+  function usable(w) {
+    return w.status !== "active" && (w.result?.verdict === "passed" ||
+      (w.result?.verdict === "deviation" && Boolean(w.result.usable_evidence)));
+  }
+  function blockers(n) {
+    const result = [];
+    for (const [id, needs] of dependencies(n)) {
+      const w = s.work[id];
+      if (needs === "passed" ? w.status !== "passed" : !usable(w)) result.push(id);
+    }
+    return result;
+  }
+  const mast = el("header", "mast"), top = el("div", "topline");
+  append(top, el("strong", "", t("plan")), badge(s.risk ? "at_risk" : s.work[root.id].status));
+  append(mast, top, el("h1", "", s.title), el("p", "goal", s.goal));
+  const meter = el("div", "meter-row"), prog = el("progress");
+  prog.max = leaves.length;
+  prog.value = leaves.filter((n) => s.work[n.id].status === "passed").length;
+  prog.setAttribute("aria-label", t("completed"));
+  append(
+    meter,
+    prog,
+    el("span", "", prog.value + " / " + prog.max + " " + t("completed")),
+    el("span", "clock", t("updated") + " " + stamp(s.updated) + " · v" + s.revision),
+  );
+  mast.append(meter);
+  main.append(mast);
+  if (s.risk) {
+    main.append(append(el("section", "risk"), el("h3", "", t("goal_risk")), el("p", "", s.risk)));
+  }
+  const layout = el("div", "layout"), nav = el("nav", "box"), panel = el("article", "box detail");
+  nav.setAttribute("aria-label", t("tree"));
+  panel.id = "node-detail";
+  panel.tabIndex = -1;
+  append(
+    nav,
+    append(
+      el("div", "panel-head"),
+      el("h2", "", t("tree")),
+      el("span", "micro", live.length + " " + t("nodes")),
+    ),
+  );
+  const treeBody = el("div", "treebody");
+  nav.append(treeBody);
+  append(layout, nav, panel);
+  main.append(layout);
+  function branch(n) {
+    const li = el("li"),
+      line = el("div", "treerow"),
+      kids = children.get(n.id),
+      twist = el(kids.length ? "button" : "span", "twist");
+    const pick = el("button", "pick");
+    pick.type = "button";
+    pick.dataset.id = n.id;
+    pick.id = "pick-" + n.id;
+    pick.setAttribute("aria-current", String(n.id === selected));
+    append(
+      pick,
+      el("i", "dot " + s.work[n.id].status),
+      el("span", "node-name", n.title),
+      el("span", "node-state", t(s.work[n.id].status)),
+    );
+    pick.onclick = () => choose(n.id, true);
+    append(line, twist, pick);
+    li.append(line);
+    if (kids.length) {
+      const list = el("ul");
+      list.id = "children-" + n.id;
+      list.hidden = !expanded.has(n.id);
+      twist.type = "button";
+      twist.id = "toggle-" + n.id;
+      twist.textContent = list.hidden ? "▸" : "▾";
+      twist.setAttribute("aria-label", t("opened") + " " + n.title);
+      twist.setAttribute("aria-controls", list.id);
+      twist.setAttribute("aria-expanded", String(!list.hidden));
+      twist.onclick = () => {
+        list.hidden = !list.hidden;
+        twist.textContent = list.hidden ? "▸" : "▾";
+        twist.setAttribute("aria-expanded", String(!list.hidden));
+        if (list.hidden) expanded.delete(n.id);
+        else expanded.add(n.id);
+      };
+      kids.forEach((k) => list.append(branch(k)));
+      li.append(list);
+    }
+    return li;
+  }
+  function drawTree() {
+    treeBody.replaceChildren(append(el("ul"), branch(root)));
+  }
+  function choose(id, fromClick) {
+    selected = id;
+    for (let p = nodes.get(id).parent; p; p = nodes.get(p).parent) expanded.add(p);
+    drawTree();
+    drawDetail();
+    if (fromClick) {
+      if (matchMedia("(max-width:730px)").matches) {
+        panel.focus({ preventScroll: true });
+        panel.scrollIntoView({ block: "start" });
+      } else document.getElementById("pick-" + id)?.focus({ preventScroll: true });
+    }
+  }
+  function facts(n) {
+    const ul = el("ul", "facts");
+    n.facts.forEach((f) => {
+      const source = el("span", "micro");
+      source.append(t(f.confidence) + " · ", f.source ? reference(f.source) : t("missing"));
+      ul.append(append(el("li"), el("span", "", f.claim), source));
+    });
+    return ul;
+  }
+  function outcome(r) {
+    const dl = el("dl", "fields");
+    row(dl, "actual", r.actual);
+    row(dl, "duration", duration(r.duration_seconds));
+    row(dl, "source", r.time_source || t("window"));
+    row(dl, "use", r.use);
+    row(dl, "test", r.test);
+    row(dl, "evidence", references(r.evidence));
+    if (r.usable_evidence) row(dl, "usable_evidence", r.usable_evidence);
+    if (r.reason) row(dl, "reason", r.reason);
+    if (r.goal_risk) row(dl, "goal_risk", r.goal_risk);
+    return dl;
+  }
+  function drawDetail() {
+    const n = nodes.get(selected), w = s.work[n.id];
+    panel.replaceChildren();
+    append(
+      panel,
+      append(el("div", "detail-top"), el("span", "micro", n.id), badge(w.status)),
+      el("h2", "", n.title),
+      el("p", "description", n.description),
+    );
+    if (w.result) {
+      panel.append(
+        append(
+          el("section", "result"),
+          el("h3", "", t(w.status === "active" ? "earlier" : "result")),
+          outcome(w.result),
+        ),
+      );
+    }
+    panel.append(
+      append(el("section", "lead"), el("h3", "", t("deliverable")), el("p", "", n.deliverable)),
+    );
+    const dl = el("dl", "fields");
+    row(dl, "expected", n.expected);
+    row(dl, "acceptance", n.acceptance);
+    row(dl, "estimate_minutes", estimated(n.estimate_minutes));
+    if (n.constraints.length) row(dl, "constraints", n.constraints.join("\n"));
+    if (n.awaiting_input) {
+      row(
+        dl,
+        w.input_evidence ? "input_evidence" : "awaiting_input",
+        w.input_evidence || n.awaiting_input,
+      );
+    }
+    const ds = dependencies(n), depot = el("span");
+    for (const [id, needs] of ds) {
+      if (depot.childNodes.length) depot.append(" · ");
+      depot.append(nodeLink(id));
+      if (needs === "evidence") depot.append(" (" + t("evidenceGate") + ")");
+    }
+    row(dl, "deps", ds.size ? depot : t("none"));
+    panel.append(dl);
+    if (n.baseline) {
+      const bd = el("dl", "fields"), measure = s.work[n.baseline.node], obtained = usable(measure);
+      row(bd, "metric", n.baseline.metric);
+      if (obtained) row(bd, "actual", measure.result.usable_evidence || measure.result.actual);
+      row(bd, "method", n.baseline.method);
+      row(bd, "measurement", nodeLink(n.baseline.node));
+      panel.append(
+        append(
+          el("section", obtained ? "result" : "risk"),
+          el("h3", "", t(obtained ? "measured" : "baseline")),
+          bd,
+        ),
+      );
+    }
+    const why = fold("factTitle", "why-" + n.id);
+    why.append(facts(n), el("p", "", n.rationale));
+    panel.append(why);
+  }
+  drawTree();
+  drawDetail();
+  const pending = leaves.filter((n) => s.work[n.id].status === "planned");
+  const eligible = pending.filter((n) => !n.awaiting_input && blockers(n).length === 0);
+  if (eligible.length) {
+    const foot = el("div", "ready", t("ready") + " · ");
+    eligible.forEach((n, i) => {
+      if (i) foot.append(" / ");
+      foot.append(nodeLink(n.id));
+    });
+    nav.append(foot);
+  }
+  const waiting = pending.filter((n) => n.awaiting_input && blockers(n).length === 0);
+  if (waiting.length) {
+    const foot = el("div", "ready", t("awaiting_input"));
+    waiting.forEach((n) => foot.append(append(el("div"), nodeLink(n.id), " · ", n.awaiting_input)));
+    nav.append(foot);
+  }
+  const blocked = pending.filter((n) => blockers(n).length);
+  if (blocked.length) {
+    const section = fold("blocked", "blocked-tasks");
+    section.classList.add("ready");
+    section.firstChild.append(" · " + blocked.length);
+    blocked.forEach((n) => {
+      const line = append(el("div"), nodeLink(n.id), " · " + t("deps") + " ");
+      blockers(n).forEach((id, i) => {
+        if (i) line.append(" / ");
+        line.append(nodeLink(id));
+      });
+      section.append(line);
+    });
+    nav.append(section);
+  }
+  const log = el("section", "box history"),
+    events = s.history.filter((e) => e.kind !== "start" || e.input_evidence).slice().reverse();
+  append(
+    log,
+    append(
+      el("div", "panel-head"),
+      el("h2", "", t("history")),
+      el("span", "micro", String(events.length)),
+    ),
+  );
+  function value(field, x) {
+    if (x == null) return "—";
+    if (field === "estimate_minutes") return estimated(x);
+    if (field === "deps") {
+      return x.map((d) => {
+        const [id, how] = depParts(d);
+        return id + " (" + t(how === "passed" ? "passed" : "evidenceGate") + ")";
+      }).join(", ") || t("none");
+    }
+    if (field === "facts") {
+      return x.map((f) => f.claim + " · " + (f.source || t("missing")) + " · " + t(f.confidence)).join(
+        "\n",
+      );
+    }
+    if (field === "baseline") return x.metric + " · " + x.method + " · " + x.node;
+    if (Array.isArray(x)) return x.join("\n") || t("none");
+    return String(x);
+  }
+  events.forEach((e) => {
+    const d = el("details", "log");
+    d.id = "log-" + e.revision;
+    if (saved.folds?.includes(d.id)) d.open = true;
+    const summary = el("summary");
+    summary.append(el("span", "micro", "v" + e.revision + " · " + stamp(e.time)));
+    const title = e.forecast?.title || nodes.get(e.node)?.title || "";
+    summary.append(
+      e.kind === "close"
+        ? title + " · " + t(e.result.verdict)
+        : e.kind === "start"
+        ? title + " · " + t("input_evidence")
+        : t(e.kind),
+    );
+    d.append(summary);
+    const body = el("div", "logbody");
+    if (e.kind === "init") body.append(el("p", "", e.goal));
+    if (e.kind === "start") {
+      const dl = el("dl", "fields");
+      row(dl, "awaiting_input", e.awaiting_input);
+      row(dl, "input_evidence", e.input_evidence);
+      body.append(dl);
+    }
+    if (e.kind === "goal_change") {
+      const dl = el("dl", "fields");
+      row(dl, "before", e.before_goal);
+      row(dl, "after", e.after_goal);
+      row(dl, "reason", e.reason);
+      row(dl, "confirmation", e.confirmation);
+      body.append(dl);
+    }
+    if (e.result) {
+      body.append(outcome(e.result));
+      const f = fold("forecast", "forecast-" + e.revision), dl = el("dl", "fields");
+      row(dl, "deliverable", e.forecast.deliverable);
+      row(dl, "expected", e.forecast.expected);
+      row(dl, "estimate_minutes", estimated(e.forecast.estimate_minutes));
+      row(dl, "acceptance", e.forecast.acceptance);
+      row(dl, "rationale", e.forecast.rationale);
+      f.append(dl, facts(e.forecast));
+      body.append(f);
+    }
+    if (e.changes?.length) body.append(el("h3", "", t("changes")));
+    (e.changes || []).forEach((c) => {
+      const div = el("div", "change"),
+        snapshot = c.after?.title || c.before?.title || nodes.get(c.id)?.title || c.id;
+      div.append(el("strong", "", t(c.op) + " · " + snapshot + " (" + c.id + ")"));
+      const dl = el("dl", "fields");
+      if (c.op === "edit") {
+        for (const k of Object.keys(c.after)) {
+          row(
+            dl,
+            k,
+            t("before") + " · " + value(k, c.before[k]) + "\n" + t("after") + " · " +
+              value(k, c.after[k]),
+          );
+        }
+      } else {
+        const n = c.after || c.before;
+        for (
+          const k of [
+            "parent",
+            "deliverable",
+            "expected",
+            "estimate_minutes",
+            "deps",
+            "acceptance",
+            "rationale",
+          ]
+        ) row(dl, k, value(k, n[k]));
+      }
+      div.append(dl);
+      body.append(div);
+    });
+    d.append(body);
+    log.append(d);
+  });
+  main.append(log);
+  function remember() {
+    const state = {
+      selected,
+      expanded: [...expanded],
+      folds: [...document.querySelectorAll("details[open]")].map((e) => e.id),
+      y: scrollY,
+      focus: document.activeElement?.id || "",
+    };
+    try {
+      sessionStorage.setItem(storeKey, JSON.stringify(state));
+    } catch {}
+  }
+  if (saved.focus) document.getElementById(saved.focus)?.focus({ preventScroll: true });
+  if (saved.y) requestAnimationFrame(() => scrollTo(0, saved.y));
+  addEventListener("pagehide", remember);
+  let probe = null;
+  function check() {
+    if (document.hidden || probe) return;
+    const f = el("iframe", "probe");
+    probe = f;
+    f.tabIndex = -1;
+    f.setAttribute("aria-hidden", "true");
+    f.title = "";
+    const u = new URL(location.href);
+    u.hash = "";
+    u.searchParams.set("_plan_probe", String(Date.now()));
+    f.src = u.href;
+    document.body.append(f);
+    setTimeout(() => {
+      if (probe === f) {
+        f.remove();
+        probe = null;
+      }
+    }, 4000);
+  }
+  addEventListener("message", (e) => {
+    if (
+      !probe || e.source !== probe.contentWindow || e.data?.type !== "task-plan-revision" ||
+      e.data.uid !== s.uid
+    ) return;
+    probe.remove();
+    probe = null;
+    if (Number.isInteger(e.data.revision) && e.data.revision > s.revision) {
+      remember();
+      location.reload();
+    }
+  });
+  setInterval(check, 5000);
+  addEventListener("focus", check);
+})();
+</script>
+</body>
+</html>

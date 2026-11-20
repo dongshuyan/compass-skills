@@ -23,13 +23,14 @@
 >
 > 从使用 `SKILL.md` 到搭建本地 Skill 系统，讲清楚最小结构、渐进披露、复用审计、AI 生成草稿、真实链路提炼和迭代验证。
 
-COMPASS 当前公开 10 个本地 skills：5 个运行时协作 skills、2 个 run-history skill 工程 skills、2 个写作与表达 skills，以及 1 个本地招聘辅助 skill。仓库还包含一个可选的 Codex 会话标题插件，使用独立安装器。核心协作层围绕用户画像、任务图谱、同一 AI 对话内暂停续跑、跨对话续接和需求对齐；`run-history` 双 skill 负责沉淀和升级 skill；`clear-communication` 负责按读者需要组织解释；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
+COMPASS 当前公开 11 个本地 skills：6 个运行时协作 skills、2 个 run-history skill 工程 skills、2 个写作与表达 skills，以及 1 个本地招聘辅助 skill。仓库还包含一个可选的 Codex 会话标题插件，使用独立安装器。核心协作层围绕用户画像、任务图谱、同一 AI 对话内暂停续跑、跨对话续接、需求对齐和计划复查；`run-history` 双 skill 负责沉淀和升级 skill；`clear-communication` 负责按读者需要组织解释；`academic-humanizer` 负责自然、可信的学术表达；`assess-interview-candidate` 负责把获准处理的简历和岗位要求整理成可审计的候选人评估与离线面试报告。
 
 当前公开版技能一览：
 
 | Skill | 作用 |
 | --- | --- |
 | [`task-clarifier`](skills/task-clarifier/) | 在高成本、高歧义或高风险任务前，把目标、范围、证据、验收标准和风险边界对齐清楚。 |
+| [`task-planner`](skills/task-planner/) | 把已确认的需求做成可展开的 HTML 计划，每个节点结束时记录验收结果，并按实测调整后续任务。 |
 | [`task-forest`](skills/task-forest/) | 在当前 repo 内维护任务森林 / DAG，记录长期目标、依赖、进度、偏差、todo 和历史。 |
 | [`pause-and-resume`](skills/pause-and-resume/) | 在最近的安全节点协作式暂停未完成任务，并在同一 AI 对话中根据精确检查点继续执行。 |
 | [`session-handoff-prompt`](skills/session-handoff-prompt/) | 把当前 AI 对话压缩成可直接贴给新 AI 对话的续接 prompt。 |
@@ -173,17 +174,18 @@ DAG 关系视图：
 
 ## 为什么需要 COMPASS
 
-长任务需要持续保存五类信息：
+长任务需要持续保存六类信息：
 
 - **用户信息**：沟通偏好、风险边界、常见遗漏和长期协作方式。
 - **任务全局**：当前动作属于哪个长期目标、依赖什么、推进到哪里。
 - **目标关系**：当前任务和原始目的之间的贡献关系，以及是否出现偏移。
 - **暂停检查点**：同一 AI 对话暂停时的安全停止位置、剩余工作、不可重复副作用和恢复后的第一个动作。
 - **续接上下文**：新 AI 对话需要知道什么，才能不重放完整聊天记录也能继续推进。
+- **执行计划**记录接下来要交付什么，以及上一次验收怎样改变了后续安排。
 
 COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作画像，再查看任务森林；临时离开但保留当前 AI 对话时留下暂停检查点，需要换 AI 对话时生成续接 prompt，在行动前完成目标对齐；当某条流程已经跑通、值得沉淀，或某个现有 skill 需要根据真实 session 证据受控自我进化时，再进入 `run-history` 双 skill。
 
-## 五个核心协作 skills + 五个扩展 skills
+## 六个核心协作 skills + 五个扩展 skills
 
 | 层 | Skill | 解决的问题 |
 | --- | --- | --- |
@@ -192,6 +194,7 @@ COMPASS 提供一套长期协作和 skill 演进流程：先读取用户协作�
 | **知停** | [`$pause-and-resume`](skills/pause-and-resume/) | 在同一 AI 对话中安全暂停未完成任务，保存精确检查点，并在用户回来后直接续跑。 |
 | **知续** | [`$session-handoff-prompt`](skills/session-handoff-prompt/) | 把当前对话里真正需要延续的目标、进展、约束和下一步，压缩成可直接复制给新 AI 对话的提示词。 |
 | **知向** | [`$task-clarifier`](skills/task-clarifier/) | 把模糊需求对齐成三方一致的执行契约：用户想清楚、agent 听准确、用户能确认没跑偏。 |
+| **计划** | [`$task-planner`](skills/task-planner/) | 为已确认的目标安排阶段、依赖和验收。执行到节点结束时，按实测结果更新计划。 |
 | **造技** | [`$run-history-skill-builder`](skills/run-history-skill-builder/) | 把已经跑通或反复打磨过的真实流程，抽成新的可复用 skill 包，或先生成不落文件的设计方案。 |
 | **修技** | [`$run-history-skill-upgrader`](skills/run-history-skill-upgrader/) | 自动根据真实执行、遇到困难、解决困难、验证结果和用户反馈等 session 信息，为已有 skill 先产出结构化升级方案，并把这个过程组织成最简单的 skill 受控自我进化闭环；只有在明确批准后才执行修改。 |
 | **明述** | [`$clear-communication`](skills/clear-communication/) | 按读者当前问题选取和组织信息，写清动作、原因、条件和下一步，并核对原意与证据范围。 |
@@ -206,6 +209,7 @@ $task-forest 让 AI 知道“任务在哪里、做到哪里、为什么做，以
 $pause-and-resume 让 AI 知道“当前对话停在哪里、回来后从哪里继续，以及哪些动作不能重复”。
 $session-handoff-prompt 让 AI 知道“新对话怎样像接着原来的对话继续做事”。
 $task-clarifier 让 AI 知道“用户的需求到底是什么”。
+$task-planner 把已确认的任务排成计划，随验收结果调整后续步骤。
 $run-history-skill-builder 让 AI 知道“这条已经跑通的流程怎样被沉淀成新的 skill”。
 $run-history-skill-upgrader 让 AI 知道“现有 skill 怎样根据真实 session 证据受控自我进化”。
 $clear-communication 让 AI 知道“读者需要理解什么或做什么，以及怎样把关系讲清楚”。
@@ -233,8 +237,8 @@ README 统一用 `$skill-name` 表示显式点名。实际使用时可以采用�
 
 | Agent / 环境 | 推荐接入方式 |
 | --- | --- |
-| Codex | 复制 `skills/` 下需要的 released skill 目录到 Codex 可发现的 skills 目录，或作为 repo-local skills 使用；当前公开版共 10 个 skills。 |
-| Claude Code | 复制 `skills/` 下需要的 released skill 目录到 Claude Code 的 custom skills 目录，或放入项目 skills 根目录；当前公开版共 10 个 skills。 |
+| Codex | 复制 `skills/` 下需要的 released skill 目录到 Codex 可发现的 skills 目录，或作为 repo-local skills 使用；当前公开版共 11 个 skills。 |
+| Claude Code | 复制 `skills/` 下需要的 released skill 目录到 Claude Code 的 custom skills 目录，或放入项目 skills 根目录；当前公开版共 11 个 skills。 |
 | OpenClaw | 放入 workspace `skills/`、`.agents/skills` 或个人/托管 skills 目录；按 OpenClaw 的 skill precedence 生效。 |
 | OpenCode | 保留本 repo 的 `skills/` 和 [AGENTS.md](AGENTS.md)，让 agent 通过 AGENTS 规则发现并读取对应 `SKILL.md`。 |
 | 其他 agent | 只要能读取文件并运行本地脚本，就按 [AGENTS.md](AGENTS.md) 的通用协议加载：先读 `SKILL.md`，再按需读 `references/` 和运行 `scripts/`。 |
@@ -259,7 +263,7 @@ Repo: https://github.com/dongshuyan/compass-skills
 6. 最后报告安装位置、已安装 skills、安全检查结果、验证结果，以及如何在 AI 对话中调用。
 ```
 
-手动安装时，把 `skills/` 下需要的 released skill 目录复制到目标 agent 的本地 skills 目录；当前公开版共 10 个 skills。安装后可在 AI 对话中点名使用：
+手动安装时，把 `skills/` 下需要的 released skill 目录复制到目标 agent 的本地 skills 目录；当前公开版共 11 个 skills。安装后可在 AI 对话中点名使用：
 
 ```text
 $user-profile-keeper
@@ -267,6 +271,7 @@ $task-forest
 $pause-and-resume
 $session-handoff-prompt
 $task-clarifier
+$task-planner
 $run-history-skill-builder
 $run-history-skill-upgrader
 $clear-communication
@@ -379,11 +384,11 @@ python3 scripts/title_plugin.py install --global
 python3 scripts/title_plugin.py install --project /absolute/path/to/project
 ```
 
-需要 Python 3.11+、Git 和兼容的本地 Codex。本插件已在 macOS 实测；根据使用的 POSIX 接口，预期兼容 Linux，但尚未在 Linux 运行验证，Windows 不支持。首次安装通常需要在同一 Codex home 的 `/hooks` 中审查插件的两条定义；检查 `status` 返回 `runtime_ready: true` 后才算入口就绪。前面的 `npx skills add` 用于安装 10 个通用 Skill，不会安装此插件或其 Hooks；插件内部的管理 Skill 依赖完整配套文件，不能单独复制安装。
+需要 Python 3.11+、Git 和兼容的本地 Codex。本插件已在 macOS 实测；根据使用的 POSIX 接口，预期兼容 Linux，但尚未在 Linux 运行验证，Windows 不支持。首次安装通常需要在同一 Codex home 的 `/hooks` 中审查插件的两条定义；检查 `status` 返回 `runtime_ready: true` 后才算入口就绪。前面的 `npx skills add` 用于安装 11 个通用 Skill，不会安装此插件或其 Hooks；插件内部的管理 Skill 依赖完整配套文件，不能单独复制安装。
 
 [完整说明](docs/session-titles.md)包含安装、Codex/Harbor 共享设置、更新、卸载、来源和限制。共享模式需要显式绑定稳定的状态根，并让指定的 Codex home 加载同一插件市场、信任 Hooks；安装器不会自动发现或迁移账户。标题内容仍依赖 Agent 执行指令，API 回读成功也不能证明桌面侧栏立即刷新。
 
-## 五个核心协作 skills
+## 六个核心协作 skills
 
 ### $user-profile-keeper：本地用户画像
 
@@ -505,6 +510,20 @@ python3 scripts/title_plugin.py install --project /absolute/path/to/project
 输出：有用户决定未确认时，先给最多 3 个关键问题和推荐答案；如果没有开放决定，则不提问题。无论哪种情况，都用 2-5 行复述你的理解并让我确认。
 ```
 
+### task-planner 任务计划与节点复查
+
+需求对齐后，用 [task-planner](skills/task-planner/SKILL.md) 生成可展开的本地 `plan.html`。小任务可以只有一个节点。大任务可以先打通框架，再分阶段补全功能。每个可执行叶子节点的预计用时上限为 6 小时。
+
+批准执行后，代理在同一份 HTML 中标记进行中的工作。每个节点结束时写入实际结果、用时和复测方法。验收出现偏差时，页面上方显示调整后的计划，下方保留原先的预期和修改依据。辅助脚本需要 Python 3.9 或更高版本。
+
+用下面的命令为当前用户的 Codex 和 Claude Code 安装。
+
+```bash
+npx skills add dongshuyan/compass-skills --skill task-planner -a codex -a claude-code -g
+```
+
+在 Codex 中输入 `$task-planner`，在 Claude Code 中输入 `/task-planner`。例如，可以说“把刚确认的需求做成 HTML 计划，我先看计划”。
+
 ## 能做什么
 
 - 新 AI 对话结束时，把进度、偏差、决策和待办归入全局任务图。（用户可以自行做成 hook）
@@ -525,8 +544,8 @@ python3 scripts/title_plugin.py install --project /absolute/path/to/project
 - `printf '%s\n' '本研究采用分层抽样。' | python3 skills/academic-humanizer/scripts/metrics.py - --json`：只读检查语言路由、过程残留和对立句式候选，不输出作者身份概率或质量分数。
 - `python3 -m py_compile ...`：验证新增 Python 脚本语法。
 - `skills.sh.json` 与各 Skill 的 `evals/evals.json` 均可解析为 JSON。
-- `clarity-session-titles` 0.5.0 的 116 项标题、RPC、安装器与目录搬迁测试在 Python 3.11、3.14 上通过；Codex `0.165.0-alpha.1.2` 的隔离 home 中通过 22 项真实插件生命周期检查。`skills@1.5.25` 在默认和 full-depth 模式下仍识别 10 个通用 Skill，Codex 与 Claude Code 的通配符复制安装逐文件一致，未单独安装内部标题 Skill。这些检查未调用模型，也未验收桌面侧栏刷新，见[本次检查记录](PUBLICATION_AUDIT.md#2026-10-30-addition)。
-- 使用 `skills@1.5.23` 时，当前本地源码可被识别为 10 个 skills；`pause-and-resume` 已成功复制到临时 Codex 与 Claude Code skill 目录，两个 `SKILL.md` 副本与发布源逐字节一致。
+- `clarity-session-titles` 0.5.0 的 116 项标题、RPC、安装器与目录搬迁测试在 Python 3.11、3.14 上通过；Codex `0.165.0-alpha.1.2` 的隔离 home 中通过 22 项真实插件生命周期检查。`skills@1.5.25` 在当时的默认和 full-depth 模式下识别出 10 个通用 Skill，Codex 与 Claude Code 的通配符复制安装逐文件一致，未单独安装内部标题 Skill。这些检查未调用模型，也未验收桌面侧栏刷新，见[本次检查记录](PUBLICATION_AUDIT.md#2026-10-30-addition)。
+- 使用 `skills@1.5.23` 时，当时的本地源码可被识别为 10 个 skills；`pause-and-resume` 已成功复制到临时 Codex 与 Claude Code skill 目录，两个 `SKILL.md` 副本与发布源逐字节一致。
 - `clear-communication` 已通过包结构和 Skill 结构校验。临时安装到 Codex、Claude Code 项目目录后，6 个发布文件均与源码逐字节一致；Codex `0.163.0-alpha.10.2` 与 Claude Code `2.1.296` 的原生接口均能发现该项目 Skill。这项检查没有向模型发送实际任务。
 - `pause-and-resume` 已通过 Skill 结构校验；公开文件与完成 Codex 暂停续跑行为测试时使用的源文件逐字节一致。
 - `assess-interview-candidate` 的 83 项单元和公开包测试在 Python 3.11、3.14 上均通过；Skill 结构校验、Ruff、JSON、Python 3.10 语法、JavaScript 语法和离线报告契约校验也已通过。本轮照片布局升级尚未完成独立的真实浏览器视觉复核。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Planner"
+  short_description: "Create a living plan and review each completed node"
+  default_prompt: "Use $task-planner to turn the agreed goal into a clear HTML plan and keep it current at each completed node."

@@ -4,9 +4,10 @@
   "groupings": [
     {
       "title": "Core Skills",
-      "description": "Local-first skills for task alignment, task memory, same-session pause and resume, handoff continuity, and user-aware agent collaboration.",
+      "description": "Local-first skills for task alignment, planning, task memory, same-session pause and resume, handoff continuity, and user-aware agent collaboration.",
       "skills": [
         "task-clarifier",
+        "task-planner",
         "task-forest",
         "pause-and-resume",
         "session-handoff-prompt",

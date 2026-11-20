@@ -24,13 +24,14 @@
 npx skills add dongshuyan/compass-skills --skill '*' -a claude-code
 ```
 
-COMPASS Skills gives AI agents ten local skills: five runtime collaboration skills, two run-history skill-engineering skills, two writing and communication skills, and one local hiring-support skill. It also includes an optional Codex session-title plugin, installed separately.
+COMPASS Skills gives AI agents eleven local skills: six runtime collaboration skills, two run-history skill-engineering skills, two writing and communication skills, and one local hiring-support skill. It also includes an optional Codex session-title plugin, installed separately.
 
-The project currently ships ten `SKILL.md` skills:
+The project currently ships eleven `SKILL.md` skills:
 
 | Skill | Purpose |
 | --- | --- |
 | [`task-clarifier`](skills/task-clarifier/) | Aligns goals, scope, evidence, acceptance criteria, and risk boundaries before ambiguous, costly, or externally visible work. |
+| [`task-planner`](skills/task-planner/) | Turns an agreed goal into an expandable HTML plan and updates it as the agent checks each result. |
 | [`task-forest`](skills/task-forest/) | Maintains a repo-local task forest / DAG with goals, subtasks, dependencies, progress, deviations, todos, decisions, and conversation history. |
 | [`pause-and-resume`](skills/pause-and-resume/) | Cooperatively pauses unfinished work at a safe boundary and resumes it from a precise checkpoint in the same AI conversation. |
 | [`session-handoff-prompt`](skills/session-handoff-prompt/) | Compresses the current AI conversation's goal, progress, constraints, and next steps into a paste-ready prompt for a new AI conversation. |
@@ -41,7 +42,7 @@ The project currently ships ten `SKILL.md` skills:
 | [`academic-humanizer`](skills/academic-humanizer/) | Helps write or revise English and Chinese academic prose by removing formulaic AI-like patterns and restoring a natural scholarly voice while preserving claims, evidence strength, and logical relations. |
 | [`assess-interview-candidate`](skills/assess-interview-candidate/) | Turns an authorized resume and job description into an auditable evidence layer and a concise three-part offline interviewer report, with locally sanitized resume portraits and bounded timeline-age estimates kept outside scoring. |
 
-The optional [Agent Clarity title plugin](docs/session-titles.md) lives under `plugins/clarity-session-titles/`; it has a separate installer and is not one of these ten portable skills.
+The optional [Agent Clarity title plugin](docs/session-titles.md) lives under `plugins/clarity-session-titles/`; it has a separate installer and is not one of these eleven portable skills.
 
 For multi-skill repositories, install only the functions you actually need. Use `pause-and-resume` when the same AI conversation will remain available; use `session-handoff-prompt` when work must move to a fresh conversation. The `run-history` pair supports skill engineering. Use `clear-communication` to organize explanations for the reader, and `academic-humanizer` to improve academic prose without changing its claims.
 
@@ -69,6 +70,7 @@ After installation, invoke the skills directly in an AI conversation:
 
 ```text
 $task-clarifier
+$task-planner
 $task-forest
 $pause-and-resume
 $session-handoff-prompt
@@ -84,21 +86,23 @@ For manual installation, copy the required folders under [`skills/`](skills/) in
 
 ## Why COMPASS Exists
 
-Long-running agent work needs five kinds of state:
+Long-running agent work needs six kinds of state:
 
 - User context: communication preferences, risk boundaries, recurring omissions, and collaboration style.
 - Project context: where the current request fits, what it depends on, and how far it has progressed.
 - Goal context: how the current task contributes to the original objective and whether it still matches it.
 - Pause context: the safe stopping point, remaining work, non-repeatable effects, and first action when the same AI conversation resumes.
 - Handoff context: what a new AI conversation needs to continue the current task without replaying the whole transcript.
+- The current plan and the evidence for changes at each checkpoint.
 
-COMPASS organizes that state into five local workflows:
+COMPASS organizes that state into six local workflows:
 
 1. A local profile that the user can inspect and correct.
 2. A repo-local task graph that survives AI conversation boundaries.
 3. A cooperative pause checkpoint for continuing in the same AI conversation.
 4. A paste-ready continuation prompt for a new AI conversation.
 5. A clarification gate before ambiguous or risky execution.
+6. An HTML plan that reflects completed work and any changes to the next steps.
 
 ## How The Core And Meta Skills Work Together
 
@@ -126,12 +130,27 @@ task-forest            -> where does this task fit and is it still aligned?
 pause-and-resume       -> where should this AI conversation stop and continue later?
 session-handoff-prompt -> what should the next AI conversation know to continue now?
 task-clarifier         -> what should the agent do now?
+task-planner           -> what should we deliver next, and what changed after the last check?
 clear-communication    -> what does this reader need to understand or do?
 run-history-skill-builder  -> how do we package this proven workflow as a new skill?
 run-history-skill-upgrader -> how does a skill self-evolve safely from real session evidence?
 academic-humanizer         -> how do we remove AI-sounding prose without changing its claims?
 assess-interview-candidate -> how do we prepare a focused, evidence-bounded human interview?
 ```
+
+## Task plans and checkpoints
+
+Use [task-planner](skills/task-planner/SKILL.md) once the goal is agreed. A small task can have one node. Larger tasks can start with a working framework and add functionality in stages. Each executable leaf is estimated at six hours or less.
+
+The skill writes a local `plan.html`. During an authorized run, the agent marks work in progress and records each completed node’s result, elapsed time and retest instructions. If a check misses its target, the same report shows the revised steps and keeps the previous plan in its history. The helper requires Python 3.9 or later.
+
+Install it for both clients across your projects with this command.
+
+```bash
+npx skills add dongshuyan/compass-skills --skill task-planner -a codex -a claude-code -g
+```
+
+In Codex, use `$task-planner`. In Claude Code, use `/task-planner`. For example, ask it to turn an agreed task into an HTML plan you can review before work starts.
 
 ## Clear communication
 
@@ -230,7 +249,7 @@ python3 scripts/title_plugin.py install --global
 python3 scripts/title_plugin.py install --project /absolute/path/to/project
 ```
 
-Requires Python 3.11+, Git, and a compatible local Codex. This plugin is tested on macOS; Linux is expected to work but has not been exercised, and Windows is unsupported. The first install normally requires reviewing the plugin's two definitions in Codex `/hooks`; `status` must report `runtime_ready: true` before treating the hooks as ready. The generic `npx skills add` commands above install the ten portable skills; this plugin uses its own installer. Its internal Skill must stay with the complete package.
+Requires Python 3.11+, Git, and a compatible local Codex. This plugin is tested on macOS; Linux is expected to work but has not been exercised, and Windows is unsupported. The first install normally requires reviewing the plugin's two definitions in Codex `/hooks`; `status` must report `runtime_ready: true` before treating the hooks as ready. The generic `npx skills add` commands above install the eleven portable skills; this plugin uses its own installer. Its internal Skill must stay with the complete package.
 
 See [installation, shared Codex/Harbor setup, updates, removal, sources, and limits](docs/session-titles.md). Shared mode is explicit: it binds a stable state root and requires the intended homes to load the same marketplace and trust the hooks. It does not discover or migrate accounts automatically. Title generation still depends on the Agent following instructions; API readback does not establish immediate desktop-sidebar refresh.
 
@@ -337,7 +356,7 @@ Ecosystem map:
 
 ## Compatibility
 
-This section covers the ten portable skills. The optional [session-title plugin](docs/session-titles.md) requires a compatible local Codex. It is tested on macOS; Linux is expected but untested, and Windows is unsupported.
+This section covers the eleven portable skills. The optional [session-title plugin](docs/session-titles.md) requires a compatible local Codex. It is tested on macOS; Linux is expected but untested, and Windows is unsupported.
 
 COMPASS works across agent runtimes as a `SKILL.md` package with Markdown instructions, YAML frontmatter, optional `references/`, optional `scripts/`, and optional agent metadata.
 
@@ -481,8 +500,8 @@ The public install path has been validated with `skills@1.5.11`:
 - `npx skills add dongshuyan/compass-skills --skill '*' -a claude-code --copy -y` installs the released skills into a temporary project's `.claude/skills/` directory.
 - `python3 skills/session-handoff-prompt/scripts/smoke_test_handoff.py --skill-dir skills/session-handoff-prompt` validates compacted-event projection, task-forest read-only summaries, local validation, and shareable redaction.
 - `printf '%s\n' 'Samples were randomized.' | python3 skills/academic-humanizer/scripts/metrics.py - --json` provides read-only descriptive diagnostics for language routing, process leaks, and contrast candidates without assigning an authorship or quality score.
-- `clarity-session-titles` 0.5.0 passes 116 title/RPC/installer/relocation tests on Python 3.11 and 3.14, plus 22 real plugin-lifecycle checks in a disposable home using Codex `0.165.0-alpha.1.2`. With `skills@1.5.25`, default and full-depth discovery still list ten portable skills; wildcard copy installation for Codex and Claude Code preserves their tracked files and excludes the internal title Skill. These checks do not run a model or verify desktop-sidebar refresh. See [the dated audit](PUBLICATION_AUDIT.md#2026-10-30-addition).
-- With `skills@1.5.23`, the current local source is detected as ten skills; `pause-and-resume` copies successfully into temporary Codex and Claude Code skill roots with byte-identical `SKILL.md` files.
+- `clarity-session-titles` 0.5.0 passes 116 title/RPC/installer/relocation tests on Python 3.11 and 3.14, plus 22 real plugin-lifecycle checks in a disposable home using Codex `0.165.0-alpha.1.2`. With `skills@1.5.25`, default and full-depth discovery listed ten portable skills at the time; wildcard copy installation for Codex and Claude Code preserves their tracked files and excludes the internal title Skill. These checks do not run a model or verify desktop-sidebar refresh. See [the dated audit](PUBLICATION_AUDIT.md#2026-10-30-addition).
+- With `skills@1.5.23`, the source at the time was detected as ten skills; `pause-and-resume` copies successfully into temporary Codex and Claude Code skill roots with byte-identical `SKILL.md` files.
 - `clear-communication` passes the package and Skill structure validators. A temporary copy installation for Codex and Claude Code preserves all six package files byte for byte. Codex `0.163.0-alpha.10.2` and Claude Code `2.1.296` both discover that temporary project skill through their native interfaces; this check sends no model task.
 - `pause-and-resume` passes the Skill validator. Its published file is byte-identical to the source used for the completed Codex pause/resume behavior tests.
 - `assess-interview-candidate` has 83 passing unit and public-package tests on Python 3.11 and 3.14. It also passes the Skill validator, Ruff, JSON parsing, Python 3.10 syntax parsing, JavaScript syntax checking, and offline report contract validation. An independent live-browser visual pass for the portrait layout remains pending.
