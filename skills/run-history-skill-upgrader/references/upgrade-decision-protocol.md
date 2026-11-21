@@ -26,6 +26,14 @@ Do not use the holdout challenge to invent the rule itself.
 
 ## Route Effect Mapping
 
+If the current skill already contains an equivalent rule for a step that failed, check the version used in that run. If the rule was added later, check whether the newer version already addresses the failure. If the rule was present, follow the available evidence:
+
+- Did the entry point match the task, and did the relevant guidance load?
+- Did the rule apply under the conditions of that run? Did another instruction conflict with it?
+- Was the step carried out? Did the final artifact meet that run's requirements?
+
+Propose the smallest change where the evidence locates the failure, such as repairing a broken reference or checking the final export. If the evidence shows only an incorrect artifact or otherwise leaves the cause unresolved, record the cause as unknown.
+
 Describe the route impact of each planned change with labels such as:
 
 - `delete_weak_route`

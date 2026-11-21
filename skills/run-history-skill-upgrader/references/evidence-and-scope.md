@@ -64,9 +64,11 @@ If that is not practical, say so in the plan and treat it as extra risk.
 Strong:
 
 - reproducible failure;
-- repeated user correction;
+- the same user correction across independent tasks;
 - validator or test output;
 - official source or platform change.
+
+If you cite recurrence to justify a lasting rule, state how many independent tasks showed the issue, or say that their independence is unknown. Count continuations, forks, retries, and duplicate exports of the same task once. Retries that reproduce the failure support its reproducibility within that task. A single verified defect can justify a targeted fix.
 
 Weak unless corroborated:
 

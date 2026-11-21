@@ -66,6 +66,8 @@ If you cannot produce these, you do not yet understand the workflow well enough 
 
 ## Reusable Invariants vs Local Accidentals
 
+If you cite recurrence to support a reusable rule, state how many independent tasks showed the pattern, or say that their independence is unknown. Count continuations, forks, retries, and duplicate exports of the same task once. A retry that reproduces a failure strengthens the evidence for that failure within the task. A single completed workflow can still be packaged from its observed steps and outcomes.
+
 Reusable:
 
 - "choose the validated final artifact, not a raw intermediate";
