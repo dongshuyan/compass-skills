@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "should_trigger": [
+    {"id": "short-chat", "prompt": "Answer this short question clearly and explain the one condition that changes the answer.", "category": "every-output", "rationale": "The skill applies to short conversational replies as well as long documents."},
+    {"id": "tutorial", "prompt": "Turn these setup notes into a tutorial with prerequisites, steps, checks, and recovery paths.", "category": "tutorial", "rationale": "A tutorial needs dependency-aware sequencing and local failure handling."},
+    {"id": "story", "prompt": "Rewrite this story so its suspense and flashbacks remain easy to follow.", "category": "nonlinear-narrative", "rationale": "Nonlinear structure is valid when transitions preserve reader orientation."},
+    {"id": "network", "prompt": "Explain this service graph without pretending that the dependencies are one straight line.", "category": "network", "rationale": "The skill should choose a graph explanation for network-shaped material."},
+    {"id": "status", "prompt": "Write a status update that separates completed, attempted, blocked, and unverified work.", "category": "state-report", "rationale": "Operational state and evidence strength must remain distinct."}
+  ],
+  "scope_boundaries": [
+    {"id": "unrelated-tool", "prompt": "Install the requested package in the approved environment; do not ask for an explanation.", "category": "execution-boundary", "rationale": "Clear communication shapes any resulting user-visible report, but this skill must not authorize or perform installation."},
+    {"id": "destructive-action", "prompt": "Delete the temporary build directory after the approved cleanup; do not ask for an explanation.", "category": "execution-boundary", "rationale": "Clear communication shapes any resulting user-visible report, but this skill must not authorize or perform deletion."}
+  ],
+  "quality_expectations": [
+    "Uses a structure that matches the material instead of forcing every output into one template.",
+    "Makes material transitions, prerequisites, branches, and uncertainty visible.",
+    "Applies to short replies and ordinary conversation with a proportionate check.",
+    "Preserves facts, conditions, numbers, negation, evidence strength, and operational state.",
+    "Can co-apply to a domain workflow's user-visible report without replacing that workflow or granting permissions."
+  ]
+}

@@ -1,55 +1,102 @@
-# 表达取舍示例
+# Information-Selection Examples
 
-以下均为本项目编写的假设示例，不是实际项目或实验结果。
+These examples are hypothetical package examples, not project or experiment
+results. They show how to preserve the relationships that affect a reader's
+next decision.
 
-## 把记录写成使用说明
+## Turn a record into usable instructions
 
-读者要知道刚安装的笔记工具怎么开始。材料：打开 NoteBox 后点“新建笔记”即可写作，内容自动保存在当前浏览器。自动保存经过一次真实操作检查；云同步按钮已放入界面，但服务尚未接通。维护记录还列出 23 项本地检查、组件字段 `sync_enabled=false` 和“下一版整理日志”的计划。清除浏览器数据会删除本地笔记，关闭窗口不会删除。
+The reader needs to know how to start with a newly installed note tool. The
+source says: open NoteBox and choose **New note**; content is saved in the
+current browser. One real save operation was checked. A cloud-sync button is
+visible but the service is not connected. The maintenance log lists 23 local
+checks, `sync_enabled=false`, and a plan to organize logs later. Clearing
+browser data deletes local notes; closing the window does not.
 
-合适：打开 NoteBox，点“新建笔记”就能开始写，内容会自动保存在当前浏览器。自动保存已经检查过；云同步还不能用，所以暂时不能靠它在另一台设备上读取笔记。关闭窗口不会删除笔记，但清除浏览器数据会删除，请留意这一区别。
+Better:
 
-这里保留了开始操作、保存位置、已验证范围、云同步限制及两种操作的后果。检查条数、组件字段和整理日志的计划不会改变读者的操作，留在维护记录中即可。若任务改为审查安装质量，这些记录可能又是必要信息；不能把省略规则用于所有受众。
+> Open NoteBox and choose **New note** to begin. Your notes are saved in the
+> current browser. The save operation has been checked; cloud sync is not
+> connected yet, so another device cannot read these notes through the sync
+> button. Closing the window does not delete notes, but clearing browser data
+> does.
 
-## 状态与证据
+The rewrite keeps the start action, storage location, verified scope, sync
+limit, and the two different deletion consequences. The check count, internal
+flag, and future log plan stay in the maintenance record because they do not
+change this reader's next action. A maintenance audit could need them again;
+the omission rule depends on the reader and task.
 
-材料：修改已完成，8 项本地测试通过，尚未在 Windows 设备运行。
+## Keep state and evidence together
 
-不准确：已经修复，Windows 上可以正常使用。
+Source: the change is complete, eight local tests pass, and Windows has not
+been tested.
 
-合适：修改已完成，8 项本地测试通过。Windows 设备上还没测，下一步需要验证实际运行。
+Misleading:
 
-关键不是句子短，而是把“做了什么”和“证据证明到哪里”放在一起。
+> The fix is complete and works on Windows.
 
-## 条件与操作
+Better:
 
-材料：只允许重试读取请求；写入请求只有带有幂等键时才能自动重试。同一个键对应同一个操作。
+> The change is complete and eight local tests pass. Windows still needs a
+> runtime check.
 
-容易误解：失败后可以重试，注意使用幂等键。
+The point is to keep the work state beside the evidence boundary. Shorter
+sentences alone do not make the claim safer.
 
-合适：读取请求失败后可以重试。写入请求只有带有幂等键时才允许自动重试；重复发送同一个操作时，继续使用原来的键。
+## Put conditions next to the operation they qualify
 
-专业术语仍在，但读者不用自己猜规则作用于哪种请求。
+Source: read requests may be retried. Write requests may be retried only when
+they carry an idempotency key, and the same key represents the same operation.
 
-## 不确定的因果
+Easy to misread:
 
-材料：服务重启后错误暂未复现，没有定位根因。
+> Retry failures, and remember to use an idempotency key.
 
-不准确：服务重启解决了问题。
+Better:
 
-合适：重启后暂时没有再出现错误，根因还没确定。
+> A read request may be retried. A write request may be retried only
+> when it carries an idempotency key; reuse that same key when retrying the
+> same operation.
 
-## 已经清楚的句子
+The terminology stays intact, but the reader no longer has to guess which
+request type the condition governs.
 
-原文：保存后关闭窗口。
+## Do not turn correlation into a cause
 
-保留原文。除非任务需要解释保存位置或失败处理，否则无需增加“为了确保……”等背景。
+Source: the error has not reappeared after a service restart, and its root
+cause is unknown.
 
-## 学术措辞
+Misleading:
 
-材料：在一个数据集上的观察结果是 A 的均值高于 B，未做显著性检验，不能推断因果。
+> Restarting the service fixed the problem.
 
-不准确：A 显著优于 B，说明该机制带来了性能提升。
+Better:
 
-合适：在该数据集上，A 的平均结果高于 B。由于尚未进行显著性检验，也未建立因果证据，这一差异不能据此归因于该机制。
+> The error has not reappeared since the restart. Its root cause is still
+> unknown.
 
-专业稿件应保留原有术语和引用；不能把这条示例的句式当成所有论文的固定结尾。
+## Preserve a clear short sentence
+
+Source: `Save, then close the window.`
+
+Keep it as written when the task does not require storage details or failure
+handling. Do not add background merely to make the edit look substantial.
+
+## Preserve scholarly evidence strength
+
+Source: on one dataset, A has a higher mean than B. No significance test was
+run, and the observation does not establish causality.
+
+Misleading:
+
+> A is significantly better than B, showing that the mechanism improves
+> performance.
+
+Better:
+
+> On this dataset, A has a higher mean than B. No significance test was run,
+> and this observation does not establish causality.
+
+Keep the manuscript's terminology and citations. This example illustrates an
+evidence boundary; it is not a fixed closing sentence for every paper.

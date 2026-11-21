@@ -28,3 +28,7 @@ These are methodological references; this package does not redistribute their da
 The skill defines a workflow for a language model to follow. Package validation and successful installation check its structure and availability; they do not measure reader comprehension or guarantee that every response improves.
 
 The core instructions use no host-specific tool names, absolute machine paths, shell commands, scripts, model settings, network services, or hardware interfaces. Hosts determine discovery, invocation, permissions, and context retention. The optional OpenAI interface file supplies display metadata and is not required to read or follow the skill.
+
+## Local skill-design references
+
+The package structure and routing guidance were also checked against the repository's [skill design protocol](../../run-history-skill-builder/references/skill-design-protocol.md) and [skill-writing tutorial](../../../skill-writing-tutorial.html). They support few strong routes, progressive disclosure, explicit evidence and state gates, and small verifiable checks. They are design inputs for this package, not evidence that the communication behavior has been benchmarked.

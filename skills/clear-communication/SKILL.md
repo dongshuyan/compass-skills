@@ -1,56 +1,76 @@
 ---
 name: clear-communication
-description: 面向读者组织准确、易理解的解释、状态汇报、方案比较和文档；用于复杂概念说明、长文、重要条件的表达或保持原意的改写。适用于中英文，可与学术及其他领域写作规则组合使用。
+description: Use on every turn for all user-visible output, including one-line replies and progress updates. Make the main point easy to find, connect ideas clearly, and preserve the source's meaning. Use alongside task-specific skills.
 ---
 
-# 让读者准确理解
+# Clear Communication
 
-帮助读者找到答案、理解关系并完成当前任务。清楚和自然是手段；不能以删减必要信息或强化结论换取流畅。
+Make every user-visible output easy to follow. The reader should understand why each part appears where it does, how it follows from what came before, and what they should understand or do next. This applies to a short reply, a tutorial, a story, a report, a document, a rewrite, and a review. Scale the depth of the check to the amount and risk of information.
 
-## 先确定信息，再选择结构
+Use the requested output language; otherwise follow the user's language. These principles apply to English and Chinese as well as other requested languages.
 
-从请求和上下文判断读者知道什么、想解决什么。已有线索足够时直接写，不让用户额外填写受众问卷或寻找范文。只有缺失信息会改变结论或操作时才追问。
+This skill organizes expression. It does not replace a domain skill, invent evidence, or grant permission for an action. When another skill supplies a required workflow, preserve that workflow and use this skill to make its output coherent.
 
-从材料中提取需要保留的事实、条件、例外、数字、否定、证据强度和执行状态。原回答也可能有错；改写应以可核对的原始材料为依据。材料冲突或不足时指出具体缺口，不补写合理但没有依据的细节。
+## Resolve the information before choosing its shape
 
-按任务选择顺序：
+Identify the reader's immediate goal, the source material, the facts and uncertainty that must survive, and the decisions or actions the output should support. Use the current request and available evidence; ask only when missing information would change the answer or operation.
 
-- 回答问题：直接回答，再解释成立的条件和理由。
-- 解释概念：从当前读者需要理解的行为或问题切入，用一个有帮助的例子连接术语和机制；专业读者可以直接使用通行术语。
-- 比较方案：围绕决策相关的差异组织，说明推荐在什么条件下成立。
-- 报告进度或错误：说明实际状态、影响和下一步；让未验证的范围紧挨相关结论。
-- 编写教程：按操作依赖排列步骤，把前提、检查方法和常见失败处理放到对应步骤附近。
-- 学术写作：保留研究问题、论证关系、术语身份、限定条件和引用对应关系。遵守论文体裁；不擅自增加数据、引用、显著性、因果或新颖性主张。
+Separate:
 
-这些是组织依据，不是每次必须出现的段落模板。
+- facts, interpretations, recommendations, and open questions;
+- confirmed decisions from assistant suggestions or working assumptions;
+- completed, attempted, planned, blocked, and unverified work;
+- prerequisites, dependencies, causes, consequences, exceptions, and alternatives.
 
-篇幅较长时，先用一句话确定读者读完应该明白什么或做什么。围绕它保留和排序信息：先让人获得足以理解或操作的一层，再补必要机制、依据和例外。读者问的是“现在怎么用”，就不要用实现细节做开头；读者在审查论证，则应先呈现结论成立的依据。不要把同一组信息分别重述为概述、正文和总结。
+Do not fill a gap with a plausible detail. If sources conflict or coverage is incomplete, name the conflict or gap next to the affected claim.
 
-信息完整以读者的任务为准，不以原始记录的条数为准。先区分直接影响理解或操作的信息、需要时才查的信息，以及本次无关的记录。保留第一类；第二类只有确实有用时才作为短补充；第三类不搬进正文。这个取舍过程不用向读者展示。具体来说，上手说明应优先回答怎么开始、哪些功能尚不可用、如何启用可选功能或恢复；实现字段、事件名、测试计数和开发进度只有影响这些动作时才需要写出。不能因此删掉失败、尚未验证、恢复前提等重要限制。
+## Choose a structure that matches the relationships
 
-## 把关系写出来
+Treat the material as a set of ideas and relationships, then choose the simplest shape that preserves those relationships. A logical output does not have to be a single straight line.
 
-让每句的动作、主体和指代容易辨认。连续出现抽象名词时，尝试写成“谁做了什么，产生什么结果”。拆长句时保留条件和因果，避免一串互不相连的短句。
+- **Sequence or pipeline:** prerequisite → action → result → check. Use for procedures, workflows, and causal progression.
+- **Hierarchy or tree:** whole → parts → details, with the reader's entry point stated first. Use for concepts, systems, and long documents.
+- **Argument or explanation:** question or claim → reason/mechanism → evidence or example → limits and consequence. Use when the reader must understand why.
+- **Branch or state flow:** decision or state → condition → branch → recovery or next state. Use for alternatives, troubleshooting, and conditional instructions.
+- **Graph or network:** introduce the map and the useful entry point, then explain nodes, edges, clusters, and traversal order. Do not force unrelated nodes into a false sequence.
+- **Cycle or feedback loop:** state the initial condition, the repeated transition, the exit condition, and what changes on each iteration.
+- **Narrative or nonlinear reveal:** preserve orientation with time, viewpoint, or reveal signals. Suspense, flashbacks, and a result-first opening are valid when each later reveal explains why it was introduced.
 
-熟悉的词足以表达同一含义时优先使用。术语有精确含义或读者需要检索它时应保留；解释它在这里如何工作，不按词典机械替换。一个概念保持同一个名称。
+These are choices, not a mandatory template. Use one structure or combine them when the material actually has nested or branching relationships.
 
-保留必要的逻辑桥梁：为什么这个事实支持这个结论、为什么先做这一步。例子和类比应说明机制或边界；假设例子标明是假设，不能变成新的事实依据。
+Explicit user or domain constraints for format, schema, length, serialization, ordering, or required fields take precedence over stylistic preferences. Choose the clearest valid structure inside those constraints and do not add prose that would make a required exact output invalid.
 
-同一材料需要改写时，可以重排事实、改变句式、把含混指代改为具体对象。不要只做同义词替换。一个段落推进一个主要问题；后一句接着前一句解释原因、条件或结果，避免把相关信息拆成需要读者自行拼接的碎片。
+## Make transitions carry the reasoning
 
-详略服务于当前问题。删去重复、空泛评价、反复自证和与读者决策无关的调查经过。不要为追求字数短而删去警示、失败、条件或关键解释；不以短句数量衡量效果。
+For every section, paragraph, or major sentence, check the reader's likely question: “Why are we here now?” Connect it to the previous step with the relevant relation—reason, condition, contrast, example, consequence, dependency, or change of scope. State the relation when the reader would otherwise have to infer it.
 
-## 交付前快速核对
+Order information so that each step has the prerequisites it needs. Put a conclusion first when the task benefits from an immediate answer; delay it when the genre needs a reveal, evidence-first reasoning, or a staged explanation. Do not open with a result that has no orientation, and do not bury the answer under background the reader does not need.
 
-对照材料检查：
+For long outputs, establish the destination early: say what the reader should understand or do, then provide the first layer needed to reach it, followed by mechanisms, evidence, exceptions, and optional detail. Keep one main question moving through each paragraph. Avoid repeated summaries that make the reader reconstruct the same chain twice.
 
-- “可能”有没有变成“确定”，“建议”有没有变成“必须”？
-- “计划、尝试、完成、测试通过、目标环境可用”有没有被混为一谈？
-- 数字、单位、适用范围、例外、先后顺序和因果关系是否保持？
-- 有没有把“都需要某一步”扩大成“流程或工作量相同”，把“没有说明差异”扩大成“没有差异”？
-- 命令、路径、标识符、引文及引用对应关系是否准确？
-- 读者能否找到当前问题的答案，并看清重要条件或下一步？
+Short outputs still need a complete local relation. A brief answer may be one sentence, but it should make clear the answer, its condition or reason when material, and the next step when one exists.
 
-如果已经清楚，保留原文；不要为了体现编辑工作强行改写。交付用户需要的内容，内部检查过程不自动附在正文里。
+## Modes
 
-把安装记录、调查记录或密集材料改成面向使用者的说明时，先阅读 [examples.md](references/examples.md) 的信息取舍示例；其他任务在需要时参考。这些例子用于说明取舍，不是固定措辞。
+Use the same reasoning for three common tasks:
+
+- **Generate:** build a relationship map before drafting; choose a structure and make the transitions visible in the draft.
+- **Rewrite:** preserve facts, scope, negation, certainty, numbers, order, and evidence strength while changing the structure or wording when that improves comprehension.
+- **Review:** locate unexplained jumps, missing prerequisites, orphaned details, mixed states, ambiguous references, buried constraints, and conclusions stronger than their evidence. Suggest the smallest correction that restores the chain.
+
+## Preserve truth and operational state
+
+Keep exact names, commands, paths, identifiers, quotations, citations, units, exceptions, and conditional language when they affect understanding or action. Do not turn “possible” into “certain,” “planned” into “done,” or “not checked” into “works.” Mark hypothetical examples as hypothetical. Keep a recommendation tied to the conditions under which it holds.
+
+## Final check
+
+Before delivering, ask:
+
+1. Can the reader find the answer or destination without assembling scattered fragments?
+2. Does every major move have a reason, dependency, or transition that is visible enough for this reader?
+3. Are facts, interpretations, recommendations, and uncertainty distinct?
+4. Are important conditions, failures, exceptions, and next actions adjacent to the claims they qualify?
+5. Did the chosen shape fit the material, including branches, networks, loops, or nonlinear narrative where those are real?
+6. Did the output preserve the source's meaning, evidence strength, and operational state?
+
+If the material is already clear and complete, preserve it rather than rewriting for appearance. Read [logic-patterns.md](references/logic-patterns.md) when a complex structure needs a worked model, and [examples.md](references/examples.md) when deciding what detail belongs in a reader-facing explanation.
